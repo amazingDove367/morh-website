@@ -1,0 +1,85 @@
+# ==========================================
+# MORH Website - .gitignore
+# HTML / CSS / JavaScript
+# SEO / AEO / GEO Optimized
+# ==========================================
+
+
+# ------------------------------------------
+# 1. macOS System Files
+# ------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+
+# ------------------------------------------
+# 2. Windows System Files
+# ------------------------------------------
+Thumbs.db
+Desktop.ini
+
+
+# ------------------------------------------
+# 3. IDE / Editor Temporary Files
+# ------------------------------------------
+.idea/
+*.swp
+*.swo
+*~
+
+
+# ------------------------------------------
+# 4. Environment Variables / Secrets
+# ------------------------------------------
+.env
+.env.*
+!.env.example
+
+
+# ------------------------------------------
+# 5. Logs
+# ------------------------------------------
+*.log
+npm-debug.log*
+
+
+# ------------------------------------------
+# 6. Temporary / Backup Files
+# ------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.old
+
+
+# ------------------------------------------
+# 7. Dependencies / Cache
+# ------------------------------------------
+node_modules/
+.cache/
+
+
+# ==========================================
+# SEO / AEO / GEO Files
+# These files MUST be tracked by Git
+# ==========================================
+
+!robots.txt
+!sitemap.xml
+!index.html
+!result.html
+!README.md
+
+# Website assets
+!assets/
+!assets/**
+
+# Structured data files (if added)
+!*.jsonld
+!*.json
+
+# AI crawler information files (if added)
+!llms.txt
+!llms-full.txt
