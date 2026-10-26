@@ -7,44 +7,50 @@
     · .js-motion: 고정(sticky) 무대 위에서 src/scripts/ritual.ts 가 스크롤 진행도로 모든 객체를 배치
   - 핵심 문구와 제품 링크는 모두 실제 HTML 텍스트
 */
-const PRODUCT = '/prototype/product-a/';
+import { localePath, withBase, type Locale } from '../../i18n/locales';
+import { DICTS } from '../../i18n';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = DICTS[locale];
+const PRODUCT = localePath(locale, '/product/');
+const img = withBase;
 ---
 <section class="ritual" id="ritual" aria-labelledby="ritual-title" data-ritual>
   <div class="ritual__pin">
     <div class="ritual__stage" data-stage>
       <h1 id="ritual-title" class="ritual__title">
-        <span class="ritual__days" data-days>14 DAYS</span>
-        <span class="ritual__sub" data-sub>YOUR DAILY RITUAL</span>
+        <span class="ritual__days" data-days>{t.home.days}</span>
+        <span class="ritual__sub" data-sub>{t.home.sub}</span>
       </h1>
 
       <canvas class="ritual__canvas" data-canvas aria-hidden="true"></canvas>
 
       <figure class="ritual__glass">
-        <img src="/images/ritual/hg-day14-794.webp" srcset="/images/ritual/hg-day14-480.webp 480w, /images/ritual/hg-day14-794.webp 794w"
+        <img src={img('/images/ritual/hg-day14-794.webp')} srcset={`${img('/images/ritual/hg-day14-480.webp')} 480w, ${img('/images/ritual/hg-day14-794.webp')} 794w`}
              sizes="(max-width: 720px) 58vw, 300px" width="794" height="1388" loading="lazy" decoding="async"
-             alt="위쪽은 비고 아래쪽에 크림이 모인 구리색 프레임의 유리 모래시계" />
+             alt={t.home.glassAlt} />
       </figure>
 
       <div class="ritual__jar">
-        <img class="ritual__lid" data-lid src="/images/ritual-lid-1016.webp" srcset="/images/ritual-lid-520.webp 520w, /images/ritual-lid-1016.webp 1016w"
+        <img class="ritual__lid" data-lid src={img('/images/ritual-lid-1016.webp')} srcset={`${img('/images/ritual-lid-520.webp')} 520w, ${img('/images/ritual-lid-1016.webp')} 1016w`}
              sizes="(max-width: 720px) 60vw, 30vw" width="1016" height="332" alt="" fetchpriority="high" decoding="async" />
         <div class="ritual__body" data-body>
-          <img src="/images/ritual-body-1016.webp" srcset="/images/ritual-body-520.webp 520w, /images/ritual-body-1016.webp 1016w"
+          <img src={img('/images/ritual-body-1016.webp')} srcset={`${img('/images/ritual-body-520.webp')} 520w, ${img('/images/ritual-body-1016.webp')} 1016w`}
                sizes="(max-width: 720px) 60vw, 30vw" width="1016" height="508" fetchpriority="high" decoding="async"
-               alt="MORH 크림. 아이보리색 둥근 뚜껑과 버건디 MORH 로고가 있는 샴페인 톤 반투명 유리 용기" />
+               alt={t.home.jarAlt} />
         </div>
       </div>
 
       <p class="ritual__counter" data-counter aria-hidden="true">
-        <span class="ritual__counter-label">DAY</span>
+        <span class="ritual__counter-label">{t.home.counterDay}</span>
         <span class="ritual__counter-num" data-day>01</span>
         <span class="ritual__counter-of">/ 14</span>
       </p>
 
       <div class="ritual__final" data-final>
-        <h2 class="ritual__headline">매일의 루틴이 쌓이는 14일</h2>
-        <p class="ritual__copy">MORH와 함께하는 나만의 시간</p>
-        <a class="btn ritual__cta" href={PRODUCT}>제품 자세히 보기 <span class="arrow" aria-hidden="true">→</span></a>
+        <h2 class="ritual__headline">{t.home.headline}</h2>
+        <p class="ritual__copy">{t.home.copy}</p>
+        <a class="btn ritual__cta" href={PRODUCT}>{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
       </div>
     </div>
   </div>
@@ -86,7 +92,7 @@ const PRODUCT = '/prototype/product-a/';
   .ritual__final { grid-area: final; text-align: center; }
   @media (min-width: 900px) {
     :global(html:not(.js-motion)) .ritual__stage { grid-template-columns: 1fr 1fr; grid-template-areas: 'days days' 'jar jar' 'sub sub' 'glass final'; }
-    :global(html:not(.js-motion)) .ritual__final { text-align: left; justify-self: start; align-self: center; }
+    :global(html:not(.js-motion)) .ritual__final { text-align: start; justify-self: start; align-self: center; }
   }
 
   /* ───────── 스크롤 연동 배치 ───────── */
@@ -114,13 +120,13 @@ const PRODUCT = '/prototype/product-a/';
   .ritual__counter-num.is-passing { color: var(--c-ink-soft); opacity: 0.55; }
   .ritual__counter-of { font-size: 0.2em; color: var(--c-ink-soft); font-family: var(--f-sans); font-weight: 500; letter-spacing: 0.08em; }
   :global(.js-motion) .ritual__final {
-    position: absolute; z-index: 7; text-align: left; top: 50%; left: 56%; width: min(40%, 520px);
+    position: absolute; z-index: 7; text-align: start; top: 50%; inset-inline-start: 56%; width: min(40%, 520px);
     translate: 0 -50%; opacity: 0; visibility: hidden;
   }
   :global(.js-motion) .ritual__final.is-on { visibility: visible; }
   @media (max-width: 719px) {
     :global(.js-motion) .ritual__counter { flex-direction: row; align-items: baseline; gap: 0.3em; }
-    :global(.js-motion) .ritual__final { left: var(--gutter); right: var(--gutter); width: auto; top: auto; bottom: 7%; translate: 0 0; text-align: center; }
+    :global(.js-motion) .ritual__final { inset-inline: var(--gutter); width: auto; top: auto; bottom: 7%; translate: 0 0; text-align: center; }
     :global(.js-motion) .ritual__cta { width: 100%; }
   }
   :global(.js-motion) [data-lid], :global(.js-motion) [data-body] { will-change: transform; }

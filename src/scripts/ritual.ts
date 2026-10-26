@@ -69,6 +69,8 @@ export function initRitual() {
   const root = document.querySelector<HTMLElement>('[data-ritual]');
   if (!root || !document.documentElement.classList.contains('js-motion')) return;
   const sec: HTMLElement = root;
+  // 오른쪽→왼쪽 언어: 마지막 장면의 모래시계·날짜 위치만 좌우를 바꿈(사진은 반전하지 않음)
+  const rtl = document.documentElement.dir === 'rtl';
 
   const q = <T extends Element>(s: string) => root.querySelector(s) as T;
   const stage = q<HTMLElement>('[data-stage]');
@@ -182,7 +184,7 @@ export function initRitual() {
       by1, bx1: W / 2, ly1: by1 - bodyH / 2 - lidH / 2 + J * OVER,
       kHold, kP, sxP, bxP, byP, seamY, gP, hyP,
       gZ, zX: W / 2, zY: mobile ? H * 0.56 : H * 0.51,
-      gF, fX: mobile ? W / 2 : W * 0.3, fY: mobile ? H * 0.29 : H * 0.5,
+      gF, fX: mobile ? W / 2 : rtl ? W * 0.7 : W * 0.3, fY: mobile ? H * 0.29 : H * 0.5,
       daysY: H * 0.2, subY: H * 0.32,
     };
     L.subW = sub.offsetWidth; L.subH = sub.offsetHeight;
@@ -369,7 +371,8 @@ export function initRitual() {
     const cIn = seg(p, 0.53, 0.58), cOut = seg(p, 0.88, 0.92);
     css(counter, 'opacity', (cIn * (1 - cOut)).toFixed(3));
     const glassLeft = hx - (HG_W / 2) * g;
-    const cxC = mobile ? W / 2 - L.cW / 2 : Math.max(24, Math.min(W * 0.14, glassLeft - L.cW - W * 0.05));
+    const cxL = mobile ? W / 2 - L.cW / 2 : Math.max(24, Math.min(W * 0.14, glassLeft - L.cW - W * 0.05));
+    const cxC = rtl && !mobile ? W - cxL - L.cW : cxL;
     const cyC = mobile ? H * 0.035 : H / 2 - L.cH / 2;
     css(counter, 'transform', `translate3d(${cxC.toFixed(2)}px, ${cyC.toFixed(2)}px, 0)`);
     const dd = Math.round(day);

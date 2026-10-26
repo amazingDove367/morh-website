@@ -1,0 +1,16 @@
+---
+import Base from '../layouts/Base.astro';
+import { localePath } from '../i18n/locales';
+import { DICTS } from '../i18n';
+const t = DICTS.ko;
+---
+<Base locale="ko" path="/" title={`${t.notFound.title} | MORH`} description={t.meta.homeDesc} noindex>
+  <section class="wrap nf">
+    <h1>{t.notFound.title}</h1>
+    <p lang="en">Page not found</p>
+    <a class="btn" href={localePath('ko', '/')}>{t.common.toHome}</a>
+  </section>
+</Base>
+<style>
+  .nf { padding-block: var(--s-10); display: grid; gap: var(--s-4); justify-items: start; }
+</style>

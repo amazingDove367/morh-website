@@ -1,26 +1,44 @@
 ---
 /*
-  홈·상세 공통 헤더 (레퍼런스 '텍스쳐.png'): 왼쪽 SHOP · 가운데 버건디 MORH · 오른쪽 ABOUT / BAG
+  홈·상세 공통 헤더 (레퍼런스 '텍스쳐.png'): 왼쪽 SHOP · 가운데 버건디 MORH · 오른쪽 ABOUT / BAG / 언어
   아래 얇은 구분선과 반복 텍스트 띠. 헤더만 상단에 고정되고 텍스트 띠는 함께 스크롤됩니다.
-  bagOpensSheet: 상세페이지에서는 BAG 이 구매 신청 시트를 엶 (장바구니 기능은 없음)
+  언어 선택: 같은 화면의 다른 언어 주소로 이동하는 링크 목록(URL 이 언어 상태의 기준)
 */
-interface Props { bagOpensSheet?: boolean }
-const { bagOpensSheet = false } = Astro.props;
-const PRODUCT = '/prototype/product-a/';
+import { LOCALES, LOCALE_META, localePath, type Locale } from '../../i18n/locales';
+import { DICTS } from '../../i18n';
+interface Props { locale: Locale; path: string; bagOpensCheckout?: boolean }
+const { locale, path, bagOpensCheckout = false } = Astro.props;
+const t = DICTS[locale];
+const product = localePath(locale, '/product/');
 const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
 ---
 <header class="morh-header">
   <div class="morh-header__inner">
-    <nav class="morh-header__nav morh-header__nav--l" aria-label="쇼핑">
-      <a href={PRODUCT}>SHOP</a>
+    <nav class="morh-header__nav morh-header__nav--s" aria-label={t.a11y.shopNav}>
+      <a href={product} aria-current={path === '/product/' ? 'page' : undefined}>{t.nav.shop}</a>
     </nav>
-    <a class="morh-header__logo" href="/" aria-label="MORH 모르 홈">MORH</a>
-    <nav class="morh-header__nav morh-header__nav--r" aria-label="주요 메뉴">
-      <a href="/#about">ABOUT</a>
-      {bagOpensSheet
-        ? <button type="button" data-buy-open aria-label="BAG — 구매 신청 열기">BAG</button>
-        : <a href={PRODUCT} aria-label="BAG — 제품 상세페이지에서 구매">BAG</a>}
-    </nav>
+    <a class="morh-header__logo" href={localePath(locale, '/')} aria-label={t.a11y.home}>MORH</a>
+    <div class="morh-header__end">
+      <nav class="morh-header__nav" aria-label={t.a11y.mainNav}>
+        <a href={`${localePath(locale, '/')}#about`}>{t.nav.about}</a>
+        <a href={bagOpensCheckout ? localePath(locale, '/checkout/') : product} aria-label={t.nav.bagLabel} data-bag>{t.nav.bag}</a>
+      </nav>
+      <details class="lang" data-lang>
+        <summary aria-label={`${t.a11y.language} — ${t.a11y.currentLanguage}: ${LOCALE_META[locale].label}`}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" /><path d="M1.5 8h13M8 1.5c2 2 2.6 4.2 2.6 6.5S10 12.5 8 14.5M8 1.5C6 3.5 5.4 5.7 5.4 8S6 12.5 8 14.5" /></svg>
+          <span>{LOCALE_META[locale].short}</span>
+        </summary>
+        <ul role="list">
+          {LOCALES.map((l) => (
+            <li>
+              <a href={localePath(l, path)} hreflang={LOCALE_META[l].html} lang={LOCALE_META[l].html} aria-current={l === locale ? 'true' : undefined}>
+                {LOCALE_META[l].label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </div>
   </div>
 </header>
 <div class="morh-band" aria-hidden="true">
@@ -35,25 +53,46 @@ const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
   }
   .morh-header__logo {
     font-family: var(--f-serif); font-weight: 600; font-size: 1.875rem; letter-spacing: 0.01em; line-height: 1;
-    color: var(--c-burgundy); text-decoration: none;
+    color: var(--c-burgundy); text-decoration: none; direction: ltr;
   }
-  .morh-header__nav { display: flex; gap: clamp(20px, 6vw, 88px); }
-  .morh-header__nav--r { justify-content: flex-end; }
-  .morh-header__nav a, .morh-header__nav button {
-    font: inherit; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; color: var(--c-ink);
-    text-decoration: none; min-height: 44px; display: inline-flex; align-items: center;
-    background: none; border: 0; padding: 0; cursor: pointer;
+  .morh-header__end { display: flex; justify-content: flex-end; align-items: center; gap: clamp(14px, 4vw, 56px); }
+  .morh-header__nav { display: flex; gap: clamp(16px, 5vw, 72px); }
+  .morh-header__nav a, .lang summary {
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; color: var(--c-ink);
+    text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
   }
-  .morh-header__nav a:hover, .morh-header__nav button:hover { color: var(--c-burgundy); text-decoration: underline; text-underline-offset: 0.5em; }
+  .morh-header__nav a:hover, .lang summary:hover { color: var(--c-burgundy); }
+  .morh-header__nav a[aria-current='page'] { color: var(--c-burgundy); }
+  .lang { position: relative; }
+  .lang summary { list-style: none; letter-spacing: 0.06em; }
+  .lang summary::-webkit-details-marker { display: none; }
+  .lang svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1; }
+  .lang ul {
+    position: absolute; inset-inline-end: 0; top: calc(100% + 6px); min-width: 150px; z-index: 5;
+    background: var(--c-paper); border: 1px solid var(--c-line-strong); padding: 6px 0;
+  }
+  .lang a { display: block; padding: 10px 16px; font-size: 0.875rem; text-decoration: none; color: var(--c-ink); }
+  .lang a:hover { background: var(--c-ivory); }
+  .lang a[aria-current='true'] { color: var(--c-burgundy); font-weight: 650; }
   .morh-band { border-bottom: var(--border); overflow: hidden; background: var(--c-paper); }
   .morh-band p {
-    display: flex; gap: 1.6em; white-space: nowrap; padding: 6px var(--gutter);
+    display: flex; gap: 1.6em; white-space: nowrap; padding: 6px var(--gutter); direction: ltr;
     font-size: 0.5625rem; font-weight: 600; letter-spacing: 0.12em; color: var(--c-ink-soft);
   }
   .morh-band span + span::before { content: '/'; margin-right: 1.6em; font-weight: 400; }
   @media (max-width: 719px) {
-    .morh-header__logo { font-size: 1.5rem; }
-    .morh-header__nav { gap: 18px; }
-    .morh-header__nav a, .morh-header__nav button { letter-spacing: 0.1em; }
+    .morh-header__inner { grid-template-columns: auto 1fr auto; gap: 10px; }
+    .morh-header__logo { font-size: 1.45rem; justify-self: center; }
+    .morh-header__nav { gap: 12px; }
+    .morh-header__end { gap: 10px; }
+    .morh-header__nav a, .lang summary { letter-spacing: 0.08em; }
   }
 </style>
+
+<script>
+  // 언어 메뉴: 바깥을 누르거나 Esc 로 닫기
+  document.querySelectorAll<HTMLDetailsElement>('[data-lang]').forEach((d) => {
+    document.addEventListener('click', (e) => { if (d.open && !d.contains(e.target as Node)) d.open = false; });
+    d.addEventListener('keydown', (e) => { if (e.key === 'Escape' && d.open) { d.open = false; d.querySelector('summary')?.focus(); } });
+  });
+</script>

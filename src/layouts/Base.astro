@@ -1,70 +1,88 @@
 ---
+/*
+  모든 페이지 공통 레이아웃: 언어·방향(lang/dir), 메타·검색 설정, 헤더·하단 띠·푸터, 분석 스크립트(설정된 경우만)
+  - 검색 노출: PUBLIC_INDEXABLE=true 인 운영 배포에서만 index. 미리보기·로컬은 항상 noindex
+  - canonical·hreflang: PUBLIC_SITE_URL 이 있을 때만(임의 주소를 만들지 않음)
+  - 움직임 줄이기: OS 설정 또는 ?motion=off → html.reduce-motion (정적 장면), 그 외 html.js-motion
+*/
 import '../styles/base.css';
-import SiteHeader from '../components/SiteHeader.astro';
-import SiteFooter from '../components/SiteFooter.astro';
-import ProtoBar from '../components/ProtoBar.astro';
-import PrivacyModal from '../components/PrivacyModal.astro';
-
-export interface ProtoInfo {
-  area: string;            // 예: '① Hero Motion'
-  variant: 'A' | 'B' | '연결';
-  name: string;            // 예: 'Typography × Texture'
-  a?: string;              // A안 경로
-  b?: string;              // B안 경로
-}
+import MorhHeader from '../components/morh/MorhHeader.astro';
+import MorhBand from '../components/morh/MorhBand.astro';
+import MorhFooter from '../components/morh/MorhFooter.astro';
+import { LOCALES, LOCALE_META, localePath, withBase, type Locale } from '../i18n/locales';
+import { DICTS } from '../i18n';
 
 interface Props {
+  locale: Locale;
+  /** 언어 접두어 없는 경로 ('/', '/product/') — 언어 전환·hreflang 에 사용 */
+  path: string;
   title: string;
   description: string;
   noindex?: boolean;
-  proto?: ProtoInfo;
   jsonld?: Record<string, unknown>;
   ogImage?: string;
-  header?: boolean;
-  footer?: boolean;
+  bagOpensCheckout?: boolean;
 }
 
-const { title, description, noindex = true, proto, jsonld, ogImage = '/images/morh-front-1254.webp', header = true, footer = true } = Astro.props;
+const { locale, path, title, description, noindex = false, jsonld, ogImage = '/images/morh-front-1254.webp', bagOpensCheckout = false } = Astro.props;
+const t = DICTS[locale];
+const meta = LOCALE_META[locale];
+const env = import.meta.env;
+const indexable = env.PUBLIC_INDEXABLE === 'true' && !noindex;
+const site = (env.PUBLIC_SITE_URL || '').replace(/\/$/, '');
+const abs = (p: string) => (site ? `${site}${p}` : p);
+const ga = (env.PUBLIC_GA4_ID || '').trim();
+const gaValid = /^G-[A-Z0-9]{4,}$/.test(ga);
 ---
 <!doctype html>
-<html lang="ko">
+<html lang={meta.html} dir={meta.dir}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{title}</title>
   <meta name="description" content={description} />
-  {noindex && <meta name="robots" content="noindex, nofollow" />}
+  {!indexable && <meta name="robots" content="noindex, nofollow" />}
+  {site && <link rel="canonical" href={abs(localePath(locale, path))} />}
+  {site && LOCALES.map((l) => <link rel="alternate" hreflang={LOCALE_META[l].html} href={abs(localePath(l, path))} />)}
+  {site && <link rel="alternate" hreflang="x-default" href={abs(localePath('ko', path))} />}
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="MORH 모르" />
+  <meta property="og:site_name" content={t.meta.siteName} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content={ogImage} />
-  <meta property="og:locale" content="ko_KR" />
+  <meta property="og:image" content={abs(withBase(ogImage))} />
+  <meta property="og:locale" content={meta.og} />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#fcfaf6" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <!-- canonical·og:url: 운영 주소 확정 후 추가 (임의 주소 사용 안 함) -->
-  <!-- GA4 / Meta Pixel 자리: 붙이면 개인정보 처리 안내에 '익명 방문 통계' 항목을 추가해야 합니다 -->
+  <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
   {jsonld && <script type="application/ld+json" set:html={JSON.stringify(jsonld)} />}
   <script is:inline>
-    // 모션 줄이기: OS 설정 또는 ?motion=off. iframe 비교 화면에서는 프로토타입 바 숨김.
     (function () {
       var d = document.documentElement, q = new URLSearchParams(location.search);
       var reduce = q.get('motion') === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
       d.classList.add(reduce ? 'reduce-motion' : 'js-motion');
-      if (q.get('embed') === '1' || window.self !== window.top) d.classList.add('is-embed');
+      window.__events = [];
     })();
   </script>
+  {gaValid && (
+    <>
+      <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga}`}></script>
+      <script is:inline define:vars={{ ga }}>
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { window.dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        window.gtag('config', ga);
+      </script>
+    </>
+  )}
 </head>
 <body>
-  <a class="skip-link" href="#main">본문 바로가기</a>
-  {proto && <ProtoBar {...proto} />}
-  {header && <SiteHeader />}
+  <a class="skip-link" href="#main">{t.a11y.skip}</a>
+  <MorhHeader locale={locale} path={path} bagOpensCheckout={bagOpensCheckout} />
   <main id="main">
     <slot />
   </main>
-  {footer && <SiteFooter />}
-  <PrivacyModal />
+  <MorhBand />
+  <MorhFooter locale={locale} />
   <slot name="after" />
 </body>
 </html>
