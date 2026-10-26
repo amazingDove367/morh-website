@@ -1,0 +1,48 @@
+---
+import { product, formatKRW } from '../data/product';
+---
+<dialog class="sheet" id="purchase-sheet" aria-labelledby="purchase-title">
+  <div class="sheet__head">
+    <h2 id="purchase-title">구매 신청</h2>
+    <button type="button" class="sheet__close" data-sheet-close aria-label="닫기">×</button>
+  </div>
+  <!-- 입력칸에 name 속성이 없어 스크립트가 꺼져 있어도 값이 주소창·서버로 넘어가지 않습니다 (기존 저장소와 동일 원칙) -->
+  <form id="lead-form" class="sheet__body" action="/result/" method="get" autocomplete="off" novalidate>
+    <p class="demo-note">포트폴리오 데모입니다. 실제 결제·배송은 진행되지 않으며 입력한 정보는 저장되지 않습니다.</p>
+    <div class="order">
+      <img src="/images/morh-front-thumb.webp" alt="" width="64" height="64" />
+      <div>
+        <p class="order__name">{product.name}</p>
+        <p class="muted">수량 <span data-qty-value>1</span>개 · <strong data-total>{formatKRW(product.price.value)}</strong> <span class="test-tag test-tag--sample"></span></p>
+      </div>
+    </div>
+    <label class="field">
+      <span>이름</span>
+      <input id="f-name" type="text" required maxlength="20" placeholder="홍길동" />
+    </label>
+    <label class="field">
+      <span>연락처</span>
+      <input id="f-contact" type="tel" inputmode="tel" required pattern="[0-9\- ]{9,14}" placeholder="010-0000-0000" aria-describedby="f-contact-hint" />
+      <small id="f-contact-hint">숫자와 하이픈(-)으로 입력해 주세요.</small>
+    </label>
+    <div class="safe-note">
+      <span aria-hidden="true">🔒</span>
+      <p>입력한 정보는 <b>어디에도 전송·저장되지 않고</b> 완료 즉시 지워집니다. <button type="button" class="linklike" data-privacy-open>개인정보 처리 안내 보기</button></p>
+    </div>
+    <button class="btn btn--block" type="submit" id="cta-submit">구매 신청하기</button>
+  </form>
+</dialog>
+
+<style>
+  .demo-note { font-size: var(--fs-small); padding: var(--s-3); background: var(--c-ivory); border: var(--border); }
+  .order { display: flex; gap: var(--s-4); align-items: center; padding-bottom: var(--s-4); border-bottom: var(--border); }
+  .order img { background: var(--c-ivory); }
+  .order__name { font-weight: 650; }
+  .safe-note { display: flex; gap: var(--s-3); font-size: var(--fs-small); line-height: 1.6; }
+  .linklike { background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; font-size: inherit; color: var(--c-ink); font-weight: 600; }
+</style>
+
+<script>
+  import { initPurchase } from '../scripts/purchase';
+  initPurchase();
+</script>

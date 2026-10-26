@@ -1,0 +1,52 @@
+---
+/* 홈: 제품 → 크림 → 시간으로 이어지는 14일 루틴 (스크롤 연동) */
+import Base from '../layouts/Base.astro';
+import MorhHeader from '../components/morh/MorhHeader.astro';
+import MorhBand from '../components/morh/MorhBand.astro';
+import RitualScene from '../components/home/RitualScene.astro';
+import { product, copy } from '../data/product';
+const PRODUCT = '/prototype/product-a/';
+---
+<Base
+  title="MORH 모르 | 14 DAYS, YOUR DAILY RITUAL"
+  description={`${copy.tagline} 매일의 루틴이 쌓이는 14일, ${product.fullName}.`}
+  header={false}
+>
+  <div class="home">
+    <MorhHeader />
+    <RitualScene />
+
+    <section class="about wrap" id="about" aria-labelledby="about-title">
+      <div class="about__text">
+        <p class="label">About MORH</p>
+        <h2 id="about-title">{copy.tagline}</h2>
+        <p class="muted">{copy.support} <span class="test-tag test-tag--plan"></span></p>
+        <div class="about__links">
+          <a class="btn" href={PRODUCT}>{copy.ctaPrimary} <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="text-link" href={`${PRODUCT}#reviews`}>구매후기 보기</a>
+        </div>
+      </div>
+      <a class="about__card" href={PRODUCT}>
+        <img src="/images/morh-front-800.webp" srcset="/images/morh-front-400.webp 400w, /images/morh-front-800.webp 800w"
+             sizes="(max-width: 900px) 80vw, 34vw" width="800" height="800" loading="lazy" decoding="async"
+             alt="모르 브라이트닝 크림 정면" />
+        <span class="about__name">{product.fullName}</span>
+        <span class="muted">{product.category}</span>
+      </a>
+    </section>
+    <MorhBand />
+  </div>
+</Base>
+
+<style>
+  /* 홈 전용 범위(.home) — 상세페이지 스타일에 영향 없음 */
+  .about { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--s-8); align-items: center; padding-block: var(--s-10) var(--s-8); }
+  .about__text { display: grid; gap: var(--s-4); }
+  .about__text h2 { font-size: var(--fs-h2); color: var(--c-burgundy); max-width: 18ch; }
+  .about__links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-5); margin-top: var(--s-3); }
+  .about__card { display: grid; gap: var(--s-2); justify-items: center; text-decoration: none; border-top: var(--border); border-bottom: var(--border); padding-block: var(--s-6); }
+  .about__card img { width: min(100%, 380px); }
+  .about__name { font-weight: 650; }
+  .about__card:hover .about__name { text-decoration: underline; }
+  @media (max-width: 900px) { .about { grid-template-columns: 1fr; padding-block: var(--s-9) var(--s-7); } }
+</style>

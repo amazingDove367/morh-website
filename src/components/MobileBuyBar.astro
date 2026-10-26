@@ -1,0 +1,31 @@
+---
+import { product, formatKRW } from '../data/product';
+---
+<div class="buybar" data-buybar aria-hidden="true" inert>
+  <div class="buybar__inner">
+    <div>
+      <p class="buybar__name">{product.name}</p>
+      <p class="buybar__price"><strong data-total>{formatKRW(product.price.value)}</strong> <span class="test-tag test-tag--sample"></span></p>
+    </div>
+    <button type="button" class="btn" id="cta-mobile" data-buy-open>구매하기</button>
+  </div>
+</div>
+
+<style>
+  .buybar { display: none; }
+  @media (max-width: 900px) {
+    /* 콘텐츠가 가려지지 않도록 바 높이 + 안전 영역만큼 본문 하단 여백을 항상 확보 (레이아웃 이동 없음) */
+    :global(body) { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+    .buybar {
+      display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-buybar);
+      background: var(--c-paper); border-top: var(--border-strong);
+      padding: var(--s-3) var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom));
+      transform: translateY(110%); transition: transform var(--dur-panel) var(--ease-cream);
+    }
+    .buybar.is-visible { transform: none; }
+  }
+  .buybar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); }
+  .buybar__name { font-size: 0.875rem; color: var(--c-ink-soft); }
+  .buybar__price strong { font-size: 1.0625rem; }
+  .buybar .btn { min-width: 132px; }
+</style>

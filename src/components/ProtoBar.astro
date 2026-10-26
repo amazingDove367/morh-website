@@ -1,0 +1,19 @@
+---
+import type { ProtoInfo } from '../layouts/Base.astro';
+type Props = ProtoInfo;
+const { area, variant, name, a, b } = Astro.props;
+const path = Astro.url.pathname;
+---
+<div class="proto-bar" role="note" aria-label="프로토타입 안내">
+  <div class="wrap proto-bar__inner">
+    <span><strong>PROTOTYPE</strong> · {area} · {variant === '연결' ? '' : `${variant}안 `}{name}</span>
+    {(a || b) && (
+      <span class="proto-bar__switch" aria-label="A/B안 전환">
+        {a && <a href={a} aria-current={path === a ? 'page' : undefined}>A안</a>}
+        {b && <a href={b} aria-current={path === b ? 'page' : undefined}>B안</a>}
+      </span>
+    )}
+    <a href="/prototype/">비교 허브</a>
+    <a href="?motion=off">모션 줄이기로 보기</a>
+  </div>
+</div>

@@ -1,0 +1,155 @@
+---
+/*
+  상세 설명 / 구매후기 탭 (WAI-ARIA Tabs 패턴, 자동 활성화)
+  - ←/→/Home/End 로 탭 이동, 선택되지 않은 패널은 hidden → 빈 공간 없음
+  - 두 패널 모두 초기 HTML 에 들어 있어 검색엔진이 읽을 수 있음
+  - #reviews 링크로 들어오면 구매후기 탭을 선택
+*/
+import { copy } from '../data/product';
+import { defaultReviews, stars, type Review } from '../data/reviews';
+interface Props { reviews?: Review[] }
+const { reviews = defaultReviews } = Astro.props;
+const isSample = reviews.some((r) => r.sample);
+---
+<section class="tabs wrap" aria-label="상품 상세 정보" data-tabs>
+  <div class="tabs__list" role="tablist" aria-label="상세 설명과 구매후기">
+    <button type="button" role="tab" id="tab-detail" aria-controls="panel-detail" aria-selected="true" tabindex="0">상세 설명</button>
+    <button type="button" role="tab" id="tab-reviews" aria-controls="panel-reviews" aria-selected="false" tabindex="-1">구매후기 <span class="tabs__count" data-tab-count>{reviews.length}</span></button>
+  </div>
+
+  <div class="tabs__panel" role="tabpanel" id="panel-detail" aria-labelledby="tab-detail" tabindex="0">
+    <div class="detail">
+      <div class="detail__intro">
+        <p class="label">Detail</p>
+        <h2>{copy.strategy}</h2>
+        <p class="muted">{copy.support} <span class="test-tag test-tag--plan"></span></p>
+      </div>
+      <figure class="detail__tex reveal">
+        <img src="/images/cream-texture-420.webp" width="420" height="560" loading="lazy" decoding="async"
+             alt="흰 배경 위에 세로로 길게 펴 바른 흰색 크림 텍스처" />
+        <figcaption class="muted">크림 텍스처 사진 · 원본 420×560px</figcaption>
+      </figure>
+      <div class="detail__use reveal">
+        <h3>사용법</h3>
+        <ol role="list" class="steps">
+          <li><span class="serif-i">i</span> 세안 후 토너로 피부 결을 정돈합니다.</li>
+          <li><span class="serif-i">ii</span> 스킨케어 마지막 단계에 적당량을 펴 바릅니다.</li>
+          <li><span class="serif-i">iii</span> 아침에는 선크림으로 마무리합니다.</li>
+        </ol>
+        <p class="muted small">사용 순서는 기존 MORH 페이지의 루틴 안내 기준입니다. 1회 사용량은 <span class="test-tag test-tag--tbd"></span></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs__panel" role="tabpanel" id="panel-reviews" aria-labelledby="tab-reviews" tabindex="0" hidden>
+    <div class="rv" id="reviews-list">
+      {reviews.length === 0 ? (
+        <p class="rv__empty">아직 등록된 구매후기가 없습니다</p>
+      ) : (
+        <>
+          {isSample && <p class="rv__notice">아래 후기는 포트폴리오 화면 구성을 위한 <b>예시 후기</b>이며 실제 구매자 후기가 아닙니다.</p>}
+          <ul role="list" class="rv__list" data-review-list>
+            {reviews.map((r) => (
+              <li class="rv__item" id={`review-${r.id}`}>
+                <div class="rv__meta">
+                  <p><span aria-label={`5점 만점에 ${r.rating}점`}>{stars(r.rating)}</span></p>
+                  <p class="muted">{r.author} · {r.skin}{r.sample && <> · <span class="test-tag test-tag--sample"></span></>}</p>
+                </div>
+                <div>
+                  <h3>{r.title}</h3>
+                  <p>{r.body}</p>
+                </div>
+                {r.photo ? (
+                  <figure class="rv__photo">
+                    <img src={r.photo.thumb} width="400" height="400" loading="lazy" alt={r.photo.alt} />
+                  </figure>
+                ) : <span></span>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .tabs { margin-top: var(--s-7); }
+  .tabs__list { display: grid; grid-template-columns: 1fr 1fr; border-block: 1px solid var(--c-line-strong); position: sticky; top: var(--header-h); z-index: 5; background: var(--c-paper); }
+  .tabs__list [role='tab'] { min-height: 52px; border: 0; background: none; cursor: pointer; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; color: var(--c-ink-soft); }
+  .tabs__list [role='tab'] + [role='tab'] { border-left: 1px solid var(--c-line); }
+  .tabs__list [role='tab'][aria-selected='true'] { color: var(--c-burgundy); box-shadow: inset 0 -2px 0 var(--c-burgundy); }
+  .tabs__list [role='tab']:hover { background: var(--c-ivory); }
+  .tabs__count { font-variant-numeric: tabular-nums; font-weight: 500; }
+  .tabs__panel { padding: clamp(24px, 4vw, 56px) 0; }
+  .tabs__panel:focus-visible { outline-offset: -3px; }
+
+  .detail { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--s-7) var(--col-gap); }
+  .detail__intro { grid-column: 1 / 8; display: grid; gap: var(--s-4); }
+  .detail__intro h2 { font-size: var(--fs-h2); max-width: 16ch; }
+  .detail__tex { grid-column: 9 / -1; grid-row: 1 / 3; margin: 0; }
+  .detail__tex img { width: 100%; max-width: 360px; mix-blend-mode: multiply; }
+  .detail__tex figcaption { font-size: 0.875rem; margin-top: var(--s-2); }
+  .detail__use { grid-column: 1 / 8; }
+  .detail__use h3 { font-size: var(--fs-h3); margin-bottom: var(--s-4); }
+  .steps { display: grid; border-top: var(--border); }
+  .steps li { display: grid; grid-template-columns: 3rem 1fr; padding: var(--s-4) 0; border-bottom: var(--border); }
+  .steps .serif-i { color: var(--c-burgundy); font-size: 1.25rem; }
+  .small { font-size: 0.875rem; margin-top: var(--s-3); }
+
+  .rv { display: grid; gap: var(--s-4); }
+  .rv__empty { padding: var(--s-6) 0; text-align: center; color: var(--c-ink-soft); }
+  .rv__notice { font-size: 0.875rem; padding: var(--s-3); background: var(--c-test-bg); color: var(--c-test-ink); }
+  .rv__list { display: grid; border-top: var(--border); }
+  .rv__item { display: grid; grid-template-columns: 180px 1fr 88px; gap: var(--s-5); padding: var(--s-5) 0; border-bottom: var(--border); }
+  .rv__meta p:first-child { color: var(--c-burgundy); letter-spacing: 0.1em; }
+  .rv__meta p { font-size: 0.875rem; }
+  .rv__item h3 { font-size: 1.0625rem; margin-bottom: var(--s-2); }
+  .rv__photo { margin: 0; }
+  .rv__photo img { width: 88px; height: 88px; object-fit: cover; background: #fff; border: 1px solid var(--c-line); }
+
+  @media (max-width: 900px) {
+    .detail__intro, .detail__use, .detail__tex { grid-column: 1 / -1; grid-row: auto; }
+    .rv__item { grid-template-columns: 1fr 72px; }
+    .rv__meta { grid-column: 1 / -1; }
+    .rv__photo img { width: 72px; height: 72px; }
+  }
+</style>
+
+<script>
+  import { initReveal } from '../scripts/scroll';
+  initReveal();
+  const root = document.querySelector<HTMLElement>('[data-tabs]');
+  if (root) {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const select = (t: HTMLButtonElement, focus = true) => {
+      tabs.forEach((x) => {
+        const on = x === t;
+        x.setAttribute('aria-selected', String(on));
+        x.tabIndex = on ? 0 : -1;
+        document.getElementById(x.getAttribute('aria-controls')!)!.hidden = !on;
+      });
+      if (focus) t.focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t));
+      t.addEventListener('keydown', (e) => {
+        const k = e.key;
+        let j = -1;
+        if (k === 'ArrowRight') j = (i + 1) % tabs.length;
+        if (k === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+        if (k === 'Home') j = 0;
+        if (k === 'End') j = tabs.length - 1;
+        if (j >= 0) { e.preventDefault(); select(tabs[j]); }
+      });
+    });
+    const openReviews = () => {
+      select(tabs[1], false);
+      root.scrollIntoView({ behavior: document.documentElement.classList.contains('reduce-motion') ? 'auto' : 'smooth' });
+      tabs[1].focus({ preventScroll: true });
+    };
+    document.querySelectorAll('[data-tab-link="reviews"], a[href$="#reviews"]').forEach((a) =>
+      a.addEventListener('click', (e) => { e.preventDefault(); openReviews(); history.replaceState(null, '', '#reviews'); }));
+    if (location.hash === '#reviews') requestAnimationFrame(openReviews);
+  }
+</script>

@@ -1,0 +1,21 @@
+---
+import Base from '../layouts/Base.astro';
+import PrivacyItems from '../components/PrivacyItems.astro';
+---
+<Base title="개인정보 처리 안내 | MORH 모르" description="MORH 모르 데모 사이트의 개인정보 처리 안내입니다. 입력한 정보는 전송·저장되지 않고 즉시 파기됩니다." noindex>
+  <article class="wrap policy" aria-labelledby="policy-title">
+    <p class="label">Policy</p>
+    <h1 id="policy-title">개인정보 처리 안내</h1>
+    <p class="policy__badge">개인정보 미수집 · 즉시 파기</p>
+    <p class="muted">이 사이트는 퍼포먼스 마케팅 포트폴리오용 데모입니다. 구매 신청 화면은 구매 흐름을 시연하기 위한 것이며, 실제 주문·결제는 이루어지지 않습니다.</p>
+    <PrivacyItems />
+    <p class="muted small">시행일: 운영 주소 확정 시 기재 · 문의처: 운영 정보 확정 시 기재 <span class="test-tag test-tag--tbd"></span></p>
+  </article>
+</Base>
+
+<style>
+  .policy { max-width: 760px; padding-block: var(--s-8); display: grid; gap: var(--s-5); }
+  .policy h1 { font-size: var(--fs-h1); }
+  .policy__badge { justify-self: start; font-size: var(--fs-label); font-weight: 700; padding: 4px 10px; border: 1px solid var(--c-burgundy); color: var(--c-burgundy); }
+  .small { font-size: 0.875rem; }
+</style>

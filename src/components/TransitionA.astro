@@ -1,0 +1,80 @@
+---
+/*
+  ② Transition A — Texture Zoom
+  고정 구간(스크롤 약 1.2화면) 동안 크림 텍스처가 가장 밝고 매끈한 지점(49.5%, 13.6%)을 향해 확대되고,
+  같은 톤(--c-cream-tex)의 면이 화면을 채워 다음 섹션 배경으로 이어집니다.
+  - 원본 420×560px: 확대 상한 4.5배, 2배를 넘는 구간부터 면 색이 덮어 업스케일 흐림이 드러나지 않게 함
+  - 스크롤을 가로채지 않음. 모션 줄이기에서는 고정 구간 없이 정지 레이아웃
+*/
+import { copy } from '../data/product';
+---
+<section class="tz" aria-labelledby="tz-title" data-tz>
+  <div class="tz__sticky">
+    <div class="tz__start wrap">
+      <p class="label">Cream Texture</p>
+      <p class="tz__start-line">MORH의 크림을<br /><em class="serif-i">가까이.</em></p>
+    </div>
+    <figure class="tz__tex" aria-hidden="true">
+      <img src="/images/cream-texture-420.webp" width="420" height="560" alt="" loading="lazy" decoding="async" />
+    </figure>
+    <div class="tz__fill" aria-hidden="true"></div>
+    <div class="tz__end wrap">
+      <h2 id="tz-title" class="tz__end-line">{copy.social}</h2>
+    </div>
+  </div>
+</section>
+
+<style>
+  .tz { position: relative; height: 220vh; background: var(--c-paper); }
+  .tz__sticky {
+    position: sticky; top: var(--header-h); height: calc(100svh - var(--header-h));
+    overflow: hidden; display: grid; place-items: center; background: var(--c-paper);
+  }
+  .tz__start { position: absolute; inset: auto 0 auto 0; top: 10%; z-index: 3; }
+  .tz__start-line { font-size: var(--fs-h1); font-weight: 700; letter-spacing: var(--ls-display); line-height: 1.1; margin-top: var(--s-3); }
+  .tz__start-line em { color: var(--c-burgundy); font-weight: 500; }
+  .tz__tex {
+    margin: 0; width: clamp(220px, 24vw, 340px); z-index: 1; mix-blend-mode: multiply;
+    transform-origin: 49.5% 13.6%; will-change: transform;
+  }
+  .tz__tex img { width: 100%; }
+  .tz__fill { position: absolute; inset: 0; background: var(--c-cream-tex); opacity: 0; z-index: 2; }
+  .tz__end { position: absolute; inset: auto 0 12% 0; z-index: 4; opacity: 0; }
+  .tz__end-line { font-size: var(--fs-h2); max-width: 18ch; }
+
+  /* 모션 줄이기 / JS 없음: 정지 레이아웃 */
+  :global(.reduce-motion) .tz { height: auto; }
+  :global(.reduce-motion) .tz__sticky { position: relative; top: 0; height: auto; display: block; padding-block: var(--s-8); }
+  :global(.reduce-motion) .tz__start, :global(.reduce-motion) .tz__end { position: static; opacity: 1; }
+  :global(.reduce-motion) .tz__tex { margin: var(--s-6) auto; }
+  :global(.reduce-motion) .tz__end { background: var(--c-cream-tex); padding-block: var(--s-7); }
+
+  @media (max-width: 720px) {
+    .tz { height: 200vh; }
+    .tz__tex { width: 58vw; }
+    .tz__start { top: 6%; }
+  }
+</style>
+
+<script>
+  import { onProgress, reduced, seg, lerp, easeInOut } from '../scripts/scroll';
+  const root = document.querySelector<HTMLElement>('[data-tz]');
+  if (root && !reduced()) {
+    const tex = root.querySelector<HTMLElement>('.tz__tex')!;
+    const fill = root.querySelector<HTMLElement>('.tz__fill')!;
+    const start = root.querySelector<HTMLElement>('.tz__start')!;
+    const end = root.querySelector<HTMLElement>('.tz__end')!;
+    const MAX = 4.5; // 확대 상한: 원본 420px 기준 압축 블록이 두드러지기 전까지. 이후는 면 색이 덮음
+    onProgress(root, 'sticky', (p) => {
+      const z = easeInOut(seg(p, 0.08, 0.72));
+      tex.style.transform = `scale(${lerp(1, MAX, z)})`;
+      fill.style.opacity = String(seg(p, 0.3, 0.68));
+      const s = seg(p, 0.05, 0.35);
+      start.style.opacity = String(1 - s);
+      start.style.transform = `translateY(${-s * 6}vh)`;
+      const e = seg(p, 0.7, 0.95);
+      end.style.opacity = String(e);
+      end.style.transform = `translateY(${(1 - e) * 4}vh)`;
+    });
+  }
+</script>

@@ -1,0 +1,17 @@
+---
+/* 전환 A/B 비교용 공통 시작 구간 (히어로 직후 상황을 대신함) */
+import { copy } from '../data/product';
+---
+<section class="stub" aria-labelledby="stub-title">
+  <div class="wrap">
+    <p class="label">Brand</p>
+    <h2 id="stub-title" class="stub__title">{copy.strategy}</h2>
+    <p class="stub__cue muted">아래로 스크롤하면 다음 장면으로 전환됩니다 <span aria-hidden="true">↓</span></p>
+  </div>
+</section>
+
+<style>
+  .stub { min-height: 62vh; display: flex; align-items: center; border-bottom: var(--border); }
+  .stub__title { font-size: var(--fs-h1); max-width: 16ch; margin-top: var(--s-3); }
+  .stub__cue { margin-top: var(--s-6); font-size: var(--fs-small); }
+</style>

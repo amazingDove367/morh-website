@@ -1,0 +1,170 @@
+---
+/*
+  ③ Product A — Interactive Product Gallery
+  정면·좌측면·우측면·뒷면·항공샷을 썸네일/이전·다음/방향키로 선택하고, 확대 버튼·탭·클릭으로 2.2배 확대.
+  확대 중에는 마우스 이동·드래그·방향키로 위치를 옮길 수 있습니다. 5장의 '사진 전환'이며 360도 회전이 아닙니다.
+*/
+import { views, srcset } from '../data/product';
+---
+<section class="gal" aria-label="제품 사진 갤러리 (사진 5장)" data-gallery>
+  <div class="gal__stage" data-stage>
+    {views.map((v, i) => (
+      <img
+        class="gal__img" data-view={v.key} data-index={i}
+        src={`/images/morh-${v.key}-800.webp`} srcset={srcset(v.key)}
+        sizes="(max-width: 900px) 100vw, 56vw" width="800" height="800"
+        alt={v.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async"
+        fetchpriority={i === 0 ? 'high' : undefined}
+        hidden={i !== 0}
+      />
+    ))}
+    <button type="button" class="gal__nav gal__nav--prev" data-step="-1" aria-label="이전 사진">‹</button>
+    <button type="button" class="gal__nav gal__nav--next" data-step="1" aria-label="다음 사진">›</button>
+  </div>
+  <div class="gal__bar">
+    <p class="gal__caption" aria-live="polite"><span data-caption>정면</span> <span class="muted">· <span data-count>1</span> / {views.length}</span></p>
+    <button type="button" class="gal__zoom" data-zoom aria-pressed="false">확대 <span aria-hidden="true">+</span></button>
+  </div>
+  <div class="gal__thumbs" role="group" aria-label="사진 선택">
+    {views.map((v, i) => (
+      <button type="button" class="gal__thumb" data-thumb={i} aria-current={i === 0 ? 'true' : undefined} aria-label={`${v.label} 사진 보기`}>
+        <img src={`/images/morh-${v.key}-thumb.webp`} width="160" height="160" alt="" loading="lazy" />
+        <span>{v.label}</span>
+      </button>
+    ))}
+  </div>
+  <p class="gal__hint muted">사진 5장으로 보는 외형입니다. 확대 중에는 끌거나 방향키로 위치를 옮길 수 있어요.</p>
+</section>
+
+<style>
+  .gal { border: var(--border-strong); }
+  .gal__stage {
+    position: relative; aspect-ratio: 1; overflow: hidden; background: var(--c-paper);
+    border-bottom: var(--border); cursor: zoom-in; touch-action: pan-y;
+  }
+  @media (min-width: 901px) { .gal__stage { aspect-ratio: 4 / 3; } }
+  .gal__stage.is-zoomed { cursor: grab; touch-action: none; }
+  .gal__stage.is-dragging { cursor: grabbing; }
+  .gal__img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+    transition: opacity var(--dur-panel) var(--ease-cream), transform var(--dur-panel) var(--ease-cream);
+    user-select: none; -webkit-user-drag: none;
+  }
+  .gal__img[hidden] { display: block; opacity: 0; pointer-events: none; visibility: hidden; }
+  .gal__stage.is-dragging .gal__img { transition: opacity var(--dur-panel) var(--ease-cream); }
+  .gal__nav {
+    position: absolute; top: 50%; translate: 0 -50%; width: 48px; height: 48px; border: 0; background: none;
+    font-size: 2rem; line-height: 1; cursor: pointer; z-index: 2;
+  }
+  .gal__nav:hover { background: var(--c-ivory); }
+  .gal__nav--prev { left: var(--s-2); }
+  .gal__nav--next { right: var(--s-2); }
+  .is-zoomed .gal__nav { display: none; }
+  .gal__bar { display: flex; justify-content: space-between; align-items: center; padding: 0 0 0 var(--s-5); border-bottom: var(--border); min-height: 52px; }
+  .gal__caption { font-size: var(--fs-small); font-weight: 600; }
+  .gal__zoom { min-height: 52px; padding: 0 var(--s-5); border: 0; border-left: var(--border); background: none; cursor: pointer; font-size: var(--fs-small); font-weight: 600; }
+  .gal__zoom[aria-pressed='true'] { background: var(--c-ink); color: var(--c-paper); }
+  .gal__thumbs { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .gal__thumb { display: grid; gap: 4px; justify-items: center; padding: var(--s-2) 4px var(--s-3); border: 0; background: none; cursor: pointer; font-size: 0.8125rem; border-right: var(--border); }
+  .gal__thumb:last-child { border-right: 0; }
+  .gal__thumb img { width: 100%; max-width: 88px; aspect-ratio: 1; object-fit: contain; }
+  .gal__thumb[aria-current='true'] { box-shadow: inset 0 -2px 0 var(--c-burgundy); font-weight: 700; }
+  .gal__thumb:hover { background: var(--c-ivory); }
+  .gal__hint { font-size: 0.875rem; padding: var(--s-3) var(--s-5); border-top: var(--border); }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-gallery]');
+  if (root) {
+    const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+    const imgs = [...root.querySelectorAll<HTMLImageElement>('.gal__img')];
+    const thumbs = [...root.querySelectorAll<HTMLButtonElement>('[data-thumb]')];
+    const zoomBtn = root.querySelector<HTMLButtonElement>('[data-zoom]')!;
+    const cap = root.querySelector<HTMLElement>('[data-caption]')!;
+    const count = root.querySelector<HTMLElement>('[data-count]')!;
+    const labels = thumbs.map((t) => t.querySelector('span')!.textContent!);
+    const SCALE = 2.2;
+    let idx = 0, zoomed = false, ox = 0.5, oy = 0.5;
+
+    const cur = () => imgs[idx];
+    function apply() {
+      const img = cur();
+      img.style.transformOrigin = `${ox * 100}% ${oy * 100}%`;
+      img.style.transform = zoomed ? `scale(${SCALE})` : '';
+    }
+    function setZoom(on: boolean) {
+      zoomed = on;
+      if (on) { const img = cur(); img.sizes = '1254px'; } // 확대 시 원본 해상도(1254px) 사용
+      stage.classList.toggle('is-zoomed', on);
+      zoomBtn.setAttribute('aria-pressed', String(on));
+      zoomBtn.firstChild!.textContent = on ? '확대 해제 ' : '확대 ';
+      if (!on) { ox = 0.5; oy = 0.5; }
+      apply();
+    }
+    function show(i: number) {
+      if (zoomed) setZoom(false);
+      idx = (i + imgs.length) % imgs.length;
+      imgs.forEach((im, k) => { im.hidden = k !== idx; im.style.transform = ''; });
+      thumbs.forEach((t, k) => (k === idx ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current')));
+      cap.textContent = labels[idx];
+      count.textContent = String(idx + 1);
+    }
+
+    thumbs.forEach((t, k) => t.addEventListener('click', () => show(k)));
+    root.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) =>
+      b.addEventListener('click', (e) => { e.stopPropagation(); show(idx + Number(b.dataset.step)); }));
+    zoomBtn.addEventListener('click', () => setZoom(!zoomed));
+
+    // 클릭/탭: 확대 토글 (드래그와 구분)
+    let down: { x: number; y: number; ox: number; oy: number } | null = null;
+    let moved = false;
+    stage.addEventListener('pointerdown', (e) => {
+      if ((e.target as HTMLElement).closest('button')) return;
+      down = { x: e.clientX, y: e.clientY, ox, oy }; moved = false;
+      if (zoomed) { stage.setPointerCapture(e.pointerId); stage.classList.add('is-dragging'); }
+    });
+    stage.addEventListener('pointermove', (e) => {
+      const r = stage.getBoundingClientRect();
+      if (zoomed && down) {
+        const dx = (e.clientX - down.x) / r.width, dy = (e.clientY - down.y) / r.height;
+        if (Math.abs(dx) + Math.abs(dy) > 0.01) moved = true;
+        ox = Math.min(1, Math.max(0, down.ox - dx * 1.4));
+        oy = Math.min(1, Math.max(0, down.oy - dy * 1.4));
+        apply();
+      } else if (zoomed && e.pointerType === 'mouse') {
+        ox = (e.clientX - r.left) / r.width; oy = (e.clientY - r.top) / r.height; apply();
+      }
+    });
+    const end = (e: PointerEvent) => {
+      if (!down) return;
+      stage.classList.remove('is-dragging');
+      if (!moved) {
+        const r = stage.getBoundingClientRect();
+        if (!zoomed) { ox = (e.clientX - r.left) / r.width; oy = (e.clientY - r.top) / r.height; setZoom(true); }
+        else setZoom(false);
+      }
+      down = null;
+    };
+    stage.addEventListener('pointerup', end);
+    stage.addEventListener('pointercancel', () => { down = null; stage.classList.remove('is-dragging'); });
+
+    // 키보드: 좌우 = 사진 전환(확대 중엔 이동), 상하 = 확대 중 이동, Esc = 확대 해제
+    root.addEventListener('keydown', (e) => {
+      const k = e.key;
+      if (k === 'Escape' && zoomed) { setZoom(false); zoomBtn.focus(); e.preventDefault(); return; }
+      if (zoomed && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(k)) {
+        const s = 0.08;
+        if (k === 'ArrowLeft') ox = Math.max(0, ox - s);
+        if (k === 'ArrowRight') ox = Math.min(1, ox + s);
+        if (k === 'ArrowUp') oy = Math.max(0, oy - s);
+        if (k === 'ArrowDown') oy = Math.min(1, oy + s);
+        apply(); e.preventDefault(); return;
+      }
+      if (!zoomed && (k === 'ArrowLeft' || k === 'ArrowRight') && (e.target as HTMLElement).closest('.gal__thumbs, .gal__stage, .gal__bar')) {
+        show(idx + (k === 'ArrowRight' ? 1 : -1));
+        if ((e.target as HTMLElement).closest('.gal__thumbs')) thumbs[idx].focus();
+        e.preventDefault();
+      }
+    });
+  }
+</script>

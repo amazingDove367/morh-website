@@ -1,0 +1,161 @@
+---
+/*
+  구매후기 요약 — 제품 갤러리·구매 정보와 '상세 설명 / 구매후기' 탭 사이 (탭 바깥이라 어느 탭에서도 유지)
+  ① 평점·후기 수 + 전체 후기 보기  ② 포토 후기 가로 목록(누르면 해당 후기 열기, 마지막 '더보기')  ③ 구매후기 요약
+  - 모든 수치는 같은 후기 목록(src/data/reviews.ts)에서 계산 → 탭·목록의 수치와 일치
+  - 요약은 AI 가 아닌 키워드 집계 + 후기 원문 인용. 후기가 없으면 빈 상태만 표시
+*/
+import { summarize, stars, type Review } from '../../data/reviews';
+interface Props { reviews: Review[] }
+const { reviews } = Astro.props;
+const sum = summarize(reviews);
+const full = Math.floor(sum.average);
+---
+<section class="rs wrap" aria-labelledby="rs-title" data-review-summary>
+  <h2 id="rs-title" class="visually-hidden">구매후기 요약</h2>
+  {sum.count === 0 ? (
+    <div class="rs__empty" data-rs-empty>
+      <p>아직 등록된 구매후기가 없습니다</p>
+    </div>
+  ) : (
+    <>
+      <div class="rs__top">
+        <p class="rs__score">
+          <span class="rs__stars" aria-hidden="true">{stars(full)}</span>
+          <strong>{sum.average.toFixed(1)}</strong>
+          <span class="visually-hidden">5점 만점에 평균 {sum.average.toFixed(1)}점</span>
+        </p>
+        <p class="rs__count">
+          <span>후기 <b data-rs-count>{sum.count}</b>건</span>
+          {sum.sample && <span class="test-tag test-tag--sample"></span>}
+          <a href="#reviews" data-tab-link="reviews" class="rs__all">전체 후기 보기 <span aria-hidden="true">→</span></a>
+        </p>
+      </div>
+      {sum.sample && (
+        <p class="rs__note">아래 후기와 요약은 포트폴리오 화면 구성을 위한 <b>예시 후기</b> 기준입니다. 실제 구매자 후기와 사진이 아니며, 사진은 고객 사진 대신 제품 사진을 사용했습니다.</p>
+      )}
+
+      {sum.photos.length > 0 && (
+        <ul class="rs__photos" role="list" aria-label="포토 후기">
+          {sum.photos.map((r) => (
+            <li>
+              <button type="button" class="rs__thumb" data-rs-open={r.id} aria-haspopup="dialog" aria-label={`${r.author} 님 포토 후기 열기 — ${r.title}`}>
+                <img src={r.photo!.thumb} width="400" height="400" loading="lazy" decoding="async" alt="" />
+              </button>
+            </li>
+          ))}
+          <li>
+            <a class="rs__more" href="#reviews" data-tab-link="reviews">더보기 <span aria-hidden="true">→</span></a>
+          </li>
+        </ul>
+      )}
+
+      {sum.insight && (
+        <div class="rs__insight">
+          <h3>구매후기 요약</h3>
+          <p class="rs__headline">{sum.insight.headline}</p>
+          <ul role="list" class="rs__lines">
+            {sum.insight.lines.map((l) => <li>{l}</li>)}
+          </ul>
+          <ul role="list" class="rs__tags" aria-label="주요 키워드">
+            {sum.insight.tags.map((t) => <li>#{t.label} <span>{t.count}</span></li>)}
+          </ul>
+          <p class="rs__method">후기 {sum.count}건의 문장에서 키워드를 세어 정리했습니다. 인용은 후기 원문입니다.</p>
+        </div>
+      )}
+
+      <dialog class="rs__dialog" data-rs-dialog aria-labelledby="rs-d-title">
+        <div class="rs__d-inner">
+          <button type="button" class="rs__d-close" data-rs-close aria-label="닫기">×</button>
+          <figure class="rs__d-photo"><img data-rs-d-img alt="" /></figure>
+          <div class="rs__d-body">
+            <p class="rs__d-stars" data-rs-d-stars></p>
+            <h3 id="rs-d-title" data-rs-d-title></h3>
+            <p data-rs-d-text></p>
+            <p class="muted rs__d-meta" data-rs-d-meta></p>
+            <a href="#reviews" data-tab-link="reviews" class="rs__all">전체 후기 보기 <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </dialog>
+      <script type="application/json" data-rs-data set:html={JSON.stringify(sum.photos.map((r) => ({ id: r.id, rating: r.rating, stars: stars(r.rating), author: r.author, skin: r.skin, title: r.title, body: r.body, sample: r.sample, src: r.photo!.src, alt: r.photo!.alt })))} />
+    </>
+  )}
+</section>
+
+<style>
+  .rs { margin-top: var(--s-8); padding-top: var(--s-6); border-top: 1px solid var(--c-line-strong); font-size: 0.875rem; }
+  .rs__top { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
+  .rs__score { display: flex; align-items: baseline; gap: 10px; }
+  .rs__stars { color: var(--c-burgundy); letter-spacing: 0.08em; font-size: 1rem; }
+  .rs__score strong { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rs__count { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .rs__all { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; color: var(--c-ink); }
+  .rs__all:hover { color: var(--c-burgundy); text-decoration: underline; }
+  .rs__note { margin-top: var(--s-3); font-size: 0.75rem; color: var(--c-test-ink); background: var(--c-test-bg); padding: 8px 12px; }
+  .rs__photos {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 132px; gap: 10px; margin-top: var(--s-5);
+    overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: thin;
+  }
+  .rs__photos li { scroll-snap-align: start; }
+  .rs__thumb, .rs__more { width: 132px; height: 132px; display: block; border: 1px solid var(--c-line); background: #fff; padding: 0; cursor: pointer; }
+  .rs__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rs__thumb:hover { border-color: var(--c-burgundy); }
+  .rs__more { display: grid; place-items: center; text-decoration: none; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; color: var(--c-ink); }
+  .rs__more:hover { color: var(--c-burgundy); border-color: var(--c-burgundy); }
+  .rs__insight { margin-top: var(--s-5); border: 1px solid var(--c-line-strong); padding: 18px 20px; display: grid; gap: 10px; }
+  .rs__insight h3 { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; color: var(--c-burgundy); }
+  .rs__headline { font-size: 0.9375rem; font-weight: 600; }
+  .rs__lines { display: grid; gap: 4px; color: var(--c-ink-soft); }
+  .rs__lines li { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .rs__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rs__tags li { border: 1px solid var(--c-line-strong); padding: 3px 10px; font-size: 0.75rem; }
+  .rs__tags span { color: var(--c-burgundy); font-weight: 600; margin-left: 2px; }
+  .rs__method { font-size: 0.6875rem; color: var(--c-ink-soft); }
+  .rs__empty { padding: var(--s-6) 0; text-align: center; color: var(--c-ink-soft); }
+
+  .rs__dialog { border: 1px solid var(--c-line-strong); padding: 0; width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); background: var(--c-paper); color: var(--c-ink); }
+  .rs__dialog::backdrop { background: rgba(43, 26, 31, 0.45); }
+  .rs__d-inner { display: grid; grid-template-columns: 1fr 1fr; position: relative; }
+  .rs__d-photo { margin: 0; background: #fff; aspect-ratio: 1; }
+  .rs__d-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .rs__d-body { padding: 28px 24px; display: grid; gap: 10px; align-content: start; }
+  .rs__d-stars { color: var(--c-burgundy); letter-spacing: 0.08em; }
+  .rs__d-body h3 { font-size: 1rem; }
+  .rs__d-meta { font-size: 0.75rem; }
+  .rs__d-close { position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; border: 0; background: none; font-size: 1.5rem; cursor: pointer; z-index: 1; }
+  @media (max-width: 720px) {
+    .rs__photos { grid-auto-columns: 112px; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); scroll-padding-inline: var(--gutter); }
+    .rs__thumb, .rs__more { width: 112px; height: 112px; }
+    .rs__d-inner { grid-template-columns: 1fr; }
+    .rs__d-photo { aspect-ratio: 4 / 3; }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-review-summary]');
+  const dialog = root?.querySelector<HTMLDialogElement>('[data-rs-dialog]');
+  const data = root?.querySelector('[data-rs-data]');
+  if (root && dialog && data) {
+    const items = JSON.parse(data.textContent || '[]') as { id: string; stars: string; rating: number; author: string; skin: string; title: string; body: string; sample: boolean; src: string; alt: string }[];
+    const $ = <T extends HTMLElement>(s: string) => dialog.querySelector(s) as T;
+    let opener: HTMLElement | null = null;
+    root.querySelectorAll<HTMLButtonElement>('[data-rs-open]').forEach((b) => b.addEventListener('click', () => {
+      const r = items.find((x) => x.id === b.dataset.rsOpen);
+      if (!r) return;
+      opener = b;
+      const im = $<HTMLImageElement>('[data-rs-d-img]');
+      im.src = r.src; im.alt = r.alt;
+      $('[data-rs-d-stars]').textContent = r.stars;
+      $('[data-rs-d-stars]').setAttribute('aria-label', `5점 만점에 ${r.rating}점`);
+      $('[data-rs-d-title]').textContent = r.title;
+      $('[data-rs-d-text]').textContent = r.body;
+      $('[data-rs-d-meta]').textContent = `${r.author} · ${r.skin}${r.sample ? ' · 예시 후기' : ''}`;
+      dialog.showModal();
+    }));
+    $('[data-rs-close]').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', () => opener?.focus());
+    // 다이얼로그 안의 '전체 후기 보기'는 탭 스크립트가 처리 — 먼저 닫음
+    dialog.querySelector('[data-tab-link]')?.addEventListener('click', () => { opener = null; dialog.close(); });
+  }
+</script>

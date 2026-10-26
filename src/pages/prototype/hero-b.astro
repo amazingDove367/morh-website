@@ -1,0 +1,9 @@
+---
+import Base from '../../layouts/Base.astro';
+import HeroB from '../../components/HeroB.astro';
+import { copy, product } from '../../data/product';
+---
+<Base title={`MORH 모르 | ${product.category}`} description={copy.tagline}
+  proto={{ area: '① Hero Motion', variant: 'B', name: 'Floating Product', a: '/prototype/hero-a/', b: '/prototype/hero-b/' }}>
+  <HeroB />
+</Base>

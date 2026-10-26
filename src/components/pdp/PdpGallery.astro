@@ -1,0 +1,232 @@
+---
+/*
+  상세페이지 왼쪽 갤러리 (레퍼런스 '텍스쳐.png')
+  - 기본: 큰 제품 사진 + 이전/다음 + 아래 '360' 각도 표시(정면·우측면·뒷면·좌측면 4장 사진 전환, 실제 3D 회전 아님)
+    사진을 좌우로 끌거나 360 표시에서 ←/→ 로 각도 전환
+  - 오른쪽 패널의 THE TEXTURE 를 열면(morh:texture 이벤트) 같은 자리에서 크림 제형 사진으로 바뀌고,
+    360 자리에 작은 확대 슬라이더(− / +)만 나타남. 확대 중에는 끌어서·방향키로 다른 부분 탐색
+  - 텍스처 사진은 원본 해상도(420×560) 그대로 사용 — 업스케일·생성 없음
+*/
+import { views, srcset } from '../../data/product';
+const order = ['front', 'right', 'back', 'left', 'top'] as const;
+const list = order.map((k) => views.find((v) => v.key === k)!);
+const ORBIT = 4; // 360 표시에 쓰는 사진 수 (정면·우측면·뒷면·좌측면)
+---
+<section class="pg" aria-label="제품 사진" data-pdp-gallery>
+  <p class="pg__count" aria-hidden="true" data-pg-count><span data-pg-index>01</span> / {String(list.length).padStart(2, '0')}</p>
+  <div class="pg__stage" data-pg-stage tabindex="-1">
+    {list.map((v, i) => (
+      <img
+        class="pg__img" data-pg-img={i} data-view={v.key}
+        src={`/images/morh-${v.key}-800.webp`} srcset={srcset(v.key)}
+        sizes="(max-width: 900px) 100vw, 52vw" width="800" height="800"
+        alt={v.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async"
+        fetchpriority={i === 0 ? 'high' : undefined} hidden={i !== 0}
+      />
+    ))}
+    <img class="pg__tex" data-pg-tex src="/images/cream-texture-420.webp" width="420" height="560" loading="lazy" decoding="async"
+         alt="흰 배경 위에 길게 펴 바른 흰색 크림 제형 사진" hidden />
+    <button type="button" class="pg__nav pg__nav--prev" data-pg-step="-1" aria-label="이전 사진">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+    </button>
+    <button type="button" class="pg__nav pg__nav--next" data-pg-step="1" aria-label="다음 사진">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+    </button>
+    <p class="visually-hidden" aria-live="polite" data-pg-live>정면 사진</p>
+  </div>
+
+  <div class="pg__ctrl">
+    <div class="pg__orbit" data-pg-orbit role="slider" tabindex="0" aria-label="제품 각도 — 사진 4장 전환"
+         aria-valuemin="0" aria-valuemax={ORBIT - 1} aria-valuenow="0" aria-valuetext="정면">
+      <svg viewBox="0 0 120 26" aria-hidden="true">
+        <ellipse cx="60" cy="13" rx="56" ry="9" />
+        <path class="pg__orbit-arrow" d="M112 9.5l4 3.5-5 1.6" />
+        <circle data-pg-dot cx="60" cy="22" r="2.6" />
+      </svg>
+      <span>360</span>
+    </div>
+    <div class="pg__zoom" data-pg-zoom hidden>
+      <button type="button" data-pg-zoom-step="-0.5" aria-label="축소">−</button>
+      <input type="range" min="1" max="3" step="0.05" value="1" data-pg-range aria-label="크림 사진 확대 배율" />
+      <button type="button" data-pg-zoom-step="0.5" aria-label="확대">+</button>
+      <output data-pg-zoom-out>1×</output>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pg { position: relative; }
+  .pg__count { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; color: var(--c-ink); margin-bottom: var(--s-3); font-variant-numeric: tabular-nums; }
+  .pg__stage { position: relative; aspect-ratio: 4 / 3; overflow: hidden; touch-action: pan-y; cursor: grab; outline-offset: -2px; }
+  .pg__stage.is-dragging { cursor: grabbing; }
+  .pg__img, .pg__tex {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+    user-select: none; -webkit-user-drag: none; transition: opacity var(--dur-panel) var(--ease-cream);
+  }
+  .pg__img { padding: 2% 14%; }
+  .pg__img[hidden], .pg__tex[hidden] { display: block; opacity: 0; visibility: hidden; pointer-events: none; }
+  .pg__tex { mix-blend-mode: multiply; transform-origin: 50% 50%; will-change: transform; }
+  .pg.is-texture .pg__stage { touch-action: none; }
+  .pg.is-texture.is-zoomed .pg__stage { cursor: grab; }
+  .pg.is-texture:not(.is-zoomed) .pg__stage { cursor: zoom-in; }
+  .pg__nav {
+    position: absolute; top: 50%; translate: 0 -50%; width: 44px; height: 44px; display: grid; place-items: center;
+    border: 0; background: none; cursor: pointer; color: var(--c-ink); z-index: 2;
+  }
+  .pg__nav svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.4; }
+  .pg__nav:hover { color: var(--c-burgundy); }
+  .pg__nav--prev { left: 0; }
+  .pg__nav--next { right: 0; }
+  .pg.is-texture .pg__nav { display: none; }
+
+  .pg__ctrl { display: grid; place-items: center; min-height: 64px; margin-top: var(--s-2); }
+  .pg__orbit { display: grid; justify-items: center; gap: 2px; cursor: ew-resize; padding: 4px 8px; touch-action: none; }
+  .pg__orbit[hidden] { display: none; }
+  .pg__orbit svg { width: 96px; height: 22px; overflow: visible; }
+  .pg__orbit ellipse, .pg__orbit-arrow { fill: none; stroke: var(--c-ink-soft); stroke-width: 0.8; }
+  .pg__orbit circle { fill: var(--c-ink); transition: cx var(--dur-panel) var(--ease-cream), cy var(--dur-panel) var(--ease-cream); }
+  .pg__orbit span { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.1em; }
+  .pg__zoom { display: grid; grid-template-columns: auto minmax(160px, 240px) auto; grid-template-rows: auto auto; align-items: center; column-gap: var(--s-3); }
+  .pg__zoom[hidden] { display: none; }
+  .pg__zoom button { width: 32px; height: 32px; border: 0; background: none; cursor: pointer; font-size: 1.125rem; color: var(--c-ink); }
+  .pg__zoom button:hover { color: var(--c-burgundy); }
+  .pg__zoom output { grid-column: 1 / -1; justify-self: center; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+  .pg__zoom input { appearance: none; -webkit-appearance: none; width: 100%; height: 24px; background: transparent; cursor: pointer; margin: 0; }
+  .pg__zoom input::-webkit-slider-runnable-track { height: 1px; background: var(--c-line-strong); }
+  .pg__zoom input::-moz-range-track { height: 1px; background: var(--c-line-strong); }
+  .pg__zoom input::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c-burgundy); margin-top: -5.5px; border: 0; }
+  .pg__zoom input::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--c-burgundy); border: 0; }
+  @media (max-width: 900px) { .pg__img { padding: 2% 8%; } }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-pdp-gallery]');
+  if (root) {
+    const stage = root.querySelector<HTMLElement>('[data-pg-stage]')!;
+    const imgs = [...root.querySelectorAll<HTMLImageElement>('[data-pg-img]')];
+    const tex = root.querySelector<HTMLImageElement>('[data-pg-tex]')!;
+    const idxEl = root.querySelector<HTMLElement>('[data-pg-index]')!;
+    const count = root.querySelector<HTMLElement>('[data-pg-count]')!;
+    const live = root.querySelector<HTMLElement>('[data-pg-live]')!;
+    const orbit = root.querySelector<HTMLElement>('[data-pg-orbit]')!;
+    const dot = root.querySelector<SVGCircleElement>('[data-pg-dot]')!;
+    const zoomBox = root.querySelector<HTMLElement>('[data-pg-zoom]')!;
+    const range = root.querySelector<HTMLInputElement>('[data-pg-range]')!;
+    const zoomOut = root.querySelector<HTMLOutputElement>('[data-pg-zoom-out]')!;
+    const labels: Record<string, string> = { front: '정면', right: '우측면', back: '뒷면', left: '좌측면', top: '항공샷' };
+    const ORBIT = 4;
+    let idx = 0, texture = false, s = 1, tx = 0, ty = 0;
+
+    function show(i: number) {
+      idx = (i + imgs.length) % imgs.length;
+      imgs.forEach((im, k) => { im.hidden = k !== idx; });
+      idxEl.textContent = String(idx + 1).padStart(2, '0');
+      const name = labels[imgs[idx].dataset.view!];
+      live.textContent = `${name} 사진`;
+      // 360 표시: 정면(아래)→우측(오른쪽)→뒷면(위)→좌측(왼쪽). 항공샷은 가운데
+      const a = (idx / ORBIT) * Math.PI * 2;
+      const top = idx >= ORBIT;
+      dot.setAttribute('cx', String(top ? 60 : 60 + Math.sin(a) * 56));
+      dot.setAttribute('cy', String(top ? 13 : 13 + Math.cos(a) * 9));
+      orbit.setAttribute('aria-valuenow', String(Math.min(idx, ORBIT - 1)));
+      orbit.setAttribute('aria-valuetext', name);
+    }
+
+    // ── 텍스처 확대 ──
+    function clampPan() {
+      const r = stage.getBoundingClientRect();
+      const mx = ((s - 1) * r.width) / 2, my = ((s - 1) * r.height) / 2;
+      tx = Math.min(mx, Math.max(-mx, tx)); ty = Math.min(my, Math.max(-my, ty));
+    }
+    function applyZoom() {
+      clampPan();
+      tex.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+      range.value = String(s);
+      zoomOut.textContent = `${Math.round(s * 10) / 10}×`;
+      root!.classList.toggle('is-zoomed', s > 1.001);
+    }
+    function setZoom(v: number) { s = Math.min(3, Math.max(1, v)); applyZoom(); }
+
+    function setTexture(on: boolean) {
+      texture = on;
+      root!.classList.toggle('is-texture', on);
+      tex.hidden = !on;
+      imgs.forEach((im, k) => { im.hidden = on || k !== idx; });
+      orbit.hidden = on;
+      zoomBox.hidden = !on;
+      count.style.visibility = on ? 'hidden' : '';
+      live.textContent = on ? '크림 제형 사진. 슬라이더로 확대할 수 있습니다' : `${labels[imgs[idx].dataset.view!]} 사진`;
+      s = 1; tx = 0; ty = 0; applyZoom();
+      stage.tabIndex = on ? 0 : -1;
+      stage.setAttribute('aria-label', on ? '크림 제형 사진 — 확대 후 끌거나 방향키로 이동' : '');
+      if (!on) stage.removeAttribute('aria-label');
+    }
+    document.addEventListener('morh:texture', (e) => setTexture((e as CustomEvent<{ open: boolean }>).detail.open));
+
+    root.querySelectorAll<HTMLButtonElement>('[data-pg-step]').forEach((b) => b.addEventListener('click', () => show(idx + Number(b.dataset.pgStep))));
+    range.addEventListener('input', () => setZoom(Number(range.value)));
+    root.querySelectorAll<HTMLButtonElement>('[data-pg-zoom-step]').forEach((b) => b.addEventListener('click', () => setZoom(s + Number(b.dataset.pgZoomStep))));
+
+    // 끌기: 제품 모드 = 각도 전환(60px 마다 한 장), 텍스처 확대 모드 = 위치 이동
+    let down: { x: number; y: number; tx: number; ty: number; i: number } | null = null;
+    stage.addEventListener('pointerdown', (e) => {
+      if ((e.target as HTMLElement).closest('button')) return;
+      down = { x: e.clientX, y: e.clientY, tx, ty, i: idx };
+      stage.setPointerCapture(e.pointerId);
+      stage.classList.add('is-dragging');
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!down) return;
+      const dx = e.clientX - down.x, dy = e.clientY - down.y;
+      if (texture) {
+        if (s > 1.001) { tx = down.tx + dx; ty = down.ty + dy; applyZoom(); }
+      } else if (down.i < ORBIT) {
+        const steps = Math.trunc(-dx / 60);
+        const next = (((down.i + steps) % ORBIT) + ORBIT) % ORBIT;
+        if (next !== idx) show(next);
+      }
+    });
+    const end = (e: PointerEvent) => {
+      if (!down) return;
+      const moved = Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y);
+      // 텍스처 1× 에서 사진을 누르면 2배 확대
+      if (texture && moved < 6 && s <= 1.001) {
+        const r = stage.getBoundingClientRect();
+        s = 2; tx = (r.width / 2 - (e.clientX - r.left)) * (s - 1); ty = (r.height / 2 - (e.clientY - r.top)) * (s - 1); applyZoom();
+      }
+      down = null; stage.classList.remove('is-dragging');
+    };
+    stage.addEventListener('pointerup', end);
+    stage.addEventListener('pointercancel', () => { down = null; stage.classList.remove('is-dragging'); });
+
+    // 키보드: 360 표시에서 ←/→, 텍스처 사진에서 방향키 이동 · +/- 확대
+    orbit.addEventListener('keydown', (e) => {
+      const map: Record<string, number> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
+      if (e.key in map) { e.preventDefault(); show((((Math.min(idx, ORBIT - 1) + map[e.key]) % ORBIT) + ORBIT) % ORBIT); }
+      if (e.key === 'Home') { e.preventDefault(); show(0); }
+      if (e.key === 'End') { e.preventDefault(); show(ORBIT - 1); }
+    });
+    let odown: number | null = null, oi = 0;
+    orbit.addEventListener('pointerdown', (e) => { odown = e.clientX; oi = Math.min(idx, ORBIT - 1); orbit.setPointerCapture(e.pointerId); });
+    orbit.addEventListener('pointermove', (e) => {
+      if (odown === null) return;
+      const next = (((oi + Math.trunc((e.clientX - odown) / 24)) % ORBIT) + ORBIT) % ORBIT;
+      if (next !== idx) show(next);
+    });
+    orbit.addEventListener('pointerup', () => { odown = null; });
+    stage.addEventListener('keydown', (e) => {
+      if (!texture) return;
+      const st = 40;
+      const k = e.key;
+      if (k === '+' || k === '=') { setZoom(s + 0.5); e.preventDefault(); }
+      else if (k === '-') { setZoom(s - 0.5); e.preventDefault(); }
+      else if (s > 1.001 && k.startsWith('Arrow')) {
+        if (k === 'ArrowLeft') tx += st; if (k === 'ArrowRight') tx -= st;
+        if (k === 'ArrowUp') ty += st; if (k === 'ArrowDown') ty -= st;
+        applyZoom(); e.preventDefault();
+      }
+    });
+    addEventListener('resize', () => texture && applyZoom());
+    show(0);
+  }
+</script>

@@ -1,0 +1,61 @@
+---
+import Base, { type ProtoInfo } from '../layouts/Base.astro';
+import PdpPanel from './pdp/PdpPanel.astro';
+import ReviewSummary from './pdp/ReviewSummary.astro';
+import MorhHeader from './morh/MorhHeader.astro';
+import MorhBand from './morh/MorhBand.astro';
+import ProductTabs from './ProductTabs.astro';
+import ProductInfo from './ProductInfo.astro';
+import PurchaseSheet from './PurchaseSheet.astro';
+import MobileBuyBar from './MobileBuyBar.astro';
+import { product, brand, copy, views, img } from '../data/product';
+import { defaultReviews, type Review } from '../data/reviews';
+
+interface Props { proto?: ProtoInfo; reviews?: Review[] }
+const { proto, reviews = defaultReviews } = Astro.props;
+
+// 구조화 데이터: 화면에서 확인 가능한 확정 정보만. 가격·평점·후기(예시 값)는 사용자 결정 전까지 넣지 않음.
+const jsonld = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.fullName,
+  brand: { '@type': 'Brand', name: brand.name },
+  category: product.category,
+  description: copy.tagline,
+  image: views.map((v) => img(v.key, 1254)),
+};
+---
+<Base
+  title={`${product.fullName} | ${product.category}`}
+  description={`${copy.tagline} ${product.fullName}의 사진, 사용법, 자주 묻는 질문을 확인하세요.`}
+  proto={proto}
+  jsonld={jsonld}
+  header={false}
+>
+  <MorhHeader bagOpensSheet />
+  <div class="wrap pdp">
+    <div class="pdp__grid">
+      <div class="pdp__media"><slot /></div>
+      <div class="pdp__buy"><PdpPanel reviews={reviews} /></div>
+    </div>
+  </div>
+  <ReviewSummary reviews={reviews} />
+  <ProductTabs reviews={reviews} />
+  <ProductInfo />
+  <MorhBand />
+  <Fragment slot="after">
+    <PurchaseSheet />
+    <MobileBuyBar />
+  </Fragment>
+</Base>
+
+<style>
+  /* 레퍼런스: 넓은 흰 여백, 왼쪽 큰 갤러리, 오른쪽 얇은 테두리 패널 */
+  .pdp { padding-top: clamp(20px, 3vw, 40px); }
+  .pdp__grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr); gap: clamp(24px, 5vw, 88px); align-items: start; }
+  .pdp__buy { position: sticky; top: calc(var(--header-h) + 24px); margin-top: 28px; }
+  @media (max-width: 900px) {
+    .pdp__grid { grid-template-columns: 1fr; }
+    .pdp__buy { position: static; margin-top: 0; }
+  }
+</style>

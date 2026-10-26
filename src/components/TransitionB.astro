@@ -1,0 +1,59 @@
+---
+/*
+  ② Transition B — Layered Scroll
+  고정 구간 없이, 텍스처(느림)·용기 항공샷(빠름, 반대 방향)·문장(기본 스크롤)이 서로 다른 속도로 움직여
+  다음 섹션 경계에서 하나의 장면으로 겹칩니다. 모바일에서는 이동 폭을 절반으로 줄입니다.
+*/
+import { copy } from '../data/product';
+---
+<section class="ly" aria-labelledby="ly-title" data-ly>
+  <div class="wrap ly__inner">
+    <p class="label ly__label">Cream Texture</p>
+    <p class="ly__start">MORH의 크림을<br /><em class="serif-i">가까이.</em></p>
+
+    <figure class="ly__tex" data-speed="-0.18" aria-hidden="true">
+      <img src="/images/cream-texture-420.webp" width="420" height="560" alt="" loading="lazy" decoding="async" />
+    </figure>
+    <figure class="ly__jar" data-speed="0.32">
+      <img src="/images/morh-top-800.webp" srcset="/images/morh-top-400.webp 400w, /images/morh-top-800.webp 800w"
+           sizes="(max-width: 720px) 56vw, 30vw" width="800" height="800" loading="lazy" decoding="async"
+           alt="위에서 내려다본 모르 브라이트닝 크림. 둥근 아이보리 뚜껑 윗면" />
+    </figure>
+
+    <h2 id="ly-title" class="ly__line">{copy.social}</h2>
+  </div>
+</section>
+
+<style>
+  .ly { position: relative; background: linear-gradient(var(--c-paper) 55%, var(--c-cream-tex)); overflow: clip; }
+  .ly__inner { position: relative; min-height: 135vh; display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--col-gap); align-content: start; padding-block: var(--s-8) var(--s-9); }
+  .ly__label { grid-column: 1 / -1; }
+  .ly__start { grid-column: 1 / 8; font-size: var(--fs-h1); font-weight: 700; letter-spacing: var(--ls-display); line-height: 1.1; margin-top: var(--s-3); position: relative; z-index: 3; }
+  .ly__start em { color: var(--c-burgundy); font-weight: 500; }
+  .ly__tex { grid-column: 2 / 7; grid-row: 3; margin: 12vh 0 0; mix-blend-mode: multiply; z-index: 1; max-width: 340px; will-change: transform; }
+  .ly__jar { grid-column: 7 / 12; grid-row: 3; margin: 30vh 0 0; z-index: 2; will-change: transform; }
+  .ly__line { grid-column: 3 / -1; grid-row: 4; font-size: var(--fs-h2); max-width: 18ch; margin-top: 4vh; position: relative; z-index: 3; }
+  .ly img { width: 100%; }
+
+  @media (max-width: 720px) {
+    .ly__inner { min-height: 110vh; }
+    .ly__start { grid-column: 1 / -1; }
+    .ly__tex { grid-column: 1 / 8; margin-top: 6vh; }
+    .ly__jar { grid-column: 5 / -1; margin-top: 22vh; }
+    .ly__line { grid-column: 1 / -1; }
+  }
+</style>
+
+<script>
+  import { onProgress, reduced } from '../scripts/scroll';
+  const root = document.querySelector<HTMLElement>('[data-ly]');
+  if (root && !reduced()) {
+    const layers = root.querySelectorAll<HTMLElement>('[data-speed]');
+    const mobile = matchMedia('(max-width: 720px)');
+    onProgress(root, 'pass', (p) => {
+      const k = mobile.matches ? 0.5 : 1;
+      const d = (p - 0.5) * window.innerHeight; // 섹션 중앙에서 0
+      layers.forEach((l) => { l.style.transform = `translate3d(0, ${-d * Number(l.dataset.speed) * k}px, 0)`; });
+    });
+  }
+</script>

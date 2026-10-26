@@ -1,0 +1,70 @@
+---
+import '../styles/base.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import ProtoBar from '../components/ProtoBar.astro';
+import PrivacyModal from '../components/PrivacyModal.astro';
+
+export interface ProtoInfo {
+  area: string;            // 예: '① Hero Motion'
+  variant: 'A' | 'B' | '연결';
+  name: string;            // 예: 'Typography × Texture'
+  a?: string;              // A안 경로
+  b?: string;              // B안 경로
+}
+
+interface Props {
+  title: string;
+  description: string;
+  noindex?: boolean;
+  proto?: ProtoInfo;
+  jsonld?: Record<string, unknown>;
+  ogImage?: string;
+  header?: boolean;
+  footer?: boolean;
+}
+
+const { title, description, noindex = true, proto, jsonld, ogImage = '/images/morh-front-1254.webp', header = true, footer = true } = Astro.props;
+---
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  {noindex && <meta name="robots" content="noindex, nofollow" />}
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MORH 모르" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:locale" content="ko_KR" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#fcfaf6" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <!-- canonical·og:url: 운영 주소 확정 후 추가 (임의 주소 사용 안 함) -->
+  <!-- GA4 / Meta Pixel 자리: 붙이면 개인정보 처리 안내에 '익명 방문 통계' 항목을 추가해야 합니다 -->
+  {jsonld && <script type="application/ld+json" set:html={JSON.stringify(jsonld)} />}
+  <script is:inline>
+    // 모션 줄이기: OS 설정 또는 ?motion=off. iframe 비교 화면에서는 프로토타입 바 숨김.
+    (function () {
+      var d = document.documentElement, q = new URLSearchParams(location.search);
+      var reduce = q.get('motion') === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+      d.classList.add(reduce ? 'reduce-motion' : 'js-motion');
+      if (q.get('embed') === '1' || window.self !== window.top) d.classList.add('is-embed');
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문 바로가기</a>
+  {proto && <ProtoBar {...proto} />}
+  {header && <SiteHeader />}
+  <main id="main">
+    <slot />
+  </main>
+  {footer && <SiteFooter />}
+  <PrivacyModal />
+  <slot name="after" />
+</body>
+</html>

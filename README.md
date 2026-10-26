@@ -1,46 +1,66 @@
-# 내 랜딩페이지 관리 안내
+# MORH 브랜드 웹사이트 — 1단계 프로토타입
 
-성동 SESAC 6기 수업에서 만든 랜딩페이지입니다. 이 리포는 처음부터 여러분 계정 소유이고, 앞으로 여러분이 직접 고치고 키워 가면 됩니다.
+홈(Editorial Motion)과 제품 상세(Minimal Commerce)의 핵심 인터랙션 A/B 프로토타입입니다.
+2단계(전체 홈·상세 구현)는 사용자가 A/B를 선택한 뒤 진행합니다.
 
-## 파일 구성
+## 실행
 
-| 파일 | 역할 |
+```bash
+npm install
+npm run build
+npx astro preview --port 4321 --host 127.0.0.1   # http://127.0.0.1:4321/
+# 개발 모드: npm run dev
+```
+
+- 이미지 파생본 다시 만들기: `npm run images` (Python 3 + Pillow)
+- 타입 검사: `npm run check`
+- 자동 검증(프리뷰 서버 실행 중, 시스템 Chrome 사용): `npm run verify` (전체 123항목), `node scripts/verify-home.mjs` (홈 장면 63항목)
+- 첫 로드 용량·로컬 LCP: `node scripts/weights.mjs`
+- 스크린샷: `node scripts/shot.mjs <경로> <desktop|mobile> [scrollY] [출력파일]`
+
+## 경로
+
+| 경로 | 내용 |
 |---|---|
-| `index.html` | 랜딩페이지 본문 |
-| `result.html` | 신청 후 나오는 결과(전환 완료) 페이지 |
-| `assets/site.css` | 공통 디자인 |
-| `assets/privacy.js` | 신청 폼 처리 + 개인정보 안내 팝업 |
-| `assets/` 안 이미지 | 히어로·제품 이미지 |
-| `robots.txt`, `sitemap.xml` | 검색엔진용 (Day 28~29) |
+| `/` | **홈** — 14 DAYS 스크롤 장면 (제품 → 크림 → 모래시계 14일) |
+| `/prototype/` | 1단계 A/B 비교 허브 (점수·장단점) |
+| `/prototype/compare/` | A/B 나란히 비교 (데스크톱 1280×800 / 모바일 390×844) |
+| `/prototype/hero-a/` · `hero-b/` | ① Hero Motion |
+| `/prototype/transition-a/` · `transition-b/` | ② Section Transition |
+| `/prototype/product-a/` · `product-b/` | ③ Product Interaction (+ 탭·FAQ·구매 흐름) |
+| `/prototype/story/` | Hero A → Texture Zoom A → 제품 특징 연결 |
+| `/prototype/system/` | 디자인 시스템 초안 |
+| `/result/` | 구매 신청 완료(전환) 페이지 |
+| `/privacy/` | 개인정보 처리 안내 |
 
-## 고치는 방법 (git 명령 필요 없음)
+모든 페이지 뒤에 `?motion=off` 를 붙이면 '움직임 줄이기' 상태로 볼 수 있습니다.
 
-1. 리포 화면에서 고칠 파일(`index.html`)을 누르고 오른쪽 위 연필 아이콘을 누릅니다.
-2. 글자를 고치고 **Commit changes**를 누릅니다.
-3. 1~2분 뒤 `https://내아이디.github.io/`에 반영됩니다.
+## 홈 스크롤 장면
 
-이미지는 리포 화면 **Add file → Upload files**로 `assets/` 폴더에 올리고, `index.html`에서 파일 이름을 바꿔 줍니다.
+- `src/components/home/RitualScene.astro` — 장면 마크업 (정적 배치 + 스크롤 배치)
+- `src/scripts/ritual.ts` — 스크롤 진행도 → 객체 위치·크림·날짜 계산
+- `src/scripts/hourglass.ts` — 모래시계 형상과 크림 면적 계산 (위아래 총량 일정)
+- `src/components/home/Hourglass.astro` — 유리·프레임·크림을 분리한 SVG
+- 뚜껑/몸체 레이어: `public/images/ritual-lid-*.webp`, `ritual-body-*.webp` (정면 사진에서 분리)
 
-브랜드 색은 `index.html` 맨 위 `<style>` 안의 `--primary`, `--accent`, `--bg` 값만 바꾸면 전체가 바뀝니다.
+## 폴더
 
-## 바꾸면 안 되는 것
+- `references/` — 디자인 레퍼런스(배포 제외, 수정하지 않음)
+- `source-assets/` — 원본 복사본(용기 사진 5장, 크림 텍스처). 원본 폴더는 수정하지 않음
+- `public/images/` — 웹용 파생본(`scripts/build-images.py`로 생성)
+- `src/data/product.ts` — 제품 정보 단일 출처. 확정/기획자료/예시/미확정 상태를 구분
 
-- `id="cta-main"`, `id="lead-form"`, `id="cta-submit"`: GA4·픽셀 이벤트가 이 이름을 씁니다.
-- `assets/privacy.js`의 "입력값을 지우고 result.html로 이동" 부분.
+## 기술
 
-## 분석 도구 붙이는 자리
+Astro 7 (정적 HTML 출력, 페이지별 필요한 스크립트만 포함). 모션은 의존성 없이 직접 작성한 스크롤 유틸(`src/scripts/scroll.ts`).
+폰트는 Pretendard·Cormorant Garamond(둘 다 OFL-1.1)를 npm 패키지로 자체 호스팅 — 외부 폰트 요청 없음.
 
-`index.html`과 `result.html`의 `<head>` 안에 주석으로 자리를 만들어 두었습니다.
+## 구매 흐름 (기존 morh-website 저장소와 동일한 원칙)
 
-- `<!-- GA4 -->` Day 34
-- `<!-- Meta Pixel -->` Day 35
-- `<!-- Microsoft Clarity -->` Day 38
-- `<!-- Schema JSON-LD -->` Day 29
+구매하기 → 구매 신청 시트 → 제출 → 개인정보 처리 안내 동의 → 입력값 즉시 삭제 → `/result/`.
+입력칸에 `name` 속성이 없어 값이 전송되지 않습니다. `id="cta-main"`, `lead-form`, `cta-submit` 유지.
+**폼을 실제 수집 도구에 연결하거나 분석 도구를 붙이면 `src/components/PrivacyItems.astro` 문구를 반드시 다시 작성하세요.**
 
-분석 도구를 붙이면 `index.html` 안 개인정보 안내 팝업에 "익명 방문 통계를 집계할 수 있다"는 항목을 추가해야 합니다(문구는 팝업 안 5번 항목 예시 참고).
+## Git
 
-## 개인정보 약속 (중요)
-
-지금 이 페이지는 신청 폼에 입력한 값을 **어디에도 보내지 않고 바로 지웁니다.** 팝업에도 그렇게 적혀 있습니다.
-
-나중에 폼을 Make, 구글 시트, 이메일 등에 연결해 실제로 정보를 받게 되면, 그 순간 팝업의 "절대 저장하지 않습니다" 문구는 거짓이 됩니다. 그때는 반드시 수집 항목, 목적, 보관 기간, 파기 방법을 적은 개인정보 처리방침으로 바꾸세요.
+이 폴더는 Git 초기화하지 않았습니다. (상위 폴더 `/Users/hakyungsohn/Documents/GitHub` 가 원격 없는 Git 저장소이며, 이 폴더는 그 안에서 추적되지 않은 상태입니다.)
