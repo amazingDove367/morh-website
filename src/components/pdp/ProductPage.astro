@@ -1,0 +1,63 @@
+---
+/*
+  제품 상세페이지 (디자인 기준: references/텍스쳐.png)
+  순서: 갤러리 + 정보 패널 → 구매후기 요약 → 상세 설명 / 구매후기 탭 → 탭 콘텐츠
+  구조화 데이터: 화면과 자료로 확인된 정보만(이름·브랜드·이미지·설명).
+  가격(Offer)·평점(AggregateRating)·후기(Review)는 실제 판매·실제 후기가 아니므로 넣지 않습니다.
+*/
+import Base from '../../layouts/Base.astro';
+import PdpGallery from './PdpGallery.astro';
+import PdpPanel from './PdpPanel.astro';
+import ReviewSummary from './ReviewSummary.astro';
+import ProductTabs from './ProductTabs.astro';
+import ReviewLightbox from './ReviewLightbox.astro';
+import MobileBuyBar from './MobileBuyBar.astro';
+import { VIEW_KEYS, viewImg } from '../../data/product';
+import { PRODUCT } from '../../data/commerce';
+import { defaultReviews, type Review } from '../../data/reviews';
+import { withBase, type Locale } from '../../i18n/locales';
+import { DICTS } from '../../i18n';
+
+interface Props { locale: Locale; reviews?: Review[]; noindex?: boolean }
+const { locale, reviews = defaultReviews, noindex = false } = Astro.props;
+const t = DICTS[locale];
+const site = (import.meta.env.PUBLIC_SITE_URL || '').replace(/\/$/, '');
+const jsonld = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: t.common.product,
+  brand: { '@type': 'Brand', name: 'MORH' },
+  sku: PRODUCT.id,
+  description: t.meta.productDesc,
+  image: VIEW_KEYS.map((k) => `${site}${withBase(viewImg(k, 1254))}`),
+};
+---
+<Base locale={locale} path="/product/" title={t.meta.productTitle} description={t.meta.productDesc} jsonld={jsonld} noindex={noindex} bagOpensCheckout>
+  <div class="wrap pdp">
+    <div class="pdp__grid">
+      <div class="pdp__media"><PdpGallery locale={locale} /></div>
+      <div class="pdp__buy"><PdpPanel reviews={reviews} locale={locale} /></div>
+    </div>
+  </div>
+  <ReviewSummary reviews={reviews} locale={locale} />
+  <ProductTabs reviews={reviews} locale={locale} />
+  <Fragment slot="after">
+    <ReviewLightbox reviews={reviews} locale={locale} />
+    <MobileBuyBar locale={locale} />
+  </Fragment>
+</Base>
+
+<script>
+  import { track } from '../../scripts/analytics';
+  track('view_item', { item_id: 'morh-brightening-cream' });
+</script>
+
+<style>
+  .pdp { padding-top: clamp(20px, 3vw, 40px); }
+  .pdp__grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr); gap: clamp(24px, 5vw, 88px); align-items: start; }
+  .pdp__buy { position: sticky; top: calc(var(--header-h) + 24px); margin-top: 28px; }
+  @media (max-width: 900px) {
+    .pdp__grid { grid-template-columns: 1fr; }
+    .pdp__buy { position: static; margin-top: 0; }
+  }
+</style>
