@@ -1,0 +1,51 @@
+# GitHub Pages 배포: main 에 커밋이 들어오면 사이트를 빌드(npm run build)해서 결과(dist/)를 Pages 에 올립니다.
+# 저장소 Settings → Pages → Source 가 'GitHub Actions' 여야 동작합니다.
+# 검색 노출·분석 도구는 저장소 Settings → Secrets and variables → Actions → Variables 에서 켭니다(없으면 꺼진 상태).
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Actions 탭에서 수동 실행
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          # 프로젝트 사이트 주소 https://amazingdove367.github.io/morh-website/ 에 맞춘 기준 경로
+          BASE_PATH: /morh-website/
+          PUBLIC_SITE_URL: https://amazingdove367.github.io
+          # 기본값 false: 샘플 후기·미확정 정보가 있는 동안 검색 노출 차단
+          PUBLIC_INDEXABLE: ${{ vars.PUBLIC_INDEXABLE || 'false' }}
+          # 비어 있으면 분석 스크립트를 넣지 않음
+          PUBLIC_GA4_ID: ${{ vars.PUBLIC_GA4_ID || '' }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

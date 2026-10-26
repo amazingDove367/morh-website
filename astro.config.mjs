@@ -10,9 +10,4 @@ export default defineConfig({
   trailingSlash: 'always',
   build: { inlineStylesheets: 'auto' },
   devToolbar: { enabled: false },
-  // 이전 프로토타입 주소 → 새 주소
-  redirects: {
-    '/prototype/product-a/': '/product/',
-    '/result/': '/checkout/complete/',
-  },
 });
