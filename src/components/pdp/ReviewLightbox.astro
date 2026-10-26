@@ -1,0 +1,123 @@
+---
+/*
+  후기 사진 확대 모달 (구매후기 요약의 썸네일 · 후기 목록 사진이 함께 사용)
+  - 기본 <dialog>: Esc 로 닫기, 바깥 클릭으로 닫기, 닫으면 연 버튼으로 포커스 복원
+  - 사진이 여러 장이면 이전·다음 버튼과 ←/→ 키(아랍어는 반대)로 이동
+  - 모바일: 화면 높이 안에 사진과 닫기 버튼이 들어오도록 dvh 기준 크기
+*/
+import { reviewImage, type Review } from '../../data/reviews';
+import { withBase, type Locale } from '../../i18n/locales';
+import { DICTS, fill } from '../../i18n';
+interface Props { reviews: Review[]; locale: Locale }
+const { reviews, locale } = Astro.props;
+const t = DICTS[locale];
+const r = t.reviews;
+const data = reviews.filter((rv) => rv.photos.length).map((rv) => ({
+  id: rv.id,
+  title: rv.text[locale].title,
+  body: rv.text[locale].body,
+  meta: `${rv.author[locale]} · ${rv.skin[locale]}`,
+  stars: rv.rating,
+  photos: rv.photos.map((p) => ({ src: withBase(reviewImage(p, 'full')), alt: fill(r.photoAlt, { a: r.imageKinds[p] }) })),
+}));
+const strings = { stars: r.stars, counter: r.photoCounter };
+---
+{data.length > 0 && (
+  <dialog class="lb" data-lightbox aria-labelledby="lb-title" data-strings={JSON.stringify(strings)}>
+    <div class="lb__inner">
+      <button type="button" class="lb__close" data-lb-close aria-label={t.a11y.close}>×</button>
+      <figure class="lb__figure">
+        <img data-lb-img alt="" />
+        <button type="button" class="lb__nav lb__nav--prev" data-lb-step="-1" aria-label={t.a11y.prev}><span class="flip-rtl" aria-hidden="true">‹</span></button>
+        <button type="button" class="lb__nav lb__nav--next" data-lb-step="1" aria-label={t.a11y.next}><span class="flip-rtl" aria-hidden="true">›</span></button>
+        <figcaption class="lb__count" data-lb-count aria-live="polite"></figcaption>
+      </figure>
+      <div class="lb__body">
+        <p class="lb__stars" data-lb-stars></p>
+        <h2 id="lb-title" data-lb-title></h2>
+        <p data-lb-text></p>
+        <p class="lb__meta" data-lb-meta></p>
+        <p class="lb__note">{r.notice}</p>
+      </div>
+    </div>
+  </dialog>
+  <script type="application/json" data-lb-data set:html={JSON.stringify(data)} />
+)}
+
+<style>
+  .lb { border: 1px solid var(--c-line-strong); padding: 0; width: min(880px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); background: var(--c-paper); color: var(--c-ink); overflow: auto; }
+  .lb::backdrop { background: rgba(43, 26, 31, 0.55); }
+  .lb__inner { display: grid; grid-template-columns: 1.3fr 1fr; position: relative; }
+  .lb__close { position: absolute; top: 4px; inset-inline-end: 4px; width: 44px; height: 44px; border: 0; background: rgba(252, 250, 246, 0.9); font-size: 1.6rem; cursor: pointer; z-index: 2; }
+  .lb__figure { margin: 0; position: relative; background: #fff; aspect-ratio: 1; }
+  .lb__figure img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .lb__nav { position: absolute; top: 50%; translate: 0 -50%; width: 44px; height: 44px; border: 0; background: rgba(252, 250, 246, 0.85); font-size: 1.5rem; cursor: pointer; }
+  .lb__nav--prev { inset-inline-start: 6px; }
+  .lb__nav--next { inset-inline-end: 6px; }
+  .lb__nav[hidden] { display: none; }
+  .lb__count { position: absolute; bottom: 8px; inset-inline-start: 50%; translate: -50% 0; font-size: 0.75rem; background: rgba(252, 250, 246, 0.85); padding: 2px 8px; font-variant-numeric: tabular-nums; }
+  :global([dir='rtl']) .lb__count { translate: 50% 0; }
+  .lb__body { padding: 52px 24px 24px; display: grid; gap: 10px; align-content: start; font-size: 0.875rem; }
+  .lb__stars { color: var(--c-burgundy); letter-spacing: 0.08em; }
+  .lb__body h2 { font-size: 1.0625rem; }
+  .lb__meta, .lb__note { color: var(--c-ink-soft); font-size: 0.75rem; }
+  @media (max-width: 720px) {
+    .lb { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+    .lb__inner { grid-template-columns: 1fr; }
+    .lb__figure { aspect-ratio: auto; height: min(56dvh, 100vw); }
+    .lb__body { padding: 16px; }
+  }
+</style>
+
+<script>
+  const dlg = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+  const raw = document.querySelector('[data-lb-data]');
+  if (dlg && raw) {
+    type Item = { id: string; title: string; body: string; meta: string; stars: number; photos: { src: string; alt: string }[] };
+    const items = JSON.parse(raw.textContent || '[]') as Item[];
+    const str = JSON.parse(dlg.dataset.strings || '{}') as { stars: string; counter: string };
+    const $ = <T extends HTMLElement>(s: string) => dlg.querySelector(s) as T;
+    const img = $<HTMLImageElement>('[data-lb-img]');
+    const prev = $<HTMLButtonElement>('[data-lb-step="-1"]'), next = $<HTMLButtonElement>('[data-lb-step="1"]');
+    const rtl = document.documentElement.dir === 'rtl';
+    let cur: Item | null = null, idx = 0, opener: HTMLElement | null = null;
+
+    const show = () => {
+      if (!cur) return;
+      const ph = cur.photos[idx];
+      img.src = ph.src; img.alt = ph.alt;
+      const many = cur.photos.length > 1;
+      prev.hidden = next.hidden = !many;
+      prev.disabled = idx === 0; next.disabled = idx === cur.photos.length - 1;
+      $('[data-lb-count]').textContent = many ? str.counter.replace('{a}', String(idx + 1)).replace('{b}', String(cur.photos.length)) : '';
+    };
+    const open = (id: string, k: number, from: HTMLElement) => {
+      cur = items.find((x) => x.id === id) ?? null;
+      if (!cur) return;
+      idx = Math.min(cur.photos.length - 1, Math.max(0, k));
+      opener = from;
+      $('[data-lb-stars]').textContent = '★★★★★'.slice(0, cur.stars) + '☆☆☆☆☆'.slice(0, 5 - cur.stars);
+      $('[data-lb-stars]').setAttribute('aria-label', str.stars.replace('{n}', String(cur.stars)));
+      $('[data-lb-title]').textContent = cur.title;
+      $('[data-lb-text]').textContent = cur.body;
+      $('[data-lb-meta]').textContent = cur.meta;
+      show();
+      dlg.showModal();
+    };
+    document.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-review-open]');
+      if (b) open(b.dataset.reviewOpen!, Number(b.dataset.photo || 0), b);
+    });
+    prev.addEventListener('click', () => { idx = Math.max(0, idx - 1); show(); });
+    next.addEventListener('click', () => { if (cur) { idx = Math.min(cur.photos.length - 1, idx + 1); show(); } });
+    dlg.addEventListener('keydown', (e) => {
+      if (!cur || cur.photos.length < 2) return;
+      const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
+      if (e.key === fwd && idx < cur.photos.length - 1) { idx++; show(); e.preventDefault(); }
+      if (e.key === back && idx > 0) { idx--; show(); e.preventDefault(); }
+    });
+    $('[data-lb-close]').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('close', () => { opener?.focus(); opener = null; });
+  }
+</script>

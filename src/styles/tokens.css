@@ -1,0 +1,75 @@
+/*
+  MORH 공통 디자인 토큰 (초안 v0.1)
+  색상 근거: 용기 사진 실측값
+    - 로고 버건디  #630225 (정면 로고 픽셀 중앙값)
+    - 뚜껑 아이보리 #EAE7E7 / 몸체 크림 #EDE3D8
+    - 골드 경계    #D6B994
+  홈(표현적)과 상세(구매 중심)가 같은 토큰을 공유합니다.
+*/
+:root {
+  /* ── Color ─────────────────────────────── */
+  --c-paper: #fcfaf6;        /* 기본 배경. 텍스처 흰 배경(#FFF)과 거의 같아 이음새가 생기지 않음 */
+  --c-ivory: #f4eee4;        /* 보조 면 (뚜껑·몸체 아이보리) */
+  --c-cream: #ede3d8;        /* 몸체 크림 실측값 */
+  --c-cream-tex: #f2efe9;    /* 크림 텍스처 하이라이트(#F5F4F2)를 종이색 위에 multiply 한 값: 텍스처 → 섹션 배경 연결색 */
+  --c-burgundy: #630225;     /* 로고 실측값: 강조·주요 버튼 */
+  --c-burgundy-deep: #3f0117;/* 호버·눌림 */
+  --c-ink: #2b1a1f;          /* 본문 텍스트 (버건디 기운의 검정) */
+  --c-ink-soft: #5e4a50;     /* 보조 텍스트: paper 대비 7.8:1 */
+  --c-gold: #d6b994;         /* 골드 경계 실측값: 선·작은 디테일에만 */
+  --c-gold-ink: #8a6a3c;     /* 골드 계열 텍스트가 꼭 필요할 때 (대비 4.8:1) */
+  --c-line: rgba(43, 26, 31, 0.18);
+  --c-line-strong: rgba(43, 26, 31, 0.42);
+  --c-focus: #630225;
+  --c-test-bg: #fff3c4;      /* 테스트용·미확정 정보 표시 */
+  --c-test-ink: #5a4300;
+
+  /* ── Typography ────────────────────────── */
+  --f-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --f-serif: 'Cormorant Garamond', 'Times New Roman', serif;
+
+  --fs-display: clamp(2.6rem, 7.4vw, 7.5rem);   /* 홈 히어로 */
+  --fs-h1: clamp(2.1rem, 4.6vw, 4.5rem);
+  --fs-h2: clamp(1.75rem, 3.2vw, 3rem);
+  --fs-h3: clamp(1.25rem, 1.6vw, 1.5rem);
+  --fs-lead: clamp(1.0625rem, 1.25vw, 1.25rem);
+  --fs-body: 1.0625rem;      /* 17px, 모바일 16px 이하로 줄이지 않음 */
+  --fs-small: 0.9375rem;     /* 15px */
+  --fs-label: 0.8125rem;     /* 13px 라벨 (대문자 영문/숫자 위주) */
+
+  --lh-tight: 1.08;
+  --lh-head: 1.22;
+  --lh-body: 1.68;
+  --ls-display: -0.045em;
+  --ls-head: -0.025em;
+  --ls-label: 0.08em;
+
+  /* ── Grid & Space ──────────────────────── */
+  --page-max: 1440px;
+  --gutter: clamp(16px, 4vw, 48px);   /* 좌우 여백: 모바일 16px */
+  --col-gap: clamp(16px, 2vw, 24px);
+  --header-h: 60px;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px;
+  --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px; --s-10: 144px;
+  --border: 1px solid var(--c-line);
+  --border-strong: 1px solid var(--c-line-strong);
+
+  /* ── Motion ────────────────────────────── */
+  --ease-cream: cubic-bezier(0.22, 0.61, 0.36, 1);   /* 기본: 크림이 퍼지듯 빠르게 시작해 천천히 멈춤 */
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);       /* 장면 전환 */
+  --dur-ui: 180ms;     /* 버튼·탭·포커스 */
+  --dur-panel: 320ms;  /* 시트·모달·갤러리 전환 */
+  --dur-reveal: 900ms; /* 섹션 등장 */
+  --dur-hero: 1200ms;  /* 첫 화면 연출 (진입을 막지 않음) */
+
+  --z-header: 40;
+  --z-buybar: 50;
+  --z-proto: 60;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --fs-body: 1rem;  /* 16px */
+    --header-h: 56px;
+  }
+}

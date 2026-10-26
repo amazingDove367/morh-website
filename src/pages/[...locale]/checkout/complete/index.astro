@@ -1,0 +1,78 @@
+---
+/* 주문 체험 완료 화면: 포트폴리오 체험 완료임을 분명히 안내하고, 개인정보가 아닌 체험 주문 요약만 표시 */
+import Base from '../../../../layouts/Base.astro';
+import { localePath, localeStaticPaths, type Locale } from '../../../../i18n/locales';
+import { DICTS } from '../../../../i18n';
+
+export const getStaticPaths = localeStaticPaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = DICTS[locale];
+const c = t.checkout;
+const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, shipping: c.shipping, total: c.total, region: c.region, standard: c.regionStandard, remote: c.regionRemote };
+---
+<Base locale={locale} path="/checkout/complete/" title={t.meta.completeTitle} description={t.meta.completeDesc} noindex>
+  <section class="done wrap" aria-labelledby="done-title" data-complete data-locale={locale} data-strings={JSON.stringify(strings)}>
+    <div class="done__check" aria-hidden="true">✓</div>
+    <h1 id="done-title">{t.complete.title}</h1>
+    <p>{t.complete.body}</p>
+    <p class="done__wiped">{t.complete.wiped}</p>
+    <div class="done__summary" data-summary hidden>
+      <h2>{t.complete.summary}</h2>
+      <dl data-summary-list></dl>
+    </div>
+    <p class="muted" data-summary-none hidden>{t.complete.none}</p>
+    <div class="done__actions">
+      <a class="btn" href={localePath(locale, '/')}>{t.common.toHome}</a>
+      <a class="btn btn--ghost" href={localePath(locale, '/product/')}>{t.complete.again}</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .done { max-width: 640px; padding-block: var(--s-9); display: grid; gap: var(--s-4); justify-items: center; text-align: center; }
+  .done__check { width: 64px; height: 64px; border-radius: 50%; background: var(--c-burgundy); color: #fff; display: grid; place-items: center; font-size: 1.75rem; }
+  .done h1 { font-size: var(--fs-h2); }
+  .done__wiped { padding: 10px 14px; border: 1px solid var(--c-line); background: var(--c-ivory); font-size: 0.875rem; }
+  .done__summary { width: 100%; border: 1px solid var(--c-line-strong); padding: 18px 20px; text-align: start; display: grid; gap: 10px; }
+  .done__summary[hidden] { display: none; }
+  .done__summary h2 { font-size: 0.8125rem; letter-spacing: 0.06em; }
+  .done__summary dl { display: grid; gap: 6px; font-size: 0.9375rem; }
+  .done__summary dl div { display: flex; justify-content: space-between; gap: 12px; }
+  .done__summary dd { font-variant-numeric: tabular-nums; }
+  .done__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); justify-content: center; margin-top: var(--s-3); }
+</style>
+
+<script>
+  import { trackOnce } from '../../../../scripts/analytics';
+  import { money } from '../../../../i18n/format';
+  import type { Locale } from '../../../../i18n/locales';
+  const root = document.querySelector<HTMLElement>('[data-complete]');
+  if (root) {
+    const locale = root.dataset.locale as Locale;
+    const s = JSON.parse(root.dataset.strings || '{}') as Record<string, string>;
+    let order: { qty: number; region: string; subtotal: number; benefit: number; shipping: number; total: number } | null = null;
+    try { order = JSON.parse(sessionStorage.getItem('morh:demo-order') || 'null'); } catch { order = null; }
+    if (order && Number.isFinite(order.total)) {
+      const rows: [string, string][] = [
+        [s.qty, String(order.qty)],
+        [s.region, order.region === 'remote' ? s.remote : s.standard],
+        [s.subtotal, money(locale, order.subtotal)],
+        [s.benefit, `−${money(locale, order.benefit)}`],
+        [s.shipping, money(locale, order.shipping)],
+        [s.total, money(locale, order.total)],
+      ];
+      const dl = root.querySelector('[data-summary-list]')!;
+      rows.forEach(([k, v]) => {
+        const div = document.createElement('div');
+        const dt = document.createElement('dt'); dt.textContent = k;
+        const dd = document.createElement('dd'); dd.textContent = v;
+        div.append(dt, dd); dl.append(div);
+      });
+      root.querySelector<HTMLElement>('[data-summary]')!.hidden = false;
+      // 실제 구매가 아닌 '주문 체험 완료' — 세션당 1회
+      trackOnce(`complete:${order.total}:${order.qty}`, 'demo_checkout_complete', { quantity: order.qty });
+    } else {
+      root.querySelector<HTMLElement>('[data-summary-none]')!.hidden = false;
+    }
+  }
+</script>

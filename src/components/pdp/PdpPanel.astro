@@ -1,0 +1,211 @@
+---
+/*
+  상세페이지 오른쪽 정보 패널 (레퍼런스 '텍스쳐.png'의 얇은 사각 테두리 패널)
+  EXPLORE MORH → 제품명 → 가격(기준가 취소선 + 첫 구매 혜택가) → 수량·총액 → 구매하기 → THE PRODUCT / THE TEXTURE / THE RITUAL
+  - 구매 정보와 버튼을 아코디언 위에 두어, 아코디언(특히 THE TEXTURE)을 열고 닫아도 같은 위치에 유지
+  - THE TEXTURE 가 텍스처 탐색의 유일한 진입점: 열면 morh:texture {open:true} 이벤트로 왼쪽 사진이 크림 제형으로 바뀜
+  - 구매하기 → 주문 체험 화면(/checkout/?qty=N). 수량은 개인정보가 아니므로 주소에 담아 전달
+  - 가격·배송비는 src/data/commerce.ts 한 곳에서 가져옴
+*/
+import { PRICE, DISCOUNT_PCT, SHIPPING, PRODUCT } from '../../data/commerce';
+import { summarize, type Review } from '../../data/reviews';
+import { localePath, type Locale } from '../../i18n/locales';
+import { DICTS, fill, money, num } from '../../i18n';
+interface Props { reviews: Review[]; locale: Locale }
+const { reviews, locale } = Astro.props;
+const t = DICTS[locale];
+const p = t.product;
+const sum = summarize(reviews);
+const checkout = localePath(locale, '/checkout/');
+---
+<section class="pp" aria-labelledby="product-title" data-buy-panel
+  data-checkout={checkout} data-unit={PRICE.firstPurchase} data-max={PRODUCT.maxQty} data-locale={locale}>
+  <a class="pp__row pp__explore" href={`${localePath(locale, '/')}#ritual`}>{p.explore} <span class="arrow" aria-hidden="true">→</span></a>
+
+  <div class="pp__row pp__head">
+    <p class="pp__eyebrow">MORH · {t.common.category} · {t.common.volume}</p>
+    <h1 id="product-title" class="pp__title">{t.common.product}</h1>
+    <p class="pp__tagline"><span lang="en" dir="ltr">{p.tagline}</span></p>
+    {sum.count > 0 && (
+      <a class="pp__rating" href="#reviews" data-tab-link="reviews">
+        <span class="pp__stars" aria-hidden="true">★</span> {num(locale, sum.average, 1)}
+        <span class="muted">· {fill(p.rating, { n: sum.count })}</span>
+      </a>
+    )}
+  </div>
+
+  <div class="pp__row pp__price">
+    <p class="pp__base"><span>{p.basePrice}</span> <s data-base-price>{money(locale, PRICE.base)}</s></p>
+    <p class="pp__first">
+      <span class="pp__first-label">{p.firstPrice}</span>
+      <strong data-first-price>{money(locale, PRICE.firstPurchase)}</strong>
+      <span class="pp__pct">{fill(p.discount, { n: DISCOUNT_PCT })}</span>
+    </p>
+    <p class="pp__note">{p.firstNote}</p>
+    <p class="pp__ship">{fill(p.shipLine, { a: money(locale, SHIPPING.standard), b: money(locale, SHIPPING.remoteTotal) })}</p>
+  </div>
+
+  <div class="pp__row pp__split">
+    <span id="qty-label">{p.qty}</span>
+    <div class="qty" role="group" aria-labelledby="qty-label">
+      <button type="button" class="qty__btn" data-qty="-1" aria-label={p.qtyDec}>−</button>
+      <output class="qty__val" data-qty-value aria-live="polite">1</output>
+      <button type="button" class="qty__btn" data-qty="1" aria-label={p.qtyInc}>+</button>
+    </div>
+  </div>
+  <div class="pp__row pp__split pp__total">
+    <span>{p.total}</span>
+    <strong data-total>{money(locale, PRICE.firstPurchase)}</strong>
+  </div>
+  <div class="pp__cta">
+    <a class="pp__buy" id="cta-main" href={`${checkout}?qty=1`} data-buy="panel">{t.common.buy} <span class="arrow" aria-hidden="true">→</span></a>
+  </div>
+
+  <div class="pp__acc" data-acc>
+    <h2 class="pp__acc-h">
+      <button type="button" aria-expanded="false" aria-controls="acc-product" id="acc-product-btn" data-acc-btn="product" lang="en">
+        {p.accProduct} <span class="pp__pm" aria-hidden="true"></span>
+      </button>
+    </h2>
+    <div class="pp__acc-panel" id="acc-product" role="region" aria-labelledby="acc-product-btn" hidden>
+      <p>{p.accProductBody}</p>
+      <dl class="pp__specs">
+        <div><dt>{p.specVolume}</dt><dd>{t.common.volume}</dd></div>
+        <div><dt>{p.specOrigin}</dt><dd>{p.specOriginValue}</dd></div>
+        <div><dt>{p.specStep}</dt><dd>{p.specStepValue}</dd></div>
+      </dl>
+    </div>
+
+    <h2 class="pp__acc-h">
+      <button type="button" aria-expanded="false" aria-controls="acc-texture" id="acc-texture-btn" data-acc-btn="texture" lang="en">
+        {p.accTexture} <span class="pp__pm" aria-hidden="true"></span>
+      </button>
+    </h2>
+    <div class="pp__acc-panel" id="acc-texture" role="region" aria-labelledby="acc-texture-btn" hidden>
+      <p>{p.accTextureBody}</p>
+    </div>
+
+    <h2 class="pp__acc-h">
+      <button type="button" aria-expanded="false" aria-controls="acc-ritual" id="acc-ritual-btn" data-acc-btn="ritual" lang="en">
+        {p.accRitual} <span class="pp__pm" aria-hidden="true"></span>
+      </button>
+    </h2>
+    <div class="pp__acc-panel" id="acc-ritual" role="region" aria-labelledby="acc-ritual-btn" hidden>
+      <ol role="list" class="pp__steps">
+        {p.steps.map((s) => <li>{s}</li>)}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pp { border: 1px solid var(--c-line-strong); background: var(--c-paper); font-size: 0.8125rem; }
+  .pp__row { padding: 14px 20px; border-bottom: 1px solid var(--c-line-strong); }
+  .pp__split { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); }
+  .pp__explore {
+    display: flex; gap: 10px; align-items: center; min-height: 44px; text-decoration: none;
+    font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; color: var(--c-ink);
+  }
+  .pp__explore:hover { color: var(--c-burgundy); }
+  .pp__head { padding-block: 18px 20px; }
+  .pp__eyebrow { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; color: var(--c-ink-soft); }
+  .pp__title { font-size: 1.25rem; font-weight: 650; letter-spacing: 0.01em; margin-top: 6px; line-height: 1.35; }
+  .pp__tagline { margin-top: 6px; color: var(--c-ink); }
+  .pp__rating { display: inline-flex; gap: 6px; align-items: center; margin-top: 10px; text-decoration: none; min-height: 32px; }
+  .pp__rating:hover { text-decoration: underline; }
+  .pp__stars { color: var(--c-burgundy); }
+  .pp__price { display: grid; gap: 4px; }
+  .pp__base { color: var(--c-ink-soft); display: flex; gap: 8px; align-items: baseline; }
+  .pp__base s { font-variant-numeric: tabular-nums; }
+  .pp__first { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+  .pp__first-label { font-weight: 600; color: var(--c-burgundy); }
+  .pp__first strong { font-size: 1.375rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-ink); }
+  .pp__pct { font-weight: 700; color: var(--c-burgundy); }
+  .pp__note, .pp__ship { font-size: 0.75rem; color: var(--c-ink-soft); line-height: 1.6; }
+  .pp__note { margin-top: 2px; }
+  .qty { display: inline-flex; align-items: center; border: 1px solid var(--c-line-strong); }
+  .qty__btn { width: 40px; height: 40px; border: 0; background: none; cursor: pointer; font-size: 1.125rem; color: var(--c-ink); }
+  .qty__btn:hover:not([disabled]) { color: var(--c-burgundy); }
+  .qty__btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+  .qty__val { min-width: 2.2em; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .pp__total strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .pp__cta { border-bottom: 1px solid var(--c-line-strong); }
+  .pp__buy {
+    width: 100%; min-height: 56px; display: flex; justify-content: center; align-items: center; gap: 12px;
+    background: var(--c-burgundy); color: #fff; text-decoration: none;
+    font-size: 0.875rem; font-weight: 700; letter-spacing: 0.06em;
+    transition: background-color var(--dur-ui) var(--ease-cream);
+  }
+  .pp__buy:hover { background: var(--c-burgundy-deep); }
+  .pp__acc-h { margin: 0; font-size: inherit; }
+  .pp__acc-h button {
+    width: 100%; min-height: 48px; display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px; border: 0; border-bottom: 1px solid var(--c-line-strong); background: none; cursor: pointer;
+    font: inherit; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; color: var(--c-ink); text-align: start;
+  }
+  .pp__acc > :last-of-type button { border-bottom: 0; }
+  .pp__acc-h button:hover { color: var(--c-burgundy); }
+  .pp__pm { position: relative; width: 11px; height: 11px; }
+  .pp__pm::before, .pp__pm::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: currentColor; }
+  .pp__pm::after { transform: rotate(90deg); transition: transform var(--dur-ui) var(--ease-cream); }
+  [aria-expanded='true'] .pp__pm::after { transform: rotate(0); }
+  .pp__acc-panel { padding: 14px 28px 18px; border-bottom: 1px solid var(--c-line-strong); color: var(--c-ink); line-height: 1.7; }
+  .pp__acc > .pp__acc-panel:last-child { border-bottom: 0; border-top: 1px solid var(--c-line-strong); }
+  .pp__acc-panel[hidden] { display: none; }
+  .pp__specs { display: grid; gap: 6px; margin-top: 10px; }
+  .pp__specs div { display: grid; grid-template-columns: 6.5em 1fr; gap: var(--s-3); }
+  .pp__specs dt { color: var(--c-ink-soft); }
+  .pp__steps { display: grid; gap: 4px; counter-reset: s; }
+  .pp__steps li { counter-increment: s; display: grid; grid-template-columns: 1.6em 1fr; }
+  .pp__steps li::before { content: counter(s, lower-roman); font-family: var(--f-serif); font-style: italic; color: var(--c-burgundy); }
+</style>
+
+<script>
+  import { track } from '../../scripts/analytics';
+  import { money } from '../../i18n/format';
+  import type { Locale } from '../../i18n/locales';
+
+  const panel = document.querySelector<HTMLElement>('[data-buy-panel]');
+  if (panel) {
+    const unit = Number(panel.dataset.unit), max = Number(panel.dataset.max);
+    const locale = panel.dataset.locale as Locale;
+    const checkout = panel.dataset.checkout!;
+    let qty = 1;
+    const render = () => {
+      document.querySelectorAll('[data-qty-value]').forEach((el) => { el.textContent = String(qty); });
+      document.querySelectorAll('[data-total]').forEach((el) => { el.textContent = money(locale, unit * qty); });
+      document.querySelectorAll<HTMLButtonElement>('[data-qty]').forEach((b) => {
+        const d = Number(b.dataset.qty);
+        b.disabled = (d < 0 && qty <= 1) || (d > 0 && qty >= max);
+      });
+      document.querySelectorAll<HTMLAnchorElement>('[data-buy]').forEach((a) => { a.href = `${checkout}?qty=${qty}`; });
+    };
+    document.querySelectorAll<HTMLButtonElement>('[data-qty]').forEach((b) => b.addEventListener('click', () => {
+      qty = Math.min(max, Math.max(1, qty + Number(b.dataset.qty)));
+      render();
+    }));
+    document.querySelectorAll<HTMLAnchorElement>('[data-buy]').forEach((a) => a.addEventListener('click', () => {
+      track('buy_click', { placement: a.dataset.buy || 'panel', quantity: qty });
+    }));
+    render();
+  }
+
+  const acc = document.querySelector<HTMLElement>('[data-acc]');
+  if (acc) {
+    const btns = [...acc.querySelectorAll<HTMLButtonElement>('[data-acc-btn]')];
+    let textureOpen = false;
+    const set = (target: HTMLButtonElement | null) => {
+      btns.forEach((b) => {
+        const on = b === target;
+        b.setAttribute('aria-expanded', String(on));
+        document.getElementById(b.getAttribute('aria-controls')!)!.hidden = !on;
+      });
+      const tex = target?.dataset.accBtn === 'texture';
+      if (tex !== textureOpen) {
+        textureOpen = tex;
+        document.dispatchEvent(new CustomEvent('morh:texture', { detail: { open: tex } }));
+      }
+    };
+    btns.forEach((b) => b.addEventListener('click', () => set(b.getAttribute('aria-expanded') === 'true' ? null : b)));
+  }
+</script>

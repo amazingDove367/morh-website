@@ -1,0 +1,40 @@
+---
+/*
+  개인정보 처리 안내 — 실제 처리 현황(수집 없음 · 세션 저장소의 비개인 요약 · 분석 도구 설정 여부)에 맞춰 작성
+  개인정보 보호법 제30조의 처리방침 항목 순서를 참고했으며, 운영 주체·책임자·시행일은 확정 전이라 표시하지 않음
+  분석 도구(PUBLIC_GA4_ID)를 설정하면 '방문 통계' 항목 문구가 자동으로 바뀜
+*/
+import Base from '../../../layouts/Base.astro';
+import { localeStaticPaths, type Locale } from '../../../i18n/locales';
+import { DICTS } from '../../../i18n';
+
+export const getStaticPaths = localeStaticPaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = DICTS[locale];
+const pv = t.privacy;
+const gaOn = /^G-[A-Z0-9]{4,}$/.test((import.meta.env.PUBLIC_GA4_ID || '').trim());
+const body = (v: string) => (v === 'ANALYTICS' ? (gaOn ? pv.analyticsOn : pv.analyticsOff) : v === 'PENDING' ? pv.pending : v);
+---
+<Base locale={locale} path="/privacy/" title={t.meta.privacyTitle} description={t.meta.privacyDesc}>
+  <article class="policy wrap" aria-labelledby="policy-title">
+    <h1 id="policy-title">{pv.title}</h1>
+    <p class="policy__date">{pv.updated}</p>
+    <p>{pv.intro}</p>
+    <ol class="policy__list">
+      {pv.sections.map(([h, v]) => (
+        <li><h2>{h}</h2><p class={v === 'PENDING' ? 'pending' : undefined}>{body(v)}</p></li>
+      ))}
+    </ol>
+    <p class="policy__future">{pv.future}</p>
+  </article>
+</Base>
+
+<style>
+  .policy { max-width: 760px; padding-block: var(--s-8); display: grid; gap: var(--s-4); }
+  .policy h1 { font-size: var(--fs-h2); }
+  .policy__date { color: var(--c-ink-soft); font-size: 0.8125rem; }
+  .policy__list { padding-inline-start: 1.2em; display: grid; gap: var(--s-4); }
+  .policy__list h2 { font-size: 1rem; margin-bottom: 4px; }
+  .policy__list p { font-size: 0.9375rem; line-height: 1.75; }
+  .policy__future { border-top: 1px solid var(--c-line); padding-top: var(--s-4); color: var(--c-ink-soft); font-size: 0.875rem; }
+</style>

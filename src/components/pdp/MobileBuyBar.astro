@@ -1,0 +1,54 @@
+---
+/* 모바일 하단 구매 바: 본문 구매 버튼이 화면 밖에 있을 때만 표시 */
+import { PRICE } from '../../data/commerce';
+import { localePath, type Locale } from '../../i18n/locales';
+import { DICTS, money } from '../../i18n';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = DICTS[locale];
+---
+<div class="buybar" data-buybar aria-hidden="true" inert>
+  <div class="buybar__inner">
+    <div>
+      <p class="buybar__name">{t.common.product}</p>
+      <p class="buybar__price"><strong data-total>{money(locale, PRICE.firstPurchase)}</strong> <span>{t.product.firstPrice}</span></p>
+    </div>
+    <a class="buybar__btn" id="cta-mobile" href={`${localePath(locale, '/checkout/')}?qty=1`} data-buy="mobile_bar">{t.product.mobileBar}</a>
+  </div>
+</div>
+
+<style>
+  .buybar { display: none; }
+  @media (max-width: 900px) {
+    /* 콘텐츠가 가려지지 않도록 바 높이 + 안전 영역만큼 본문 하단 여백을 항상 확보 (레이아웃 이동 없음) */
+    :global(body) { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+    .buybar {
+      display: block; position: fixed; inset-inline: 0; bottom: 0; z-index: var(--z-buybar);
+      background: var(--c-paper); border-top: 1px solid var(--c-line-strong);
+      padding: var(--s-3) var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom));
+      transform: translateY(110%); transition: transform var(--dur-panel) var(--ease-cream);
+    }
+    .buybar.is-visible { transform: none; }
+  }
+  .buybar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); }
+  .buybar__name { font-size: 0.8125rem; color: var(--c-ink-soft); }
+  .buybar__price strong { font-size: 1.0625rem; font-variant-numeric: tabular-nums; }
+  .buybar__price span { font-size: 0.75rem; color: var(--c-burgundy); margin-inline-start: 4px; }
+  .buybar__btn {
+    min-width: 132px; min-height: 52px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--c-burgundy); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.875rem;
+  }
+</style>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-buybar]');
+  const main = document.getElementById('cta-main');
+  if (bar && main && 'IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => {
+      const show = !entry.isIntersecting;
+      bar.classList.toggle('is-visible', show);
+      bar.toggleAttribute('inert', !show);
+      bar.setAttribute('aria-hidden', String(!show));
+    }).observe(main);
+  }
+</script>

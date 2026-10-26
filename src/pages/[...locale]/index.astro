@@ -1,0 +1,53 @@
+---
+/* 홈: 제품 → 크림 → 시간으로 이어지는 14일 루틴(스크롤 연동) + 브랜드 소개 */
+import Base from '../../layouts/Base.astro';
+import RitualScene from '../../components/home/RitualScene.astro';
+import { localePath, localeStaticPaths, withBase, type Locale } from '../../i18n/locales';
+import { DICTS } from '../../i18n';
+import { viewImg } from '../../data/product';
+
+export const getStaticPaths = localeStaticPaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = DICTS[locale];
+const PRODUCT = localePath(locale, '/product/');
+---
+<Base locale={locale} path="/" title={t.meta.homeTitle} description={t.meta.homeDesc}>
+  <div class="home">
+    <RitualScene locale={locale} />
+
+    <section class="about wrap" id="about" aria-labelledby="about-title">
+      <div class="about__text">
+        <p class="about__label">{t.home.aboutLabel}</p>
+        <h2 id="about-title" class="about__slogan"><span lang="en" dir="ltr">{t.home.slogan}</span></h2>
+        <p class="about__sub">{t.home.sloganKo} · {t.home.campaign}</p>
+        <p class="about__body">{t.home.aboutBody}</p>
+        <div class="about__links">
+          <a class="btn" href={PRODUCT}>{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="text-link" href={`${PRODUCT}#reviews`}>{t.common.reviews}</a>
+        </div>
+      </div>
+      <a class="about__card" href={PRODUCT}>
+        <img src={withBase(viewImg('front', 800))} srcset={`${withBase(viewImg('front', 400))} 400w, ${withBase(viewImg('front', 800))} 800w`}
+             sizes="(max-width: 900px) 80vw, 34vw" width="800" height="800" loading="lazy" decoding="async" alt={t.home.cardAlt} />
+        <span class="about__name">{t.common.product}</span>
+        <span class="about__vol">{t.common.volume}</span>
+      </a>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .about { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--s-8); align-items: center; padding-block: var(--s-10) var(--s-6); }
+  .about__text { display: grid; gap: var(--s-4); justify-items: start; }
+  .about__label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-ink-soft); }
+  .about__slogan { font-family: var(--f-serif); font-weight: 600; font-size: clamp(2.2rem, 4.4vw, 3.8rem); color: var(--c-burgundy); letter-spacing: -0.01em; line-height: 1.05; }
+  .about__sub { font-size: var(--fs-lead); color: var(--c-ink); }
+  .about__body { color: var(--c-ink-soft); max-width: 46ch; }
+  .about__links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-5); margin-top: var(--s-3); }
+  .about__card { display: grid; gap: var(--s-2); justify-items: center; text-decoration: none; border-block: 1px solid var(--c-line-strong); padding-block: var(--s-6); }
+  .about__card img { width: min(100%, 380px); }
+  .about__name { font-weight: 650; }
+  .about__vol { color: var(--c-ink-soft); font-size: 0.875rem; }
+  .about__card:hover .about__name { text-decoration: underline; }
+  @media (max-width: 900px) { .about { grid-template-columns: 1fr; padding-block: var(--s-9) var(--s-6); } }
+</style>
