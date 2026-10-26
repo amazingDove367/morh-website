@@ -77,6 +77,8 @@ ul[role='list'], ol[role='list'] { list-style: none; padding: 0; }
 :lang(zh-Hans) { --f-sans: 'Pretendard Variable', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'Hiragino Sans GB', sans-serif; }
 :lang(ar) { --f-sans: 'Geeza Pro', 'Noto Sans Arabic', 'Segoe UI', Tahoma, 'Pretendard Variable', sans-serif; }
 :lang(ar) body { word-break: normal; line-height: 1.8; }
+/* 일본어·중국어는 띄어쓰기가 없어 keep-all 이면 줄이 바뀌지 않음 → 글자 단위 줄바꿈(문장부호 규칙 준수) */
+:lang(ja) body, :lang(zh-Hans) body { word-break: normal; line-break: strict; }
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
 
 .text-link {
