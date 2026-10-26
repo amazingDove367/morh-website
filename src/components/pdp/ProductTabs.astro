@@ -1,0 +1,214 @@
+---
+/*
+  상세 설명 / 구매후기 탭 (WAI-ARIA Tabs 패턴, 자동 활성화)
+  - ←/→/Home/End 로 탭 이동(아랍어는 방향 반대), 선택되지 않은 패널은 hidden → 빈 공간 없음
+  - 두 패널 모두 초기 HTML 에 들어 있어 검색엔진이 읽을 수 있음
+  - #reviews 링크·'전체 후기 보기'·'더보기' → 구매후기 탭 선택 후 목록 시작점으로 이동
+  - #info-… 링크 → 상세 설명 탭 선택 후 해당 항목을 펼침
+  - 구매후기: 한 페이지 5개, 페이지 번호와 이전·다음. JS 가 없으면 전체 목록을 그대로 보여 줌
+*/
+import ProductInfo from './ProductInfo.astro';
+import { stars, reviewImage, PAGE_SIZE, type Review } from '../../data/reviews';
+import { withBase, type Locale } from '../../i18n/locales';
+import { DICTS, fill } from '../../i18n';
+interface Props { reviews: Review[]; locale: Locale }
+const { reviews, locale } = Astro.props;
+const t = DICTS[locale];
+const r = t.reviews;
+const pages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
+---
+<section class="tabs wrap" aria-label={t.tabs.label} data-tabs data-page-size={PAGE_SIZE}>
+  <div class="tabs__list" role="tablist" aria-label={t.tabs.label}>
+    <button type="button" role="tab" id="tab-detail" aria-controls="panel-detail" aria-selected="true" tabindex="0">{t.tabs.detail}</button>
+    <button type="button" role="tab" id="tab-reviews" aria-controls="panel-reviews" aria-selected="false" tabindex="-1">{t.tabs.reviews} <span class="tabs__count" data-tab-count>{reviews.length}</span></button>
+  </div>
+
+  <div class="tabs__panel" role="tabpanel" id="panel-detail" aria-labelledby="tab-detail" tabindex="0">
+    <div class="detail">
+      <div class="detail__intro">
+        <p class="detail__label" lang="en">{t.detail.label}</p>
+        <h2>{t.detail.heading}</h2>
+        <p class="muted">{t.detail.body}</p>
+      </div>
+      <figure class="detail__tex">
+        <img src={withBase('/images/cream-texture-420.webp')} width="420" height="560" loading="lazy" decoding="async" alt={t.detail.texAlt} />
+        <figcaption class="muted">{t.detail.texCaption}</figcaption>
+      </figure>
+    </div>
+    <ProductInfo locale={locale} />
+  </div>
+
+  <div class="tabs__panel" role="tabpanel" id="panel-reviews" aria-labelledby="tab-reviews" tabindex="0" hidden>
+    <div class="rv" id="reviews-list" tabindex="-1">
+      {reviews.length === 0 ? (
+        <p class="rv__empty">{r.empty}</p>
+      ) : (
+        <>
+          <ul role="list" class="rv__list" data-review-list>
+            {reviews.map((rv, i) => (
+              <li class="rv__item" id={`review-${rv.id}`} data-page={Math.floor(i / PAGE_SIZE) + 1}>
+                <div class="rv__meta">
+                  <p class="rv__stars"><span role="img" aria-label={fill(r.stars, { n: rv.rating })}>{stars(rv.rating)}</span></p>
+                  <p class="muted">{rv.author[locale]} · {rv.skin[locale]}</p>
+                </div>
+                <div class="rv__text">
+                  <h3>{rv.text[locale].title}</h3>
+                  <p>{rv.text[locale].body}</p>
+                  {rv.photos.length > 0 && (
+                    <ul role="list" class="rv__photos">
+                      {rv.photos.map((ph, k) => (
+                        <li>
+                          <button type="button" class="rv__photo" data-review-open={rv.id} data-photo={k} aria-haspopup="dialog"
+                                  aria-label={fill(r.openPhoto, { a: rv.author[locale], b: `${rv.text[locale].title} (${fill(r.photoCounter, { a: k + 1, b: rv.photos.length })})` })}>
+                            <img src={withBase(reviewImage(ph, 'thumb'))} width="400" height="400" loading="lazy" decoding="async" alt="" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {pages > 1 && (
+            <nav class="rv__pager" aria-label={r.pagination} data-pager hidden>
+              <button type="button" class="rv__step" data-page-step="-1" aria-label={r.prevPage}><span class="flip-rtl" aria-hidden="true">‹</span></button>
+              <ol role="list">
+                {Array.from({ length: pages }, (_, k) => (
+                  <li><button type="button" class="rv__num" data-page-go={k + 1} aria-label={fill(r.page, { n: k + 1 })}>{k + 1}</button></li>
+                ))}
+              </ol>
+              <button type="button" class="rv__step" data-page-step="1" aria-label={r.nextPage}><span class="flip-rtl" aria-hidden="true">›</span></button>
+            </nav>
+          )}
+        </>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .tabs { margin-top: var(--s-7); }
+  .tabs__list { display: grid; grid-template-columns: 1fr 1fr; border-block: 1px solid var(--c-line-strong); position: sticky; top: var(--header-h); z-index: 5; background: var(--c-paper); }
+  .tabs__list [role='tab'] { min-height: 52px; border: 0; background: none; cursor: pointer; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; color: var(--c-ink-soft); }
+  .tabs__list [role='tab'] + [role='tab'] { border-inline-start: 1px solid var(--c-line); }
+  .tabs__list [role='tab'][aria-selected='true'] { color: var(--c-burgundy); box-shadow: inset 0 -2px 0 var(--c-burgundy); }
+  .tabs__list [role='tab']:hover { background: var(--c-ivory); }
+  .tabs__count { font-variant-numeric: tabular-nums; font-weight: 500; }
+  .tabs__panel { padding: clamp(24px, 4vw, 56px) 0; }
+  .tabs__panel:focus-visible { outline-offset: -3px; }
+  .detail { display: grid; grid-template-columns: 1.4fr 0.6fr; gap: var(--s-7) var(--col-gap); margin-bottom: var(--s-8); align-items: start; }
+  .detail__intro { display: grid; gap: var(--s-4); }
+  .detail__label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-ink-soft); }
+  .detail__intro h2 { font-size: var(--fs-h2); max-width: 18ch; }
+  .detail__tex { margin: 0; }
+  .detail__tex img { width: 100%; max-width: 300px; mix-blend-mode: multiply; }
+  .detail__tex figcaption { font-size: 0.8125rem; margin-top: var(--s-2); }
+
+  .rv { display: grid; gap: var(--s-4); outline: none; scroll-margin-top: calc(var(--header-h) + 64px); }
+  .rv__empty { padding: var(--s-6) 0; text-align: center; color: var(--c-ink-soft); }
+  .rv__list { display: grid; border-top: 1px solid var(--c-line); }
+  .rv__item { display: grid; grid-template-columns: 180px 1fr; gap: var(--s-5); padding: var(--s-5) 0; border-bottom: 1px solid var(--c-line); }
+  .rv__item[hidden] { display: none; }
+  .rv__stars { color: var(--c-burgundy); letter-spacing: 0.1em; }
+  .rv__meta p { font-size: 0.8125rem; }
+  .rv__text { display: grid; gap: var(--s-2); }
+  .rv__text h3 { font-size: 1rem; }
+  .rv__photos { display: flex; gap: 8px; margin-top: var(--s-2); flex-wrap: wrap; }
+  .rv__photo { width: 88px; height: 88px; padding: 0; border: 1px solid var(--c-line); background: #fff; cursor: zoom-in; }
+  .rv__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rv__photo:hover { border-color: var(--c-burgundy); }
+  .rv__pager { display: flex; justify-content: center; align-items: center; gap: var(--s-2); margin-top: var(--s-4); }
+  .rv__pager[hidden] { display: none; }
+  .rv__pager ol { display: flex; gap: 4px; }
+  .rv__step, .rv__num { min-width: 44px; height: 44px; border: 1px solid transparent; background: none; cursor: pointer; font-variant-numeric: tabular-nums; color: var(--c-ink); }
+  .rv__step { font-size: 1.25rem; }
+  .rv__num[aria-current='page'] { border-color: var(--c-burgundy); color: var(--c-burgundy); font-weight: 700; }
+  .rv__step:disabled { opacity: 0.3; cursor: default; }
+  .rv__step:hover:not(:disabled), .rv__num:hover { color: var(--c-burgundy); }
+  @media (max-width: 900px) {
+    .detail { grid-template-columns: 1fr; }
+    .rv__item { grid-template-columns: 1fr; gap: var(--s-2); }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-tabs]');
+  if (root) {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const rtl = document.documentElement.dir === 'rtl';
+    const reduce = document.documentElement.classList.contains('reduce-motion');
+    const select = (t: HTMLButtonElement, focus = true) => {
+      tabs.forEach((x) => {
+        const on = x === t;
+        x.setAttribute('aria-selected', String(on));
+        x.tabIndex = on ? 0 : -1;
+        document.getElementById(x.getAttribute('aria-controls')!)!.hidden = !on;
+      });
+      if (focus) t.focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t));
+      t.addEventListener('keydown', (e) => {
+        const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
+        let j = -1;
+        if (e.key === fwd) j = (i + 1) % tabs.length;
+        if (e.key === back) j = (i - 1 + tabs.length) % tabs.length;
+        if (e.key === 'Home') j = 0;
+        if (e.key === 'End') j = tabs.length - 1;
+        if (j >= 0) { e.preventDefault(); select(tabs[j]); }
+      });
+    });
+
+    // ── 구매후기 페이지 나누기 ──
+    const list = root.querySelector<HTMLElement>('#reviews-list');
+    const items = [...root.querySelectorAll<HTMLElement>('[data-review-list] > li')];
+    const pager = root.querySelector<HTMLElement>('[data-pager]');
+    const pages = Math.max(1, ...items.map((li) => Number(li.dataset.page)));
+    let page = 1;
+    const goTo = (n: number, move: boolean) => {
+      page = Math.min(pages, Math.max(1, n));
+      items.forEach((li) => { li.hidden = Number(li.dataset.page) !== page; });
+      pager?.querySelectorAll<HTMLButtonElement>('[data-page-go]').forEach((b) => {
+        if (Number(b.dataset.pageGo) === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+      });
+      pager?.querySelectorAll<HTMLButtonElement>('[data-page-step]').forEach((b) => {
+        b.disabled = (Number(b.dataset.pageStep) < 0 && page === 1) || (Number(b.dataset.pageStep) > 0 && page === pages);
+      });
+      if (move && list) {
+        // 페이지를 바꾸면 목록 시작점으로 이동하고 포커스도 목록으로
+        list.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        list.focus({ preventScroll: true });
+      }
+    };
+    if (pager) {
+      pager.hidden = false;
+      pager.querySelectorAll<HTMLButtonElement>('[data-page-go]').forEach((b) => b.addEventListener('click', () => goTo(Number(b.dataset.pageGo), true)));
+      pager.querySelectorAll<HTMLButtonElement>('[data-page-step]').forEach((b) => b.addEventListener('click', () => goTo(page + Number(b.dataset.pageStep), true)));
+      goTo(1, false);
+    }
+
+    // ── 링크로 탭 열기 ──
+    const openReviews = () => {
+      select(tabs[1], false);
+      (list ?? root).scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      tabs[1].focus({ preventScroll: true });
+    };
+    document.querySelectorAll('[data-tab-link="reviews"], a[href$="#reviews"]').forEach((a) =>
+      a.addEventListener('click', (e) => { e.preventDefault(); openReviews(); history.replaceState(null, '', '#reviews'); }));
+    const openInfo = (id: string) => {
+      const el = document.getElementById(id);
+      if (!(el instanceof HTMLDetailsElement)) return;
+      select(tabs[0], false);
+      el.open = true;
+      el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    };
+    const fromHash = () => {
+      const h = location.hash.slice(1);
+      if (h === 'reviews') openReviews();
+      else if (h.startsWith('info-')) openInfo(h);
+    };
+    addEventListener('hashchange', fromHash);
+    if (location.hash) requestAnimationFrame(fromHash);
+  }
+</script>

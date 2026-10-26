@@ -1,0 +1,12 @@
+---
+/* 페이지 하단 구분선 + 'MORH / YOUR DAILY RITUAL' (레퍼런스 하단 띠) */
+---
+<div class="morh-foot-band" aria-hidden="true"><span>MORH</span><span>YOUR DAILY RITUAL</span></div>
+
+<style>
+  .morh-foot-band {
+    display: flex; justify-content: center; gap: 1.2em; border-top: var(--border); margin-top: var(--s-9);
+    padding: 12px var(--gutter); font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; color: var(--c-ink);
+  }
+  .morh-foot-band span + span::before { content: '/'; margin-right: 1.2em; font-weight: 400; }
+</style>

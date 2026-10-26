@@ -1,0 +1,96 @@
+---
+/*
+  제품 정보 아코디언 (참고: celimax 상세페이지의 정보 구조 — 문구·성분·효능은 가져오지 않음)
+  각 항목은 제목 아래에 질문에 바로 답하는 한 줄 요약을 항상 보여 주고, 펼치면 자세한 설명이 나옵니다.
+  - 여러 항목을 동시에 펼칠 수 있는 기본 <details> 사용 (키보드·스크린리더 기본 지원, 검색엔진이 읽는 실제 HTML)
+  - 확인되지 않은 정보(전성분·기능성 심사·제조업자 등)는 '출시 전 확인 중'으로 표시
+*/
+import { SHIPPING } from '../../data/commerce';
+import type { Locale } from '../../i18n/locales';
+import { DICTS, fill, money } from '../../i18n';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = DICTS[locale];
+const i = t.info;
+const ship = { a: money(locale, SHIPPING.standard), b: money(locale, SHIPPING.remoteTotal) };
+const items = [
+  { id: 'info-benefit', ...i.benefit },
+  { id: 'info-howto', ...i.howto },
+  { id: 'info-ingredients', ...i.ingredients },
+  { id: 'info-before', ...i.before },
+  { id: 'info-shipping', ...i.shipping, summary: fill(i.shipping.summary, ship) },
+  { id: 'info-returns', ...i.returns },
+];
+const pending = (v: string) => v === 'PENDING';
+---
+<section class="pi" aria-labelledby="pi-title" data-product-info>
+  <h2 id="pi-title" class="pi__heading">{i.heading}</h2>
+  <p class="pi__intro">{i.intro}</p>
+  <div class="pi__list">
+    {items.map((it) => (
+      <details class="pi__item" id={it.id}>
+        <summary>
+          <span class="pi__title">{it.title}{it.title !== it.en && <span class="pi__en" lang="en"> — {it.en}</span>}</span>
+          <span class="pi__summary">{it.summary}</span>
+          <span class="pi__pm" aria-hidden="true"></span>
+        </summary>
+        <div class="pi__body">
+          {it.id === 'info-benefit' && <ul>{i.benefit.points.map((x) => <li>{x}</li>)}</ul>}
+          {it.id === 'info-howto' && (
+            <>
+              <ol>{t.product.steps.map((x) => <li>{x}</li>)}</ol>
+              <p class="pi__muted">{i.howto.note}</p>
+            </>
+          )}
+          {it.id === 'info-ingredients' && <p>{i.ingredients.body}</p>}
+          {it.id === 'info-before' && (
+            <>
+              <table class="pi__table">
+                <tbody>
+                  {i.before.rows.map(([k, v]) => (
+                    <tr><th scope="row">{k}</th><td>{pending(v) ? <span class="pending">{t.common.pendingTag}</span> : v}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+              <p class="pi__muted">{i.before.pendingNote}</p>
+            </>
+          )}
+          {it.id === 'info-shipping' && <ul>{i.shipping.points.map((x) => <li>{fill(x, ship)}</li>)}</ul>}
+          {it.id === 'info-returns' && (
+            <>
+              <ul>{i.returns.points.map((x) => <li>{x}</li>)}</ul>
+              <p class="pi__muted">{i.returns.law}</p>
+            </>
+          )}
+        </div>
+      </details>
+    ))}
+  </div>
+</section>
+
+<style>
+  .pi { display: grid; gap: var(--s-3); }
+  .pi__heading { font-size: var(--fs-h3); }
+  .pi__intro { color: var(--c-ink-soft); font-size: 0.875rem; }
+  .pi__list { border-top: 1px solid var(--c-line-strong); margin-top: var(--s-3); }
+  .pi__item { border-bottom: 1px solid var(--c-line-strong); }
+  .pi__item summary {
+    list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 4px var(--s-4);
+    padding: 18px 0; min-height: 56px;
+  }
+  .pi__item summary::-webkit-details-marker { display: none; }
+  .pi__title { font-weight: 650; font-size: 0.9375rem; }
+  .pi__en { font-weight: 500; color: var(--c-ink-soft); font-size: 0.75rem; letter-spacing: 0.04em; }
+  .pi__summary { grid-column: 1; color: var(--c-ink-soft); font-size: 0.875rem; }
+  .pi__pm { grid-column: 2; grid-row: 1 / 3; align-self: center; position: relative; width: 12px; height: 12px; }
+  .pi__pm::before, .pi__pm::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: currentColor; }
+  .pi__pm::after { transform: rotate(90deg); transition: transform var(--dur-ui) var(--ease-cream); }
+  .pi__item[open] .pi__pm::after { transform: rotate(0); }
+  .pi__item summary:hover .pi__title { color: var(--c-burgundy); }
+  .pi__body { padding: 0 0 20px; font-size: 0.875rem; line-height: 1.75; display: grid; gap: 10px; max-width: 72ch; }
+  .pi__body ul, .pi__body ol { padding-inline-start: 1.2em; display: grid; gap: 6px; }
+  .pi__muted { color: var(--c-ink-soft); font-size: 0.8125rem; }
+  .pi__table { width: 100%; border-collapse: collapse; }
+  .pi__table th, .pi__table td { text-align: start; padding: 9px 0; border-bottom: 1px solid var(--c-line); vertical-align: top; }
+  .pi__table th { font-weight: 500; color: var(--c-ink-soft); width: 46%; padding-inline-end: var(--s-4); }
+</style>

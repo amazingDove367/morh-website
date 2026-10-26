@@ -1,0 +1,138 @@
+---
+/*
+  홈 상단 스크롤 장면: HOLD → OPEN → POUR → ZOOM → 14일 → 마무리 CTA
+  - 닫힌 제품은 실제 정면 사진(HTML), 열린 용기·크림·모래시계는 실사 레이어를 캔버스 하나에 합성(src/scripts/ritual.ts)
+  - 같은 DOM 하나로 두 가지 배치를 제공
+    · 기본(JS 없음 / 움직임 줄이기): 일반 흐름의 정적 장면 (닫힌 제품 → DAY 14 모래시계 + 카피 + 버튼)
+    · .js-motion: 고정(sticky) 무대 위에서 src/scripts/ritual.ts 가 스크롤 진행도로 모든 객체를 배치
+  - 핵심 문구와 제품 링크는 모두 실제 HTML 텍스트
+*/
+import { localePath, withBase, type Locale } from '../../i18n/locales';
+import { DICTS } from '../../i18n';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = DICTS[locale];
+const PRODUCT = localePath(locale, '/product/');
+const img = withBase;
+---
+<section class="ritual" id="ritual" aria-labelledby="ritual-title" data-ritual>
+  <div class="ritual__pin">
+    <div class="ritual__stage" data-stage>
+      <h1 id="ritual-title" class="ritual__title">
+        <span class="ritual__days" data-days>{t.home.days}</span>
+        <span class="ritual__sub" data-sub>{t.home.sub}</span>
+      </h1>
+
+      <canvas class="ritual__canvas" data-canvas aria-hidden="true"></canvas>
+
+      <figure class="ritual__glass">
+        <img src={img('/images/ritual/hg-day14-794.webp')} srcset={`${img('/images/ritual/hg-day14-480.webp')} 480w, ${img('/images/ritual/hg-day14-794.webp')} 794w`}
+             sizes="(max-width: 720px) 58vw, 300px" width="794" height="1388" loading="lazy" decoding="async"
+             alt={t.home.glassAlt} />
+      </figure>
+
+      <div class="ritual__jar">
+        <img class="ritual__lid" data-lid src={img('/images/ritual-lid-1016.webp')} srcset={`${img('/images/ritual-lid-520.webp')} 520w, ${img('/images/ritual-lid-1016.webp')} 1016w`}
+             sizes="(max-width: 720px) 60vw, 30vw" width="1016" height="332" alt="" fetchpriority="high" decoding="async" />
+        <div class="ritual__body" data-body>
+          <img src={img('/images/ritual-body-1016.webp')} srcset={`${img('/images/ritual-body-520.webp')} 520w, ${img('/images/ritual-body-1016.webp')} 1016w`}
+               sizes="(max-width: 720px) 60vw, 30vw" width="1016" height="508" fetchpriority="high" decoding="async"
+               alt={t.home.jarAlt} />
+        </div>
+      </div>
+
+      <p class="ritual__counter" data-counter aria-hidden="true">
+        <span class="ritual__counter-label">{t.home.counterDay}</span>
+        <span class="ritual__counter-num" data-day>01</span>
+        <span class="ritual__counter-of">/ 14</span>
+      </p>
+
+      <div class="ritual__final" data-final>
+        <h2 class="ritual__headline">{t.home.headline}</h2>
+        <p class="ritual__copy">{t.home.copy}</p>
+        <a class="btn ritual__cta" href={PRODUCT}>{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ───────── 공통 ───────── */
+  .ritual { position: relative; background: radial-gradient(ellipse at 50% 65%, #f0e8dc 0%, #f9f6f0 38%, var(--c-paper) 76%); }
+  .ritual__title { margin: 0; font-weight: 400; display: contents; }
+  .ritual__days {
+    font-family: var(--f-serif); font-weight: 600; color: var(--c-burgundy);
+    letter-spacing: -0.01em; line-height: 0.9; white-space: nowrap; text-align: center; font-variant-numeric: lining-nums;
+  }
+  .ritual__sub {
+    font-family: var(--f-sans); font-weight: 500; color: var(--c-burgundy);
+    letter-spacing: 0.32em; font-size: clamp(0.8125rem, 1.25vw, 1.0625rem); text-align: center; white-space: nowrap;
+  }
+  .ritual__lid, .ritual__body img { width: 100%; height: auto; display: block; user-select: none; -webkit-user-drag: none; }
+  .ritual__body { position: relative; }
+  .ritual__canvas { display: none; }
+  .ritual__glass { margin: 0; }
+  .ritual__glass img { width: 100%; height: auto; display: block; }
+  .ritual__counter { display: none; }
+  .ritual__headline { font-size: clamp(1.9rem, 3.6vw, 3.4rem); color: var(--c-burgundy); letter-spacing: -0.03em; line-height: 1.2; }
+  .ritual__copy { font-size: var(--fs-lead); color: var(--c-ink-soft); margin-top: var(--s-3); }
+  .ritual__cta { margin-top: var(--s-6); }
+
+  /* ───────── 정적 배치: JS 없음 · 움직임 줄이기 ───────── */
+  .ritual__stage {
+    display: grid; justify-items: center; gap: var(--s-5);
+    grid-template-columns: 1fr; grid-template-areas: 'days' 'jar' 'sub' 'glass' 'final';
+    padding: var(--s-7) var(--gutter) var(--s-9); max-width: var(--page-max); margin-inline: auto;
+  }
+  .ritual__days { grid-area: days; font-size: clamp(4.5rem, 15vw, 12rem); }
+  .ritual__jar { grid-area: jar; width: min(380px, 62vw); margin-top: -0.35em; }
+  .ritual__body { margin-top: -0.4%; }
+  .ritual__sub { grid-area: sub; }
+  .ritual__glass { grid-area: glass; width: min(300px, 58vw); margin-top: var(--s-7); }
+  .ritual__final { grid-area: final; text-align: center; }
+  @media (min-width: 900px) {
+    :global(html:not(.js-motion)) .ritual__stage { grid-template-columns: 1fr 1fr; grid-template-areas: 'days days' 'jar jar' 'sub sub' 'glass final'; }
+    :global(html:not(.js-motion)) .ritual__final { text-align: start; justify-self: start; align-self: center; }
+  }
+
+  /* ───────── 스크롤 연동 배치 ───────── */
+  :global(.js-motion) .ritual { height: calc(100svh - var(--header-h) + 520svh); }
+  :global(.js-motion) .ritual__pin { position: sticky; top: var(--header-h); height: calc(100svh - var(--header-h)); overflow: hidden; contain: layout paint; }
+  :global(.js-motion) .ritual__stage { display: block; position: relative; width: 100%; height: 100%; padding: 0; max-width: none; }
+  :global(.js-motion) .ritual__days,
+  :global(.js-motion) .ritual__sub,
+  :global(.js-motion) .ritual__lid,
+  :global(.js-motion) .ritual__body,
+  :global(.js-motion) .ritual__counter { position: absolute; left: 0; top: 0; margin: 0; transform-origin: 50% 50%; }
+  :global(.js-motion) .ritual__jar { position: static; width: auto; margin: 0; }
+  :global(.js-motion) .ritual__days { z-index: 1; }
+  :global(.js-motion) .ritual__sub { z-index: 1; }
+  :global(.js-motion) .ritual__glass { display: none; }
+  :global(.js-motion) .ritual__canvas { display: block; position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; }
+  :global(.js-motion) .ritual__body { z-index: 4; }
+  :global(.js-motion) .ritual__lid { z-index: 5; }
+  :global(.js-motion) .ritual__counter {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 0.08em; z-index: 6; font-variant-numeric: lining-nums tabular-nums; color: var(--c-burgundy); white-space: nowrap;
+    font-family: var(--f-serif); font-weight: 600; line-height: 1; transform-origin: 0 50%;
+  }
+  .ritual__counter-label { font-family: var(--f-sans); font-size: 0.2em; letter-spacing: 0.32em; font-weight: 600; }
+  .ritual__counter-num { font-size: 1em; font-variant-numeric: lining-nums tabular-nums; transition: color var(--dur-ui) var(--ease-cream), opacity var(--dur-ui); }
+  .ritual__counter-num.is-passing { color: var(--c-ink-soft); opacity: 0.55; }
+  .ritual__counter-of { font-size: 0.2em; color: var(--c-ink-soft); font-family: var(--f-sans); font-weight: 500; letter-spacing: 0.08em; }
+  :global(.js-motion) .ritual__final {
+    position: absolute; z-index: 7; text-align: start; top: 50%; inset-inline-start: 56%; width: min(40%, 520px);
+    translate: 0 -50%; opacity: 0; visibility: hidden;
+  }
+  :global(.js-motion) .ritual__final.is-on { visibility: visible; }
+  @media (max-width: 719px) {
+    :global(.js-motion) .ritual__counter { flex-direction: row; align-items: baseline; gap: 0.3em; }
+    :global(.js-motion) .ritual__final { inset-inline: var(--gutter); width: auto; top: auto; bottom: 7%; translate: 0 0; text-align: center; }
+    :global(.js-motion) .ritual__cta { width: 100%; }
+  }
+  :global(.js-motion) [data-lid], :global(.js-motion) [data-body] { will-change: transform; }
+</style>
+
+<script>
+  import { initRitual } from '../../scripts/ritual';
+  initRitual();
+</script>

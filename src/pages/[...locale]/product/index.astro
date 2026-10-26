@@ -1,0 +1,7 @@
+---
+import ProductPage from '../../../components/pdp/ProductPage.astro';
+import { localeStaticPaths, type Locale } from '../../../i18n/locales';
+export const getStaticPaths = localeStaticPaths;
+const { locale } = Astro.props as { locale: Locale };
+---
+<ProductPage locale={locale} />

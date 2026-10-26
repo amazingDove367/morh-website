@@ -1,0 +1,5 @@
+---
+/* 검증용: 구매후기가 한 건도 없을 때의 상세페이지(빈 상태). 항상 noindex, sitemap 제외 */
+import ProductPage from '../../components/pdp/ProductPage.astro';
+---
+<ProductPage locale="ko" reviews={[]} noindex />

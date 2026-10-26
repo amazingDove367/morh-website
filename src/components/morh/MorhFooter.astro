@@ -1,0 +1,48 @@
+---
+/* 공통 푸터: 브랜드 문장 · 쇼핑/도움 링크 · 사이트 성격 한 줄(반복 경고 대신 한 번만) */
+import { localePath, type Locale } from '../../i18n/locales';
+import { DICTS } from '../../i18n';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = DICTS[locale];
+const product = localePath(locale, '/product/');
+---
+<footer class="morh-footer">
+  <div class="wrap morh-footer__grid">
+    <div>
+      <p class="morh-footer__logo">MORH</p>
+      <p class="morh-footer__tag">{t.footer.tagline}</p>
+    </div>
+    <nav aria-label={t.footer.shop}>
+      <h2>{t.footer.shop}</h2>
+      <ul role="list">
+        <li><a href={product}>{t.common.product}</a></li>
+        <li><a href={`${product}#reviews`}>{t.common.reviews}</a></li>
+      </ul>
+    </nav>
+    <nav aria-label={t.footer.help}>
+      <h2>{t.footer.help}</h2>
+      <ul role="list">
+        <li><a href={`${product}#info-shipping`}>{t.common.shippingInfo}</a></li>
+        <li><a href={`${product}#info-returns`}>{t.common.returnsInfo}</a></li>
+        <li><a class="morh-footer__privacy" href={localePath(locale, '/privacy/')}>{t.common.privacy}</a></li>
+      </ul>
+    </nav>
+  </div>
+  <p class="wrap morh-footer__about">{t.footer.about}</p>
+</footer>
+
+<style>
+  .morh-footer { padding-block: var(--s-7) var(--s-8); font-size: 0.8125rem; }
+  .morh-footer__grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--s-6); }
+  .morh-footer__logo { font-family: var(--f-serif); font-weight: 600; font-size: 1.5rem; color: var(--c-burgundy); line-height: 1; direction: ltr; }
+  :global([dir='rtl']) .morh-footer__logo { text-align: right; }
+  .morh-footer__tag { margin-top: var(--s-3); color: var(--c-ink-soft); max-width: 36ch; }
+  .morh-footer h2 { font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: var(--s-3); color: var(--c-ink-soft); font-weight: 600; }
+  .morh-footer ul { display: grid; gap: 2px; }
+  .morh-footer a { text-decoration: none; display: inline-block; padding: 6px 0; min-height: 32px; }
+  .morh-footer a:hover { text-decoration: underline; }
+  .morh-footer__privacy { font-weight: 700; }
+  .morh-footer__about { margin-top: var(--s-6); padding-top: var(--s-4); border-top: var(--border); color: var(--c-ink-soft); font-size: 0.75rem; }
+  @media (max-width: 720px) { .morh-footer__grid { grid-template-columns: 1fr 1fr; } .morh-footer__grid > div:first-child { grid-column: 1 / -1; } }
+</style>

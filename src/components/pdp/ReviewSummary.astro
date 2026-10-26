@@ -1,0 +1,103 @@
+---
+/*
+  구매후기 요약 — 제품 갤러리·구매 정보와 '상세 설명 / 구매후기' 탭 사이 (탭 바깥이라 어느 탭에서도 유지)
+  ① 평점·후기 수 + 전체 후기 보기  ② 포토 후기 가로 목록(누르면 해당 후기 사진 확대 모달, 마지막 '더보기')  ③ 구매후기 요약
+  - 모든 수치는 같은 후기 목록(src/data/reviews.ts)에서 계산 → 탭·목록의 수치와 일치
+  - 요약은 AI 가 아니라 후기에 붙인 주제 태그 집계. 샘플 후기 안내는 이 영역에 한 번만 표시
+  - 후기가 없으면 빈 상태만 표시(사진 목록·요약 숨김)
+*/
+import { summarize, stars, reviewImage, type Review } from '../../data/reviews';
+import { withBase, type Locale } from '../../i18n/locales';
+import { DICTS, fill, num } from '../../i18n';
+interface Props { reviews: Review[]; locale: Locale }
+const { reviews, locale } = Astro.props;
+const t = DICTS[locale];
+const r = t.reviews;
+const sum = summarize(reviews);
+const full = Math.floor(sum.average);
+const [a, b] = sum.tags;
+---
+<section class="rs wrap" aria-labelledby="rs-title" data-review-summary>
+  <h2 id="rs-title" class="visually-hidden">{r.summaryTitle}</h2>
+  {sum.count === 0 ? (
+    <p class="rs__empty" data-rs-empty>{r.empty}</p>
+  ) : (
+    <>
+      <div class="rs__top">
+        <p class="rs__score">
+          <span class="rs__stars" aria-hidden="true">{stars(full)}</span>
+          <strong data-rs-average>{num(locale, sum.average, 1)}</strong>
+          <span class="visually-hidden">{fill(r.average, { n: num(locale, sum.average, 1) })}</span>
+        </p>
+        <p class="rs__count">
+          <span data-rs-count={sum.count}>{fill(r.count, { n: sum.count })}</span>
+          <a href="#reviews" data-tab-link="reviews" class="rs__all">{r.all} <span class="arrow" aria-hidden="true">→</span></a>
+        </p>
+      </div>
+      {sum.sample && <p class="rs__note" data-sample-notice>{r.notice} {sum.photoReviews.length > 0 && r.photoNote}</p>}
+
+      {sum.photoReviews.length > 0 && (
+        <ul class="rs__photos" role="list" aria-label={r.photos}>
+          {sum.photoReviews.map((rv) => (
+            <li>
+              <button type="button" class="rs__thumb" data-review-open={rv.id} data-photo="0" aria-haspopup="dialog"
+                      aria-label={fill(r.openPhoto, { a: rv.author[locale], b: rv.text[locale].title })}>
+                <img src={withBase(reviewImage(rv.photos[0], 'thumb'))} width="400" height="400" loading="lazy" decoding="async" alt="" />
+                {rv.photos.length > 1 && <span class="rs__multi" aria-hidden="true">{rv.photos.length}</span>}
+              </button>
+            </li>
+          ))}
+          <li>
+            <a class="rs__more" href="#reviews" data-tab-link="reviews">{r.more} <span class="arrow" aria-hidden="true">→</span></a>
+          </li>
+        </ul>
+      )}
+
+      {a && (
+        <div class="rs__insight">
+          <h3>{r.summaryTitle}</h3>
+          <p class="rs__headline">{b ? fill(r.summaryHead, { a: r.tags[a.tag], b: r.tags[b.tag] }) : fill(r.summaryHeadOne, { a: r.tags[a.tag] })}</p>
+          <ul role="list" class="rs__tags" aria-label={r.keywords}>
+            {sum.tags.map((tg) => <li>#{r.tags[tg.tag]} <span>{tg.count}</span></li>)}
+          </ul>
+          <p class="rs__method">{fill(r.summaryMethod, { n: sum.count })}</p>
+        </div>
+      )}
+    </>
+  )}
+</section>
+
+<style>
+  .rs { margin-top: var(--s-8); padding-top: var(--s-6); border-top: 1px solid var(--c-line-strong); font-size: 0.875rem; }
+  .rs__top { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
+  .rs__score { display: flex; align-items: baseline; gap: 10px; }
+  .rs__stars { color: var(--c-burgundy); letter-spacing: 0.08em; font-size: 1rem; }
+  .rs__score strong { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rs__count { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .rs__all { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; color: var(--c-ink); }
+  .rs__all:hover { color: var(--c-burgundy); text-decoration: underline; }
+  .rs__note { margin-top: var(--s-3); font-size: 0.75rem; color: var(--c-ink-soft); }
+  .rs__photos {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 132px; gap: 10px; margin-top: var(--s-5);
+    overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 6px; scrollbar-width: thin;
+  }
+  .rs__thumb, .rs__more { width: 132px; height: 132px; display: block; border: 1px solid var(--c-line); background: #fff; padding: 0; cursor: pointer; position: relative; }
+  .rs__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rs__thumb:hover { border-color: var(--c-burgundy); }
+  .rs__multi { position: absolute; inset-block-start: 6px; inset-inline-end: 6px; min-width: 20px; height: 20px; padding: 0 5px; display: grid; place-items: center; background: rgba(43, 26, 31, 0.7); color: #fff; font-size: 0.6875rem; font-weight: 600; }
+  .rs__more { display: grid; place-items: center; text-decoration: none; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; color: var(--c-ink); }
+  .rs__more:hover { color: var(--c-burgundy); border-color: var(--c-burgundy); }
+  .rs__insight { margin-top: var(--s-5); border: 1px solid var(--c-line-strong); padding: 18px 20px; display: grid; gap: 10px; }
+  .rs__insight h3 { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; color: var(--c-burgundy); }
+  .rs__headline { font-size: 0.9375rem; font-weight: 600; }
+  .rs__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rs__tags li { border: 1px solid var(--c-line-strong); padding: 3px 10px; font-size: 0.75rem; }
+  .rs__tags span { color: var(--c-burgundy); font-weight: 600; margin-inline-start: 2px; }
+  .rs__method { font-size: 0.6875rem; color: var(--c-ink-soft); }
+  .rs__empty { padding: var(--s-6) 0; text-align: center; color: var(--c-ink-soft); }
+  @media (max-width: 720px) {
+    /* 모바일: 가로 스와이프(스크롤 스냅 없이 기본 스크롤 그대로) */
+    .rs__photos { grid-auto-columns: 112px; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); }
+    .rs__thumb, .rs__more { width: 112px; height: 112px; }
+  }
+</style>
