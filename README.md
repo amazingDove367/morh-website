@@ -1,66 +1,171 @@
-# MORH 브랜드 웹사이트 — 1단계 프로토타입
+# MORH 모르 — 브랜드 웹사이트
 
-홈(Editorial Motion)과 제품 상세(Minimal Commerce)의 핵심 인터랙션 A/B 프로토타입입니다.
-2단계(전체 홈·상세 구현)는 사용자가 A/B를 선택한 뒤 진행합니다.
+MORH(모르)는 제가 퍼포먼스 마케팅 포트폴리오를 위해 기획한 스킨케어 브랜드입니다.
+이 저장소는 브랜드 홈, 제품 상세페이지, 주문 체험 화면으로 이루어진 MORH 웹사이트를 담고 있습니다.
 
-## 실행
+> 실제 판매·결제·배송은 하지 않습니다. 가격과 후기는 화면 구성을 위한 값이며, 주문 화면은 구매 흐름을 체험하고 측정하기 위한 것입니다.
 
-```bash
-npm install
-npm run build
-npx astro preview --port 4321 --host 127.0.0.1   # http://127.0.0.1:4321/
-# 개발 모드: npm run dev
-```
+## 왜 만들었나
 
-- 이미지 파생본 다시 만들기: `npm run images` (Python 3 + Pillow)
-- 타입 검사: `npm run check`
-- 자동 검증(프리뷰 서버 실행 중, 시스템 Chrome 사용): `npm run verify` (전체 123항목), `node scripts/verify-home.mjs` (홈 장면 63항목)
-- 첫 로드 용량·로컬 LCP: `node scripts/weights.mjs`
-- 스크린샷: `node scripts/shot.mjs <경로> <desktop|mobile> [scrollY] [출력파일]`
+광고나 검색으로 들어온 사람이 **브랜드 홈 → 제품 상세 → 구매 버튼 → 주문 체험 완료**까지 이어지는 흐름을 설계하고,
+각 단계를 이벤트로 측정할 수 있게 만드는 것이 목적입니다. 브랜드 전략·카피는 수업에서 작성한 MORH 기획 문서를 바탕으로 했습니다.
 
-## 경로
+## 버전과 작업 범위
 
-| 경로 | 내용 |
-|---|---|
-| `/` | **홈** — 14 DAYS 스크롤 장면 (제품 → 크림 → 모래시계 14일) |
-| `/prototype/` | 1단계 A/B 비교 허브 (점수·장단점) |
-| `/prototype/compare/` | A/B 나란히 비교 (데스크톱 1280×800 / 모바일 390×844) |
-| `/prototype/hero-a/` · `hero-b/` | ① Hero Motion |
-| `/prototype/transition-a/` · `transition-b/` | ② Section Transition |
-| `/prototype/product-a/` · `product-b/` | ③ Product Interaction (+ 탭·FAQ·구매 흐름) |
-| `/prototype/story/` | Hero A → Texture Zoom A → 제품 특징 연결 |
-| `/prototype/system/` | 디자인 시스템 초안 |
-| `/result/` | 구매 신청 완료(전환) 페이지 |
-| `/privacy/` | 개인정보 처리 안내 |
+- **V1 — 강사님 제공 버전**: 성동 SESAC 수업에서 강사님이 만들어 주신 한 페이지짜리 정적 랜딩페이지(HTML·CSS·JS)입니다.
+  구매 신청 폼, 개인정보 안내 팝업, 결과 페이지, 분석 도구를 붙일 자리가 들어 있습니다.
+- **V2 — 이번 개편**: 제가 Claude(Claude Code)를 활용해 같은 MORH 프로젝트를 다시 만든 버전입니다.
+  저는 방향과 요구 사항을 정하고, 레퍼런스·제품 사진·누끼컷·브랜드 카피를 제공하고, 결과를 검토하며 수정 요청을 했습니다.
+  코드 작성, 이미지 레이어 분리, 번역 초안, 브라우저 검증 스크립트는 Claude가 만들었습니다.
 
-모든 페이지 뒤에 `?motion=off` 를 붙이면 '움직임 줄이기' 상태로 볼 수 있습니다.
+V1 과 비교해 바뀐 점:
 
-## 홈 스크롤 장면
+| | V1 (archive-tutor) | V2 (develop) |
+|---|---|---|
+| 구조 | 정적 HTML 1페이지 + 결과 페이지 | Astro 정적 사이트: 홈 · 상세 · 주문 체험 · 완료 · 개인정보 안내 |
+| 홈 | 히어로 이미지와 섹션 | 스크롤에 맞춰 제품이 열리고 크림이 모래시계로 흘러 14일이 지나가는 장면 |
+| 구매 흐름 | 이름·연락처 입력 → 동의 팝업 → 결과 | 수량·금액·첫 구매 혜택·배송비·총액이 있는 주문 체험, 개인정보 입력 없이 완료 가능 |
+| 상세 정보 | 일부 수치·표 | 제품 정보 6항목 아코디언, 미확정 정보는 '출시 전 확인 중' |
+| 후기 | 예시 문구 | 샘플 후기 10건(안내 1회), 요약·페이지·사진 확대 |
+| 언어 | 한국어 | 한국어 · English · 日本語 · 简体中文 · العربية(RTL) |
+| 측정 | GA4·픽셀 자리(주석) | 측정 ID 를 넣으면 4개 이벤트 전송, 개인정보 미포함 |
 
-- `src/components/home/RitualScene.astro` — 장면 마크업 (정적 배치 + 스크롤 배치)
-- `src/scripts/ritual.ts` — 스크롤 진행도 → 객체 위치·크림·날짜 계산
-- `src/scripts/hourglass.ts` — 모래시계 형상과 크림 면적 계산 (위아래 총량 일정)
-- `src/components/home/Hourglass.astro` — 유리·프레임·크림을 분리한 SVG
-- 뚜껑/몸체 레이어: `public/images/ritual-lid-*.webp`, `ritual-body-*.webp` (정면 사진에서 분리)
+<details>
+<summary><b>버전 아카이브</b> (V1·V2 는 설명용 이름이며 정식 태그·릴리스가 아닙니다)</summary>
 
-## 폴더
+| 이름 | 브랜치 | 기준 커밋 | 내용 |
+|---|---|---|---|
+| V1 강사님 제공 버전 | [`archive-tutor`](https://github.com/amazingDove367/morh-website/tree/archive-tutor) | [`7d7ce28`](https://github.com/amazingDove367/morh-website/commit/7d7ce2871c0d4ad1ec84d024c2567362d075c1ab) | 정적 랜딩페이지 · 구매 신청 폼 · 개인정보 안내 팝업 · 결과 페이지 |
+| V2 MORH 개편 버전 | [`develop`](https://github.com/amazingDove367/morh-website/tree/develop) | `feature/morh-redesign` 병합 | 아래 커밋 참고 |
 
-- `references/` — 디자인 레퍼런스(배포 제외, 수정하지 않음)
-- `source-assets/` — 원본 복사본(용기 사진 5장, 크림 텍스처). 원본 폴더는 수정하지 않음
-- `public/images/` — 웹용 파생본(`scripts/build-images.py`로 생성)
-- `src/data/product.ts` — 제품 정보 단일 출처. 확정/기획자료/예시/미확정 상태를 구분
+V2 주요 커밋(`feature/morh-redesign`):
+
+- 📦 새 MORH 웹(Astro) 이전
+- ⚡️ 홈 스크롤 장면의 끊김 개선
+- 🔥 1단계 A/B 프로토타입과 쓰지 않는 코드 정리
+- ✨ 가격·배송비 단일 데이터와 주문 체험 흐름 추가
+- 💄 상세페이지 정보 패널·제품 정보·후기 갤러리 정리
+- 🌐 한국어 외 4개 언어 지원
+- 🔍 미리보기 검색 차단과 운영 검색 설정 분리
+- ✅ 브라우저 검증 스크립트를 새 구조에 맞게 교체
+- 📝 프로젝트 소개와 버전 기록 갱신
+
+V1 은 별도 주소로 배포되어 있지 않아, 사이트 안에 버전 선택기는 두지 않았습니다(현재 `main` 의 GitHub Pages 가 V1 입니다).
+
+</details>
 
 ## 기술
 
-Astro 7 (정적 HTML 출력, 페이지별 필요한 스크립트만 포함). 모션은 의존성 없이 직접 작성한 스크롤 유틸(`src/scripts/scroll.ts`).
-폰트는 Pretendard·Cormorant Garamond(둘 다 OFL-1.1)를 npm 패키지로 자체 호스팅 — 외부 폰트 요청 없음.
+- [Astro](https://astro.build) 7 — 정적 HTML 출력, 페이지마다 필요한 스크립트만 포함
+- TypeScript(strict) — `astro check`
+- 글꼴: Pretendard · Cormorant Garamond(npm 패키지로 자체 호스팅, OFL-1.1). 일본어·중국어·아랍어는 운영체제 기본 글꼴
+- 이미지: Python(Pillow·NumPy)으로 웹용 파생본과 홈 장면 레이어 생성 — `scripts/build-images.py`, `scripts/build-ritual.py`
+- 검증: Playwright(시스템 Chrome)로 만든 브라우저 검증 스크립트
+- 홈 장면 모션: 외부 모션 라이브러리 없이 스크롤 위치 → 캔버스 합성(`src/scripts/ritual.ts`)
 
-## 구매 흐름 (기존 morh-website 저장소와 동일한 원칙)
+## 설치·실행·검증
 
-구매하기 → 구매 신청 시트 → 제출 → 개인정보 처리 안내 동의 → 입력값 즉시 삭제 → `/result/`.
-입력칸에 `name` 속성이 없어 값이 전송되지 않습니다. `id="cta-main"`, `lead-form`, `cta-submit` 유지.
-**폼을 실제 수집 도구에 연결하거나 분석 도구를 붙이면 `src/components/PrivacyItems.astro` 문구를 반드시 다시 작성하세요.**
+```bash
+npm ci
+cp .env.example .env        # 필요할 때만 값 입력
+npm run dev                 # 개발 서버
+npm run build               # dist/ 생성
+npm run preview             # http://localhost:4321/
 
-## Git
+npm run check               # 타입 검사
+npm run verify              # 브라우저 검증(미리보기 서버 실행 중, 기본 http://127.0.0.1:4321)
+npm run verify:i18n         # 빌드 결과에서 비한국어 페이지의 한글 누락 점검
+npm run perf                # 홈 장면 프레임 측정(헤드리스 Chrome)
+```
 
-이 폴더는 Git 초기화하지 않았습니다. (상위 폴더 `/Users/hakyungsohn/Documents/GitHub` 가 원격 없는 Git 저장소이며, 이 폴더는 그 안에서 추적되지 않은 상태입니다.)
+주소: `/` 홈 · `/product/` 상세 · `/checkout/` 주문 체험 · `/checkout/complete/` 완료 · `/privacy/` 개인정보 처리 안내.
+다른 언어는 앞에 `/en/`, `/ja/`, `/zh-cn/`, `/ar/` 를 붙입니다. 아무 주소 뒤에 `?motion=off` 를 붙이면 '움직임 줄이기' 화면을 볼 수 있습니다.
+
+## 환경변수
+
+`.env.example` 을 복사해 `.env` 로 씁니다(값이 든 `.env` 는 Git 에 올리지 않습니다).
+
+| 이름 | 기본값 | 설명 |
+|---|---|---|
+| `PUBLIC_SITE_URL` | 비어 있음 | 운영 주소. 있으면 canonical·hreflang·sitemap 생성 |
+| `PUBLIC_INDEXABLE` | `false` | `true` 인 운영 배포에서만 검색 허용. 그 외에는 모든 페이지 noindex, robots.txt 전체 차단 |
+| `PUBLIC_GA4_ID` | 비어 있음 | GA4 측정 ID. 비어 있으면 분석 스크립트를 넣지 않고, 개인정보 안내도 '미사용'으로 표시 |
+| `BASE_PATH` | `/` | 하위 경로 배포 시(예: GitHub Pages 프로젝트 사이트 `/morh-website/`) |
+
+## 브랜치
+
+| 브랜치 | 역할 |
+|---|---|
+| `main` | 최종 공개·배포 버전. GitHub Pages 가 이 브랜치에서 배포됩니다(현재 V1). |
+| `develop` | 새 MORH 웹의 개발 버전(V2) |
+| `archive-tutor` | 강사님이 만든 기존 웹(V1) 보관 |
+| `feature/*` | 기능 작업 → 검증 후 `develop` 에 반영 |
+
+> V2 를 `main` 으로 배포하려면 Astro 빌드가 필요합니다. 지금의 브랜치 배포 방식(파일 그대로 공개)으로는 동작하지 않으므로,
+> GitHub Actions 로 `npm run build` 결과(`dist/`)를 배포하도록 Pages 설정을 바꾸고 `BASE_PATH=/morh-website/` 를 지정해야 합니다.
+
+## 측정 이벤트와 전환 지표
+
+GA4 측정 ID 를 설정한 환경에서만 전송합니다. 이름·연락처·주소 등 입력값은 어떤 이벤트에도 넣지 않습니다.
+
+| 이벤트 | 발생 시점 | 함께 보내는 값 |
+|---|---|---|
+| `view_item` | 상세페이지 진입 | `item_id`, `locale` |
+| `buy_click` | 구매하기 버튼 클릭 | `placement`(panel·mobile_bar), `quantity`, `locale` |
+| `begin_demo_checkout` | 주문 체험 화면 진입 | `quantity`, `locale` |
+| `demo_checkout_complete` | 주문 체험 완료 화면(세션당 1회, 새로고침 중복 없음) | `quantity`, `locale` |
+
+- **상세 → 구매 클릭률** = `buy_click` 세션 ÷ `view_item` 세션
+- **체험 시작률** = `begin_demo_checkout` ÷ `buy_click`
+- **체험 완료율** = `demo_checkout_complete` ÷ `begin_demo_checkout`
+
+`demo_checkout_complete` 는 실제 구매(`purchase`)나 매출이 아닙니다. 보고서에서 구매·매출로 집계하지 않습니다.
+
+## 결제 여부와 데이터 처리
+
+- 결제·주문·배송은 일어나지 않습니다. 주문 화면 상단과 완료 화면에서 짧게 안내합니다.
+- 주문 체험은 **체험용 가상 배송정보**로 끝까지 진행할 수 있고, 직접 입력은 선택입니다.
+  입력칸에는 `name` 속성이 없어 값이 주소창·서버로 가지 않으며, 완료 즉시 화면에서 지웁니다.
+- 완료 화면에 보여 줄 요약(수량·배송 지역 유형·금액)만 현재 탭의 `sessionStorage` 에 둡니다. 개인정보는 저장하지 않습니다.
+- 기존 V1 의 '저장하지 않는다는 점에 동의' 팝업은 수집이 없는 상황에 맞지 않아, 동의 대신 개인정보 처리 안내 페이지로 바꿨습니다.
+- 실제로 개인정보를 받게 되면(예: 구매 의향 신청) 주문 체험과 분리하고, 수집 항목·목적·보유 기간·운영 주체를 확정한 뒤 동의를 설계해야 합니다.
+  이 안내는 법적 검토를 거친 문서가 아닙니다.
+
+## 가격·배송 표시 기준
+
+한 곳(`src/data/commerce.ts`)에서 관리하며 상품 화면·주문 요약·모든 언어 화면이 같은 값을 씁니다.
+
+- 기준가 42,000원(취소선) · 첫 구매 혜택가 35,000원 · 할인율 16%((42,000−35,000)÷42,000 = 16.67%, 소수점 아래 버림)
+- 42,000원은 화면 표시 기준이며, 실제로 그 가격에 판매한 이력이 있다고 표현하지 않습니다.
+- 첫 구매 여부를 판별하는 기능은 없어서, 지금은 모든 주문에 혜택가가 적용된 상태를 보여 줍니다(화면에 안내).
+- 배송비 3,000원, 도서산간은 **총 5,000원**(추가 금액 아님). 주소로 도서산간을 자동 판정하지 않고 주문 화면에서 지역 유형을 고릅니다.
+- 언어를 바꿔도 가격은 원화(KRW), 배송은 대한민국 기준입니다. 해외 배송은 지원하지 않습니다.
+
+## 다국어
+
+- 한국어(기본) · English · 日本語 · 简体中文(간체, 중국 대륙 표기) · العربية(오른쪽→왼쪽)
+- 문구는 `src/i18n/dict/*.ts` 에 있고, 한국어 사전과 키가 하나라도 다르면 타입 검사에서 오류가 납니다.
+- 번역은 Claude 가 작성한 초안이며 원어민 검수를 거치지 않았습니다.
+
+## 확인된 기능과 남은 작업
+
+확인된 기능(브라우저 검증 99항목, `npm run verify`): 홈 장면의 연결·확대·14일 동기화·역방향 스크롤·화면 크기 변경·움직임 줄이기,
+상세페이지 가격·수량·텍스처 확대·후기 요약·후기 페이지·사진 확대·키보드 조작, 주문 체험 금액·도서산간·입력 검증·완료,
+입력값 미전송, 이벤트 중복 없음, 5개 언어와 아랍어 RTL, 미리보기 검색 차단.
+
+남은 작업:
+
+- [출시 전 확인 목록](docs/launch-checklist.md)의 제품·운영 정보 확정(전성분, 기능성 심사·보고, 제조업자·책임판매업자, 사용기한, 반품 정책 등)
+- 번역 원어민 검수, 실제 iPhone·Android·Safari·Firefox 확인
+- 홈 장면의 남은 시각 차이: 닫힌 정면 사진 → 열린 대각선 사진 전환은 두 사진을 겹쳐 바꾸는 방식(실제 3D 회전 아님),
+  크림 텍스처 원본 해상도(420×560)가 낮아 3배 확대 시 흐림
+- V2 배포용 GitHub Actions 와 운영 주소 확정
+
+## 폴더
+
+- `src/pages/[...locale]/` — 언어별 페이지(홈·상세·주문 체험·완료·개인정보)
+- `src/components/` — `home/`(스크롤 장면) · `pdp/`(상세) · `morh/`(헤더·푸터)
+- `src/data/` — `commerce.ts`(가격·배송) · `reviews.ts`(후기) · `product.ts`(제품 사진) · `ritual-geometry.json`(장면 좌표)
+- `src/i18n/` — 언어 설정과 사전
+- `references/` — 디자인 레퍼런스(배포 제외) · `source-assets/` — 원본 이미지 복사본 · `public/images/` — 웹용 파생본
+- `scripts/` — 이미지 생성 · 브라우저 검증 · 성능 측정
