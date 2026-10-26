@@ -34,7 +34,7 @@ export const PRODUCT = {
 
 /**
  * 주문 금액 계산
- * 첫 구매 혜택은 이번 주문의 모든 수량에 1개당 (기준가 − 혜택가)만큼 적용합니다(운영 정책 미확정 — README 확인 목록).
+ * 첫 구매 혜택은 수량과 관계없이 이번 주문의 모든 수량에 1개당 (기준가 − 혜택가)만큼 적용합니다(현재 모든 주문을 첫 구매로 봄).
  */
 export function orderSummary(qty: number, region: Region = 'standard') {
   const q = Math.min(PRODUCT.maxQty, Math.max(1, Math.round(qty)));
