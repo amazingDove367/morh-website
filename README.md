@@ -50,7 +50,7 @@ V2 주요 커밋(`feature/morh-redesign`):
 - ✅ 브라우저 검증 스크립트를 새 구조에 맞게 교체
 - 📝 프로젝트 소개와 버전 기록 갱신
 
-V1 은 별도 주소로 배포되어 있지 않아, 사이트 안에 버전 선택기는 두지 않았습니다(현재 `main` 의 GitHub Pages 가 V1 입니다).
+V1 은 별도 주소로 배포되어 있지 않아, 사이트 안에 버전 선택기는 두지 않았습니다. V1 은 `archive-tutor` 브랜치에서 파일로 확인할 수 있습니다.
 
 </details>
 
@@ -96,13 +96,12 @@ npm run perf                # 홈 장면 프레임 측정(헤드리스 Chrome)
 
 | 브랜치 | 역할 |
 |---|---|
-| `main` | 최종 공개·배포 버전. GitHub Pages 가 이 브랜치에서 배포됩니다(현재 V1). |
-| `develop` | 새 MORH 웹의 개발 버전(V2) |
+| `main` | 최종 공개·배포 버전. main 에 커밋이 들어오면 GitHub Pages 로 자동 배포 |
+| `develop` | 새 MORH 웹의 개발 버전 |
 | `archive-tutor` | 강사님이 만든 기존 웹(V1) 보관 |
-| `feature/*` | 기능 작업 → 검증 후 `develop` 에 반영 |
+| `feature/*` | 기능 작업 → 검증 후 `develop` 에 반영 → Pull Request 로 `main` 에 반영 |
 
-> V2 를 `main` 으로 배포하려면 Astro 빌드가 필요합니다. 지금의 브랜치 배포 방식(파일 그대로 공개)으로는 동작하지 않으므로,
-> GitHub Actions 로 `npm run build` 결과(`dist/`)를 배포하도록 Pages 설정을 바꾸고 `BASE_PATH=/morh-website/` 를 지정해야 합니다.
+공개 주소: https://amazingdove367.github.io/morh-website/ · 배포 방식과 설정은 [docs/deploy.md](docs/deploy.md)
 
 ## 측정 이벤트와 전환 지표
 
@@ -159,7 +158,6 @@ GA4 측정 ID 를 설정한 환경에서만 전송합니다. 이름·연락처·
 - 번역 원어민 검수, 실제 iPhone·Android·Safari·Firefox 확인
 - 홈 장면의 남은 시각 차이: 닫힌 정면 사진 → 열린 대각선 사진 전환은 두 사진을 겹쳐 바꾸는 방식(실제 3D 회전 아님),
   크림 텍스처 원본 해상도(420×560)가 낮아 3배 확대 시 흐림
-- V2 배포용 GitHub Actions 와 운영 주소 확정
 
 ## 폴더
 
