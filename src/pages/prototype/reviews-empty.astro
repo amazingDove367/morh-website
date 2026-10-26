@@ -1,8 +1,0 @@
----
-/* 검증용: 구매후기가 한 건도 없을 때의 상세페이지 (빈 상태 확인). 검색 제외(noindex 기본) */
-import ProductPage from '../../components/ProductPage.astro';
-import PdpGallery from '../../components/pdp/PdpGallery.astro';
----
-<ProductPage reviews={[]}>
-  <PdpGallery />
-</ProductPage>
