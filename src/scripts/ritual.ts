@@ -60,6 +60,8 @@ function loadImg(src: string) {
   const im = new Image();
   im.decoding = 'async';
   im.src = src;
+  // 처음 그릴 때 디코딩으로 프레임이 밀리지 않도록 미리 디코딩
+  im.decode?.().catch(() => {});
   return im;
 }
 
@@ -80,7 +82,7 @@ export function initRitual() {
   const dayEl = q<HTMLElement>('[data-day]');
   const fin = q<HTMLElement>('[data-final]');
 
-  const base = '/images/ritual/';
+  const base = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/images/ritual/`;
   const img = {
     lid: loadImg(base + 'jar-lid.webp'),
     body: loadImg(base + 'jar-body.webp'),
@@ -92,8 +94,54 @@ export function initRitual() {
     neck: loadImg(base + 'hg-neck.webp'),
     ring: loadImg(base + 'hg-ring.webp'),
   };
+  type Key = keyof typeof img;
   const ready = (im: HTMLImageElement) => im.complete && im.naturalWidth > 0;
-  Object.values(img).forEach((im) => im.addEventListener('load', () => request()));
+
+  /*
+    표시 크기에 맞춘 축소본: 매 프레임 큰 원본(최대 1024×1536)을 축소해 그리면 저사양에서 캔버스 갱신이 밀림.
+    화면 크기가 정해질 때 필요한 최대 배율로 한 번만 축소해 두고(ImageBitmap) 그 결과를 그림.
+  */
+  const HG_KEYS: Key[] = ['empty', 'upper', 'lower', 'neck', 'ring'];
+  const bmp: Partial<Record<Key, { src: CanvasImageSource; f: number }>> = {};
+  const want: Partial<Record<Key, number>> = {};
+  const S = (k: Key) => bmp[k] ?? { src: img[k], f: 1 };
+  function prescale(k: Key) {
+    const im = img[k], f = want[k] ?? 1;
+    if (!ready(im) || !('createImageBitmap' in window)) return;
+    if (f > 0.85) { delete bmp[k]; return; }
+    const w = Math.max(1, Math.round(im.naturalWidth * f)), h = Math.max(1, Math.round(im.naturalHeight * f));
+    createImageBitmap(im, { resizeWidth: w, resizeHeight: h, resizeQuality: 'high' })
+      .then((b) => { if (want[k] === f) { bmp[k] = { src: b, f: b.width / im.naturalWidth }; request(true); } })
+      .catch(() => {});
+  }
+  (Object.keys(img) as Key[]).forEach((k) => img[k].addEventListener('load', () => { prescale(k); request(true); }));
+
+  // 클립 경로·바닥 그림자는 한 번만 만들어 재사용
+  const toPath = (pts: number[]) => {
+    const path = new Path2D();
+    path.moveTo(pts[0], pts[1]);
+    for (let i = 2; i < pts.length; i += 2) path.lineTo(pts[i], pts[i + 1]);
+    path.closePath();
+    return path;
+  };
+  const clipUp = toPath(HG.clipUpper), clipLo = toPath(HG.clipLower);
+  const shadow = document.createElement('canvas');
+  shadow.width = 256; shadow.height = 32;
+  {
+    const sc = shadow.getContext('2d')!;
+    const gr = sc.createRadialGradient(128, 16, 2, 128, 16, 128);
+    gr.addColorStop(0, 'rgba(105,72,40,0.20)'); gr.addColorStop(1, 'rgba(105,72,40,0)');
+    sc.setTransform(1, 0, 0, 0.125, 0, 14); sc.fillStyle = gr; sc.fillRect(0, 0, 256, 256);
+  }
+
+  // 같은 값이면 DOM 스타일을 다시 쓰지 않음
+  const last = new WeakMap<HTMLElement, Record<string, string>>();
+  const css = (el: HTMLElement, prop: 'transform' | 'opacity', v: string) => {
+    const m = last.get(el) ?? {};
+    if (m[prop] === v) return;
+    m[prop] = v; last.set(el, m);
+    el.style[prop] = v;
+  };
 
   // 화면 크기에 따라 정해지는 값 (resize 때만 계산)
   let W = 0, H = 0, dpr = 1, mobile = false, J = 0, lidH = 0, bodyH = 0;
@@ -101,10 +149,11 @@ export function initRitual() {
 
   function layout() {
     W = stage.clientWidth; H = stage.clientHeight;
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    mobile = W < 720;
+    // 휴대폰은 캔버스 해상도를 1.5배까지만(채우는 픽셀 수 약 44% 감소) — 사진 레이어라 차이가 거의 보이지 않음
+    dpr = Math.min(mobile ? 1.5 : 2, window.devicePixelRatio || 1);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
-    mobile = W < 720;
     J = mobile ? Math.min(W * 0.66, H * 0.32) : Math.min(W * 0.3, H * 0.44);
     lidH = J * LID_R; bodyH = J * BODY_R;
     lid.style.width = body.style.width = `${J}px`;
@@ -139,21 +188,22 @@ export function initRitual() {
     L.subW = sub.offsetWidth; L.subH = sub.offsetHeight;
     L.daysW = days.offsetWidth; L.daysH = days.offsetHeight;
     L.cW = counter.offsetWidth; L.cH = counter.offsetHeight;
+
+    const gMax = Math.max(L.gP, L.gZ, L.gF) * dpr * 1.05;
+    const kMax = Math.max(L.kHold, L.kP * 1.12) * dpr * 1.05;
+    (Object.keys(img) as Key[]).forEach((k) => {
+      const f = Math.min(1, HG_KEYS.includes(k) ? gMax : kMax);
+      if (want[k] !== f) { want[k] = f; prescale(k); }
+    });
   }
 
   const place = (el: HTMLElement, cx: number, cy: number, w: number, h: number, deg = 0, s = 1) => {
-    el.style.transform = `translate3d(${cx - w / 2}px, ${cy - h / 2}px, 0) rotate(${deg}deg) scale(${s})`;
+    css(el, 'transform', `translate3d(${(cx - w / 2).toFixed(2)}px, ${(cy - h / 2).toFixed(2)}px, 0) rotate(${deg.toFixed(3)}deg) scale(${s.toFixed(4)})`);
   };
 
   /* ── 캔버스 그리기 도우미 ── */
   const lay = (n: keyof typeof HG.layers) => HG.layers[n];
   const jl = (n: keyof typeof JAR.layers) => JAR.layers[n];
-  function polygon(pts: number[]) {
-    ctx.beginPath();
-    ctx.moveTo(pts[0], pts[1]);
-    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
-    ctx.closePath();
-  }
   /** 모래시계 좌표계: 사진 픽셀 → 화면 */
   function hgSpace(hx: number, hy: number, g: number) {
     ctx.setTransform(dpr * g, 0, 0, dpr * g, dpr * (hx - HG_CX * g), dpr * (hy - HG_CY * g));
@@ -178,10 +228,10 @@ export function initRitual() {
 
     // 제목·부제
     const tOut = seg(p, 0.03, 0.12);
-    days.style.transform = `translate3d(${W / 2 - L.daysW / 2}px, ${L.daysY - L.daysH / 2 - tOut * H * 0.08}px, 0)`;
-    days.style.opacity = String(1 - tOut);
-    sub.style.transform = `translate3d(${W / 2 - L.subW / 2}px, ${L.subY - L.subH / 2 + tOut * H * 0.03}px, 0)`;
-    sub.style.opacity = String(1 - seg(p, 0.03, 0.09));
+    css(days, 'transform', `translate3d(${(W / 2 - L.daysW / 2).toFixed(2)}px, ${(L.daysY - L.daysH / 2 - tOut * H * 0.08).toFixed(2)}px, 0)`);
+    css(days, 'opacity', (1 - tOut).toFixed(3));
+    css(sub, 'transform', `translate3d(${(W / 2 - L.subW / 2).toFixed(2)}px, ${(L.subY - L.subH / 2 + tOut * H * 0.03).toFixed(2)}px, 0)`);
+    css(sub, 'opacity', (1 - seg(p, 0.03, 0.09)).toFixed(3));
 
     // 몸체 중심·크기·기울기 (닫힌 사진과 열린 사진이 같은 값을 공유)
     const exitY = -exit * (H * 1.05);
@@ -197,7 +247,7 @@ export function initRitual() {
     const lUp = lift * J * 0.14;
     const lc = { x: bx + Math.sin(rad(ang)) * (bodyH / 2 + lidH / 2 - J * OVER) * cs, y: by - Math.cos(rad(ang)) * (bodyH / 2 + lidH / 2 - J * OVER) * cs - lUp };
     place(lid, lc.x - lift * J * 0.06, lc.y, J, lidH, lAng, cs);
-    body.style.opacity = lid.style.opacity = String(1 - cf);
+    css(body, 'opacity', (1 - cf).toFixed(3)); css(lid, 'opacity', (1 - cf).toFixed(3));
 
     // ── 캔버스 ──
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -228,18 +278,15 @@ export function initRitual() {
     if (hgVisible) {
       // 바닥 그림자
       hgSpace(hx, hy, g);
-      const sh = ctx.createRadialGradient(HG_CX, 1438, 10, HG_CX, 1438, 430);
-      sh.addColorStop(0, 'rgba(105,72,40,0.20)'); sh.addColorStop(1, 'rgba(105,72,40,0)');
-      ctx.save(); ctx.translate(HG_CX, 1438); ctx.scale(1, 0.11); ctx.translate(-HG_CX, -1438);
-      ctx.fillStyle = sh; ctx.fillRect(HG_CX - 440, 1438 - 440, 880, 880); ctx.restore();
+      ctx.drawImage(shadow, HG_CX - 440, 1438 - 55, 880, 110);
 
       const e = lay('hg-empty');
-      ctx.drawImage(img.empty, e.x, e.y, e.w, e.h);
+      ctx.drawImage(S('empty').src, e.x, e.y, e.w, e.h);
       // 위쪽 크림
       if (upFrac > 0.001 && ready(img.upper)) {
         const u = lay('hg-upper');
-        ctx.save(); polygon(HG.clipUpper); ctx.clip();
-        ctx.drawImage(img.upper, u.x, u.y + dyU, u.w, u.h);
+        ctx.save(); ctx.clip(clipUp);
+        ctx.drawImage(S('upper').src, u.x, u.y + dyU, u.w, u.h);
         ctx.restore();
       }
       // 목을 지나는 줄기: 흐르는 동안만. 시작은 목에서 아래로 내려오고, 끝은 위쪽 끝이 떨어지며 사라짐
@@ -252,15 +299,16 @@ export function initRitual() {
         const tailTop = lerp(n.y, end, smooth(seg(moved, 0.965, 1)));
         ctx.save();
         ctx.beginPath(); ctx.rect(n.x - 10, tailTop, n.w + 20, Math.max(0, head - tailTop)); ctx.clip();
-        ctx.drawImage(img.neck, 0, 0, n.w, t0 - n.y, n.x, n.y, n.w, t0 - n.y);
-        ctx.drawImage(img.neck, 0, t0 - n.y, n.w, t1 - t0, n.x, t0, n.w, Math.max(1, end - t0));
+        const { src: ns, f: nf } = S('neck');
+        ctx.drawImage(ns, 0, 0, n.w * nf, (t0 - n.y) * nf, n.x, n.y, n.w, t0 - n.y);
+        ctx.drawImage(ns, 0, (t0 - n.y) * nf, n.w * nf, (t1 - t0) * nf, n.x, t0, n.w, Math.max(1, end - t0));
         ctx.restore();
       }
       // 아래쪽 크림
       if (loFrac > 0.001 && ready(img.lower)) {
         const lo = lay('hg-lower');
-        ctx.save(); polygon(HG.clipLower); ctx.clip();
-        ctx.drawImage(img.lower, lo.x, lo.y + dyL, lo.w, lo.h);
+        ctx.save(); ctx.clip(clipLo);
+        ctx.drawImage(S('lower').src, lo.x, lo.y + dyL, lo.w, lo.h);
         ctx.restore();
       }
     }
@@ -284,13 +332,10 @@ export function initRitual() {
       const sx = (x: number) => streamX + (x - JAR.streamX) * k;
       // 기둥은 원래 길이보다 짧으면 위에서부터 잘라 쓰고, 길면 세로로 늘림
       const natural = (JAR.drop - JAR.seam) * k;
-      if (colLen <= natural) {
-        const srcH = colLen / k;
-        ctx.drawImage(img.stream, 0, JAR.seam - s.y, s.w, srcH, sx(s.x), seamY, s.w * k, colLen);
-      } else {
-        ctx.drawImage(img.stream, 0, JAR.seam - s.y, s.w, JAR.drop - JAR.seam, sx(s.x), seamY, s.w * k, colLen);
-      }
-      ctx.drawImage(img.drop, sx(d.x), seamY + colLen - 4 * k, d.w * k, d.h * k);
+      const { src: ss, f: sf } = S('stream');
+      const srcH = colLen <= natural ? colLen / k : JAR.drop - JAR.seam;
+      ctx.drawImage(ss, 0, (JAR.seam - s.y) * sf, s.w * sf, srcH * sf, sx(s.x), seamY, s.w * k, colLen);
+      ctx.drawImage(S('drop').src, sx(d.x), seamY + colLen - 4 * k, d.w * k, d.h * k);
       ctx.restore();
     }
 
@@ -298,7 +343,7 @@ export function initRitual() {
     if (hgVisible && ready(img.ring)) {
       hgSpace(hx, hy, g);
       const r = lay('hg-ring');
-      ctx.drawImage(img.ring, r.x, r.y, r.w, r.h);
+      ctx.drawImage(S('ring').src, r.x, r.y, r.w, r.h);
     }
 
     // 열린 용기 몸체·뚜껑(같은 사진 속 위치 관계 유지). 전환 초기에는 닫힌 사진의 기울기에 맞춰 덜 기울어진 상태에서 시작
@@ -308,7 +353,7 @@ export function initRitual() {
       const b = jl('jar-body');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(bx, by); ctx.rotate(rel); ctx.scale(k, k); ctx.translate(-BCX, -BCY);
-      ctx.drawImage(img.body, b.x, b.y, b.w, b.h);
+      ctx.drawImage(S('body').src, b.x, b.y, b.w, b.h);
       // 뚜껑: 닫힌 뚜껑 위치에서 사진 속 위치로 이동
       const lidNative = { x: bx + (JAR.lidCenter[0] - BCX) * k, y: by + (JAR.lidCenter[1] - BCY) * k };
       const lt = smooth(seg(p, 0.09, 0.2));
@@ -316,25 +361,25 @@ export function initRitual() {
       const li = jl('jar-lid');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(lx, ly + exitY * 0.08); ctx.rotate(lerp(rad(18), 0, lt)); ctx.scale(k, k); ctx.translate(-JAR.lidCenter[0], -JAR.lidCenter[1]);
-      ctx.drawImage(img.lid, li.x, li.y, li.w, li.h);
+      ctx.drawImage(S('lid').src, li.x, li.y, li.w, li.h);
       ctx.globalAlpha = 1;
     }
 
     // 날짜
     const cIn = seg(p, 0.53, 0.58), cOut = seg(p, 0.88, 0.92);
-    counter.style.opacity = String(cIn * (1 - cOut));
+    css(counter, 'opacity', (cIn * (1 - cOut)).toFixed(3));
     const glassLeft = hx - (HG_W / 2) * g;
     const cxC = mobile ? W / 2 - L.cW / 2 : Math.max(24, Math.min(W * 0.14, glassLeft - L.cW - W * 0.05));
     const cyC = mobile ? H * 0.035 : H / 2 - L.cH / 2;
-    counter.style.transform = `translate3d(${cxC}px, ${cyC}px, 0)`;
+    css(counter, 'transform', `translate3d(${cxC.toFixed(2)}px, ${cyC.toFixed(2)}px, 0)`);
     const dd = Math.round(day);
     if (dd !== dayShown) { dayShown = dd; dayEl.textContent = String(dd).padStart(2, '0'); }
     dayEl.classList.toggle('is-passing', ![1, 7, 14].includes(dd)); // 01·07·14 는 항상 또렷하게
 
     // 마무리 카피
     const fIn = seg(p, 0.935, 0.985);
-    fin.style.opacity = String(fIn);
-    fin.style.transform = `translateY(${(1 - fIn) * 16}px)`;
+    css(fin, 'opacity', fIn.toFixed(3));
+    css(fin, 'transform', `translateY(${((1 - fIn) * 16).toFixed(2)}px)`);
     fin.classList.toggle('is-on', fIn > 0.01);
 
     // 검증용 상태(화면 좌표). 자동 검사 스크립트가 읽음
@@ -350,29 +395,49 @@ export function initRitual() {
     };
   }
 
-  let ticking = false;
-  let top0 = 0;
+  /*
+    렌더 루프
+    - 스크롤 이벤트에서는 목표 진행도만 갱신하고, 그리기는 화면 갱신 주기(requestAnimationFrame)에 한 번만
+    - 마우스 휠 한 칸(약 100px)이 한 프레임에 장면의 2% 이상을 건너뛰지 않도록, 표시 진행도를 목표로 짧게 따라가게 함
+      (시간 상수 70ms → 입력이 멈추면 약 0.2초 안에 정지, 큰 이동은 바로 맞춤)
+    - 값이 같으면 다시 그리지 않음
+  */
+  const TAU = 0.07;
+  let ticking = false, force = false;
+  let top0 = 0, shown = -1, lastT = 0, drawn = -1;
   function progress() {
     const r = sec.getBoundingClientRect();
     return clamp((top0 - r.top) / Math.max(1, r.height - H));
   }
-  const update = () => {
+  const update = (t: number) => {
     ticking = false;
     // 화면 크기 변경(회전·주소창) 직후 첫 프레임도 새 크기 기준으로 계산
-    if (stage.clientWidth !== W || stage.clientHeight !== H) layout();
-    frame(progress());
+    if (stage.clientWidth !== W || stage.clientHeight !== H) { layout(); force = true; }
+    const target = progress();
+    const dt = lastT ? Math.min(0.05, (t - lastT) / 1000) : 1 / 60;
+    lastT = t;
+    if (shown < 0 || Math.abs(target - shown) > 0.12) shown = target; // 처음·멀리 이동(링크 이동 등)은 즉시 맞춤
+    else shown += (target - shown) * (1 - Math.exp(-dt / TAU));
+    if (Math.abs(target - shown) < 0.0004) shown = target;
+    if (force || shown !== drawn) { frame(shown); drawn = shown; force = false; }
+    if (shown !== target) request(); else lastT = 0;
   };
-  function request() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+  function request(redraw = false) {
+    if (redraw) force = true;
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }
+  const onScroll = () => request();
 
   function relayout() {
     layout();
+    force = true;
     top0 = (document.querySelector('.morh-header') as HTMLElement | null)?.offsetHeight ?? 0;
-    frame(progress());
+    request(true);
   }
   relayout();
   new ResizeObserver(relayout).observe(stage);
-  addEventListener('scroll', request, { passive: true });
-  addEventListener('resize', request);
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
   document.fonts?.ready.then(relayout);
   (window as unknown as { __ritual: () => Record<string, unknown> }).__ritual = () => state;
   root.classList.add('is-live');

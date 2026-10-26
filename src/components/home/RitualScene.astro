@@ -91,7 +91,7 @@ const PRODUCT = '/prototype/product-a/';
 
   /* ───────── 스크롤 연동 배치 ───────── */
   :global(.js-motion) .ritual { height: calc(100svh - var(--header-h) + 520svh); }
-  :global(.js-motion) .ritual__pin { position: sticky; top: var(--header-h); height: calc(100svh - var(--header-h)); overflow: hidden; }
+  :global(.js-motion) .ritual__pin { position: sticky; top: var(--header-h); height: calc(100svh - var(--header-h)); overflow: hidden; contain: layout paint; }
   :global(.js-motion) .ritual__stage { display: block; position: relative; width: 100%; height: 100%; padding: 0; max-width: none; }
   :global(.js-motion) .ritual__days,
   :global(.js-motion) .ritual__sub,
