@@ -212,27 +212,37 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   let s = await sum();
   ok('[주문] 수량 2 전달 · 84,000 − 14,000 + 3,000 = 73,000원', s.subtotal === '84,000원' && s.benefit === '−14,000원' && s.shipping === '3,000원' && s.total === '73,000원', s);
   ok('[주문] 주소창에서 수량 값 정리', !page.url().includes('?'));
+  const before = await page.evaluate(() => {
+    const txt = document.body.innerText;
+    return { txt, pay: document.getElementById('cta-pay').textContent.trim(), title: document.querySelector('h1').textContent };
+  });
+  ok('[주문] 결제 전 화면에 포트폴리오·체험 문구 없음, 버튼은 결제하기', !/포트폴리오|체험/.test(before.txt) && before.pay === '결제하기' && before.title === '주문/결제', before.title + ' / ' + before.pay);
   await page.check('[data-region][value="remote"]');
   s = await sum();
   ok('[주문] 도서산간: 배송비 총 5,000원(추가 아님) → 75,000원', s.shipping === '5,000원' && s.total === '75,000원', s);
-  await page.click('#cta-submit');
-  ok('[주문] 확인 체크 없이 완료 불가 + 오류 문구', !(await page.isHidden('#co-confirm-err')) && page.url().includes('/checkout/') && !page.url().includes('complete'));
-  await page.check('[data-mode][value="own"]');
-  await page.check('#co-confirm');
-  await page.fill('#co-name', '홍길동'); await page.fill('#co-phone', '12'); await page.fill('#co-address', '테스트 주소');
-  await page.click('#cta-submit');
-  ok('[주문] 직접 입력: 잘못된 연락처 오류', (await page.textContent('#co-phone-err')).length > 0 && !page.url().includes('complete'));
-  await page.fill('#co-phone', '010-1234-5678');
   const ev1 = await page.evaluate(() => window.__events.map((e) => e[0]));
-  await Promise.all([page.waitForURL(/complete/), page.click('#cta-submit')]);
+  await Promise.all([page.waitForURL(/complete/), page.click('#cta-pay')]);
   await page.waitForLoadState('networkidle');
-  const done = await page.evaluate(() => ({ title: document.querySelector('h1').textContent, sum: document.querySelector('[data-summary-list]').textContent, store: sessionStorage.getItem('morh:demo-order'), events: window.__events }));
-  ok('[주문] 완료 화면: 체험 완료 안내 + 요약(75,000원)', done.title.includes('체험') && done.sum.includes('75,000원'), done);
-  const all = JSON.stringify({ url: page.url(), store: done.store, events: done.events, ev1, requests });
-  ok('[주문] 입력한 이름·연락처·주소가 URL·저장소·이벤트·요청 어디에도 없음', !/홍길동|1234-5678|01012345678|테스트 주소/.test(all), all.slice(0, 300));
-  ok('[주문] 측정 이벤트 구분: begin_demo_checkout → demo_checkout_complete(구매 이벤트 아님)', ev1.includes('begin_demo_checkout') && done.events.some((e) => e[0] === 'demo_checkout_complete') && !/"purchase"/.test(all));
-  await page.reload({ waitUntil: 'networkidle' });
-  ok('[주문] 완료 화면 새로고침 시 완료 이벤트 중복 없음', (await page.evaluate(() => window.__events.filter((e) => e[0] === 'demo_checkout_complete').length)) === 0);
+  const done = await page.evaluate(() => {
+    const lead = document.getElementById('launch-alert').getBoundingClientRect();
+    return { title: document.querySelector('h1').textContent, text: document.querySelector('.done__hero').innerText, img: document.querySelector('.done__figure img').naturalWidth,
+      sum: document.querySelector('[data-summary-list]').textContent, store: sessionStorage.getItem('morh:demo-order'), events: window.__events, leadTop: lead.top, leadBottom: lead.bottom, vh: innerHeight };
+  });
+  ok('[주문] 결제하기 → 바로 완료 화면: 감사 인사 + 포트폴리오 공개 + 사진 + 주문 내역(75,000원)', done.title.includes('결제하기까지') && done.text.includes('포트폴리오') && done.text.includes('반짝이는') && done.img > 0 && done.sum.includes('75,000원'), done.title);
+  ok('[주문] 출시 알림 받기가 첫 화면 아래쪽에 살짝 보임(스크롤하면 전체)', done.leadTop < done.vh - 40 && done.leadBottom > done.vh, { top: done.leadTop, bottom: done.leadBottom, vh: done.vh });
+  await page.click('#cta-lead');
+  ok('[알림] 빈 칸 신청 불가 + 오류', (await page.isVisible('#lead-name-err')) && (await page.isVisible('#lead-email-err')));
+  await page.fill('#lead-name', '홍길동'); await page.fill('#lead-email', 'hong@');
+  await page.click('#cta-lead');
+  ok('[알림] 이메일 형식 오류', (await page.textContent('#lead-email-err')).length > 0 && (await page.isHidden('[data-lead-done]')));
+  await page.fill('#lead-email', 'hong@example.com');
+  await page.click('#cta-lead');
+  const lead = await page.evaluate(() => ({ done: !document.querySelector('[data-lead-done]').hidden, formHidden: document.getElementById('lead-form').hidden && document.getElementById('lead-form').offsetHeight === 0, n: document.getElementById('lead-name').value, m: document.getElementById('lead-email').value, events: window.__events, store: JSON.stringify({ ...sessionStorage }) + JSON.stringify({ ...localStorage }) + document.cookie }));
+  const doneTxt = await page.textContent('[data-lead-done]');
+  ok('[알림] 신청 전에는 저장 안내 없음 → 신청 후 저장되지 않았다는 안내·감사 인사·홈 버튼, 입력값 즉시 삭제', lead.done && lead.formHidden && lead.n === '' && lead.m === '' && doneTxt.includes('저장되지 않고') && doneTxt.includes('감사') && (await page.isVisible('[data-lead-done] a[href$="/"]')) && !(await page.locator('.lead__note').count()), doneTxt.slice(0, 60));
+  const all = JSON.stringify({ url: page.url(), store: done.store, lstore: lead.store, events: lead.events, ev1, requests });
+  ok('[주문·알림] 입력한 이름·이메일이 URL·저장소·이벤트·요청 어디에도 없음', !/홍길동|hong@/.test(all), all.slice(0, 300));
+  ok('[측정] 주문서 시작(begin_checkout) → 알림 신청(generate_lead: launch_alert), purchase 없음', ev1.includes('begin_checkout') && lead.events.some((e) => e[0] === 'generate_lead' && e[1].lead_type === 'launch_alert') && !/"purchase"/.test(all));
   ok('[주문] 콘솔 오류 없음', errors.length === 0, errors);
   await ctx.close();
 }
@@ -240,6 +250,87 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
 {
   const { ctx, page } = await open('/checkout/?qty=1', MOBILE);
   ok('[주문 모바일] 가로 넘침 없음', (await overflowX(page)) <= 0);
+  await ctx.close();
+}
+
+// 결제 전 화면(홈·상세·개인정보)에 포트폴리오·체험 문구 없음
+for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
+  const { ctx, page } = await open(path);
+  const txt = await page.evaluate(() => document.body.innerText);
+  ok(`[문구] ${path} 에 포트폴리오·체험·데모 문구 없음`, !/포트폴리오|체험|데모/.test(txt), (txt.match(/.{0,20}(포트폴리오|체험|데모).{0,20}/) || [''])[0]);
+  await ctx.close();
+}
+
+/* ───────── 측정 이벤트 전체 ───────── */
+{
+  // 페이지를 넘어가는 클릭도 확인하도록, 테스트에서는 gtag 대신 탭 저장소(sessionStorage)에 기록
+  const ctx = await browser.newContext(DESKTOP);
+  await ctx.addInitScript(() => {
+    window.gtag = (cmd, name, params) => {
+      if (cmd !== 'event') return;
+      const l = JSON.parse(sessionStorage.getItem('__ga') || '[]'); l.push([name, params]); sessionStorage.setItem('__ga', JSON.stringify(l));
+    };
+  });
+  const page = await ctx.newPage();
+  const go = async (path) => { await page.goto(BASE + path, { waitUntil: 'networkidle' }); await page.waitForTimeout(300); };
+  // 홈: 장면 진행 · 헤더 · 언어 메뉴
+  await go('/');
+  await page.evaluate(() => { const sec = document.querySelector('[data-ritual]'); scrollTo(0, sec.getBoundingClientRect().top + scrollY + sec.offsetHeight); });
+  await page.waitForTimeout(800);
+  await page.click('[data-lang] summary');
+  await page.evaluate(() => document.querySelector('[data-ga="cta_click"][data-ga-cta-location="about_product"]').click());
+  await page.waitForLoadState('networkidle');
+  // 상세
+  await go('/product/');
+  await page.click('.pg__nav--next');
+  await page.click('#acc-product-btn');
+  await page.click('#acc-texture-btn');
+  await page.click('[data-pg-zoom-step="0.5"]');
+  await page.evaluate(() => document.querySelector('[data-pg-stage]').scrollIntoView({ block: 'center' }));
+  const st = await page.locator('[data-pg-stage]').boundingBox();
+  await page.mouse.move(st.x + st.width / 2, st.y + st.height / 2); await page.mouse.down(); await page.mouse.move(st.x + st.width / 2 + 80, st.y + st.height / 2 + 40, { steps: 5 }); await page.mouse.up();
+  await page.click('#acc-texture-btn');
+  await page.click('[data-qty="1"]');
+  await page.locator('.rs__thumb').first().click(); await page.click('[data-lb-close]');
+  await page.locator('.rs__thumb').nth(1).click(); await page.click('[data-lb-step="1"]'); await page.keyboard.press('Escape');
+  await page.click('.rs__all'); await page.waitForTimeout(500);
+  await page.click('[data-page-go="2"]'); await page.waitForTimeout(400);
+  await page.click('#tab-detail');
+  await page.locator('#info-shipping summary').click();
+  await Promise.all([page.waitForURL(/checkout/), page.click('#cta-main')]);
+  await page.waitForLoadState('networkidle');
+  // 주문/결제
+  await page.click('[data-co-qty="1"]');
+  await page.check('[data-region][value="remote"]');
+  await Promise.all([page.waitForURL(/complete/), page.click('#cta-pay')]);
+  await page.waitForLoadState('networkidle');
+  // 공개 화면 · 알림 신청
+  await page.click('.done__more');
+  await page.click('#cta-lead');
+  await page.fill('#lead-name', '김테스트'); await page.fill('#lead-email', 'tester@example.com');
+  await page.locator('#lead-email').blur();
+  await page.click('#cta-lead');
+  await page.click('[data-lead-done] a');
+  await page.waitForLoadState('networkidle');
+  // 푸터 · 언어 변경
+  await page.click('.morh-footer a[data-ga-menu-name="privacy"]'); await page.waitForLoadState('networkidle');
+  await page.click('[data-lang] summary');
+  await Promise.all([page.waitForURL(/\/en\//), page.click('[data-lang] a[hreflang="en"]')]);
+  await page.waitForLoadState('networkidle');
+  const log = await page.evaluate(() => JSON.parse(sessionStorage.getItem('__ga') || '[]'));
+  const src = (await import('node:fs')).readFileSync(new URL('../src/scripts/analytics.ts', import.meta.url), 'utf8');
+  const defined = [...src.slice(src.indexOf('export const EVENTS'), src.indexOf('} as const')).matchAll(/^  (\w+): \{ tier/gm)].map((m) => m[1]);
+  const seen = new Set(log.map((e) => e[0]));
+  const missing = defined.filter((n) => !seen.has(n));
+  ok(`[측정] 정의한 이벤트 ${defined.length}개가 모두 실제 행동으로 발생`, missing.length === 0, missing);
+  const pay = log.find((e) => e[0] === 'add_payment_info')?.[1];
+  ok('[측정] 결제하기(add_payment_info): 상세 +1·주문서 +1 → 3개, KRW 105,000·items·배송 지역', pay && pay.currency === 'KRW' && pay.value === 105000 && pay.items?.[0]?.quantity === 3 && pay.shipping_tier === 'remote', pay);
+  ok('[측정] 모든 이벤트에 page_locale·page_type', log.every((e) => e[1].page_locale && e[1].page_type), log.filter((e) => !e[1].page_type).map((e) => e[0]));
+  ok('[측정] 입력한 이름·이메일이 어떤 이벤트에도 없음(칸 이름만)', !/김테스트|tester@/.test(JSON.stringify(log)) && log.some((e) => e[0] === 'form_field_complete' && e[1].field_name === 'email'));
+  ok('[측정] 핵심 퍼널 순서: view_item → add_to_cart → begin_checkout → add_payment_info → form_start → generate_lead', (() => {
+    const order = ['view_item', 'add_to_cart', 'begin_checkout', 'add_payment_info', 'form_start', 'generate_lead'].map((n) => log.findIndex((e) => e[0] === n));
+    return order.every((v, i) => v >= 0 && (i === 0 || v > order[i - 1]));
+  })());
   await ctx.close();
 }
 
@@ -267,8 +358,8 @@ for (const [pre, lang, dir] of LOCS) {
     return { panelLeftOfGallery: panel.right <= gal.left + 1, imgTransform: img, prevOnRight: prevBtn.left > gal.left + gal.width / 2, price: document.querySelector('[data-first-price]').textContent, logo: getComputedStyle(document.querySelector('.morh-header__logo')).direction };
   });
   ok('[ar] RTL 배치: 정보 패널 왼쪽·갤러리 오른쪽, 이전 버튼 오른쪽, 사진·로고 반전 없음, 서양식 숫자 가격', rtl.panelLeftOfGallery && rtl.prevOnRight && rtl.imgTransform === 'none' && rtl.logo === 'ltr' && /35,000/.test(rtl.price), rtl);
-  await page.goto(BASE + '/ar/checkout/?qty=1', { waitUntil: 'networkidle' });
-  const inp = await page.evaluate(() => getComputedStyle(document.querySelector('#co-name')).direction);
+  await page.goto(BASE + '/ar/checkout/complete/', { waitUntil: 'networkidle' });
+  const inp = await page.evaluate(() => getComputedStyle(document.querySelector('#lead-name')).direction);
   ok('[ar] 입력란 오른쪽→왼쪽', inp === 'rtl');
   await ctx.close();
 }

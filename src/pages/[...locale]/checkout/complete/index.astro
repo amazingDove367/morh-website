@@ -1,49 +1,100 @@
 ---
-/* 주문 체험 완료 화면: 포트폴리오 체험 완료임을 분명히 안내하고, 개인정보가 아닌 체험 주문 요약만 표시 */
+/*
+  결제하기 이후 화면: 첫 화면에 감사 인사·사이트 성격 공개, 바로 아래에 '출시되면 알림 받기'(2차 전환)가
+  첫 화면 하단에 살짝 보이도록 배치. 개인정보가 아닌 주문 내역만 표시
+  - 알림 신청의 이름·이메일은 저장하지 않음(저장소가 정해지기 전까지). 제출하면 입력값을 즉시 지우고,
+    저장되지 않았다는 안내·감사 인사·홈 이동 버튼을 보여 줌. 측정 이벤트에는 입력값을 넣지 않음(칸 이름만)
+*/
 import Base from '../../../../layouts/Base.astro';
-import { localePath, localeStaticPaths, type Locale } from '../../../../i18n/locales';
+import { localePath, localeStaticPaths, withBase, type Locale } from '../../../../i18n/locales';
 import { DICTS } from '../../../../i18n';
 
 export const getStaticPaths = localeStaticPaths;
 const { locale } = Astro.props as { locale: Locale };
 const t = DICTS[locale];
 const c = t.checkout;
-const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, shipping: c.shipping, total: c.total, region: c.region, standard: c.regionStandard, remote: c.regionRemote };
+const l = t.lead;
+const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, shipping: c.shipping, total: c.total, region: c.region, standard: c.regionStandard, remote: c.regionRemote, errRequired: l.errRequired, errEmail: l.errEmail };
 ---
-<Base locale={locale} path="/checkout/complete/" title={t.meta.completeTitle} description={t.meta.completeDesc} noindex>
-  <section class="done wrap" aria-labelledby="done-title" data-complete data-locale={locale} data-strings={JSON.stringify(strings)}>
-    <div class="done__check" aria-hidden="true">✓</div>
-    <h1 id="done-title">{t.complete.title}</h1>
-    <p>{t.complete.body}</p>
-    <p class="done__wiped">{t.complete.wiped}</p>
-    <div class="done__summary" data-summary hidden>
-      <h2>{t.complete.summary}</h2>
+<Base pageType="complete" locale={locale} path="/checkout/complete/" title={t.meta.completeTitle} description={t.meta.completeDesc} noindex>
+  <div class="done wrap" data-complete data-locale={locale} data-strings={JSON.stringify(strings)}>
+    <section class="done__hero" aria-labelledby="done-title">
+      <figure class="done__figure">
+        <img src={withBase('/images/ritual/hg-day14-480.webp')} srcset={`${withBase('/images/ritual/hg-day14-480.webp')} 480w, ${withBase('/images/ritual/hg-day14-794.webp')} 794w`}
+             sizes="140px" width="480" height="839" alt={t.complete.imageAlt} />
+        <figcaption lang="en">{t.complete.caption}</figcaption>
+      </figure>
+      <h1 id="done-title">{t.complete.title}</h1>
+      <p class="done__blessing">{t.complete.blessing}</p>
+      <p class="done__reveal">{t.complete.reveal}</p>
+      <a class="done__more" href="#launch-alert" data-ga="cta_click" data-ga-cta-location="reveal_to_lead">{t.complete.more}</a>
+    </section>
+
+    <section class="lead" id="launch-alert" aria-labelledby="lead-title" data-lead>
+      <h2 id="lead-title">{l.title}</h2>
+      <p class="lead__desc">{l.desc}</p>
+      <form id="lead-form" class="lead__form" novalidate autocomplete="off">
+        <!-- name 속성 없음: 값이 주소창·서버로 넘어가지 않음 -->
+        <label class="field"><span>{l.name}</span><input id="lead-name" data-field="name" type="text" maxlength="30" placeholder={l.namePh} required aria-describedby="lead-name-err" /><small id="lead-name-err" class="lead__err" hidden></small></label>
+        <label class="field"><span>{l.email}</span><input id="lead-email" data-field="email" type="email" inputmode="email" maxlength="80" placeholder={l.emailPh} required aria-describedby="lead-email-err" /><small id="lead-email-err" class="lead__err" hidden></small></label>
+        <button type="submit" class="btn" id="cta-lead">{l.submit}</button>
+      </form>
+      <div class="lead__done" data-lead-done role="status" tabindex="-1" hidden>
+        <p class="lead__done-title">{l.doneTitle}</p>
+        <p>{l.done}</p>
+        <a class="btn" href={localePath(locale, '/')} data-ga="cta_click" data-ga-cta-location="lead_done_home">{t.common.toHome}</a>
+      </div>
+    </section>
+
+    <section class="done__summary" data-summary aria-labelledby="sum-title" hidden>
+      <h2 id="sum-title">{t.complete.summary}</h2>
       <dl data-summary-list></dl>
-    </div>
-    <p class="muted" data-summary-none hidden>{t.complete.none}</p>
+    </section>
     <div class="done__actions">
-      <a class="btn" href={localePath(locale, '/')}>{t.common.toHome}</a>
-      <a class="btn btn--ghost" href={localePath(locale, '/product/')}>{t.complete.again}</a>
+      <a class="btn btn--ghost" href={localePath(locale, '/')} data-ga="cta_click" data-ga-cta-location="complete_home">{t.common.toHome}</a>
+      <a class="btn btn--ghost" href={localePath(locale, '/product/')} data-ga="cta_click" data-ga-cta-location="complete_product">{t.complete.again}</a>
     </div>
-  </section>
+  </div>
 </Base>
 
 <style>
-  .done { max-width: 640px; padding-block: var(--s-9); display: grid; gap: var(--s-4); justify-items: center; text-align: center; }
-  .done__check { width: 64px; height: 64px; border-radius: 50%; background: var(--c-burgundy); color: #fff; display: grid; place-items: center; font-size: 1.75rem; }
-  .done h1 { font-size: var(--fs-h2); }
-  .done__wiped { padding: 10px 14px; border: 1px solid var(--c-line); background: var(--c-ivory); font-size: 0.875rem; }
+  .done { max-width: 640px; padding-block: var(--s-6) var(--s-9); display: grid; gap: var(--s-6); justify-items: center; text-align: center; }
+  .done__hero { display: grid; gap: var(--s-3); justify-items: center; }
+  .done__figure { margin: 0; display: grid; gap: 6px; justify-items: center; }
+  .done__figure img { width: 120px; height: auto; }
+  .done__figure figcaption { font-family: var(--f-serif); font-size: 0.875rem; letter-spacing: 0.06em; color: var(--c-burgundy); }
+  .done h1 { font-size: clamp(1.5rem, 3.2vw, 2.1rem); color: var(--c-burgundy); }
+  .done__blessing { font-size: 1rem; line-height: 1.75; max-width: 34em; }
+  .done__reveal { color: var(--c-ink-soft); font-size: 0.875rem; }
+  .done__more { font-size: 0.8125rem; font-weight: 600; color: var(--c-burgundy); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; }
+  .done__more:hover { text-decoration: underline; }
+  .lead { width: 100%; border: 1px solid var(--c-burgundy); background: #fff; padding: 22px 22px 18px; display: grid; gap: var(--s-3); text-align: start; scroll-margin-top: calc(var(--header-h) + 16px); }
+  .lead h2 { font-size: 1.125rem; color: var(--c-burgundy); }
+  .lead__desc { font-size: 0.9375rem; }
+  .lead__form { display: grid; gap: var(--s-3); }
+  .lead__form[hidden] { display: none; }
+  .lead__form .btn { min-height: 52px; }
+  .lead__err { color: #a0001c; font-size: 0.8125rem; }
+  .lead__err[hidden] { display: none; }
+  .lead__done { display: grid; gap: var(--s-3); justify-items: start; font-size: 0.9375rem; line-height: 1.75; padding: 16px 18px; background: var(--c-ivory); }
+  .lead__done-title { font-weight: 700; color: var(--c-burgundy); font-size: 1rem; }
+  .lead__done[hidden] { display: none; }
   .done__summary { width: 100%; border: 1px solid var(--c-line-strong); padding: 18px 20px; text-align: start; display: grid; gap: 10px; }
   .done__summary[hidden] { display: none; }
   .done__summary h2 { font-size: 0.8125rem; letter-spacing: 0.06em; }
   .done__summary dl { display: grid; gap: 6px; font-size: 0.9375rem; }
-  .done__summary dl div { display: flex; justify-content: space-between; gap: 12px; }
-  .done__summary dd { font-variant-numeric: tabular-nums; }
-  .done__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); justify-content: center; margin-top: var(--s-3); }
+  .done__summary :global(dl div) { display: flex; justify-content: space-between; gap: 12px; }
+  .done__summary :global(dd) { font-variant-numeric: tabular-nums; margin: 0; }
+  .done__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); justify-content: center; }
+  @media (max-width: 720px) {
+    .done { padding-top: var(--s-4); gap: var(--s-5); }
+    .done__figure img { width: 96px; }
+    .done__blessing { font-size: 0.9375rem; }
+  }
 </style>
 
 <script>
-  import { trackOnce } from '../../../../scripts/analytics';
+  import { track, trackOnce, trackFormFields } from '../../../../scripts/analytics';
   import { money } from '../../../../i18n/format';
   import type { Locale } from '../../../../i18n/locales';
   const root = document.querySelector<HTMLElement>('[data-complete]');
@@ -69,10 +120,36 @@ const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, 
         div.append(dt, dd); dl.append(div);
       });
       root.querySelector<HTMLElement>('[data-summary]')!.hidden = false;
-      // 실제 구매가 아닌 '주문 체험 완료' — 세션당 1회
-      trackOnce(`complete:${order.total}:${order.qty}`, 'demo_checkout_complete', { quantity: order.qty });
-    } else {
-      root.querySelector<HTMLElement>('[data-summary-none]')!.hidden = false;
+    }
+
+    // ── 출시 알림 신청(2차 전환): 입력값은 검증에만 쓰고 즉시 지움 ──
+    const form = document.getElementById('lead-form') as HTMLFormElement | null;
+    const done = root.querySelector<HTMLElement>('[data-lead-done]');
+    const name = document.getElementById('lead-name') as HTMLInputElement | null;
+    const email = document.getElementById('lead-email') as HTMLInputElement | null;
+    if (form && done && name && email) {
+      trackFormFields(form, 'launch_alert');
+      const setErr = (input: HTMLInputElement, msg: string) => {
+        const el = document.getElementById(`${input.id}-err`)!;
+        el.textContent = msg; el.hidden = !msg;
+        input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+      };
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const n = name.value.trim(), m = email.value.trim();
+        setErr(name, n ? '' : s.errRequired);
+        setErr(email, !m ? s.errRequired : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m) ? '' : s.errEmail);
+        const emailBad = !m ? 'required' : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m) ? '' : 'format';
+        if (!n) track('form_error', { form_id: 'launch_alert', field_name: 'name', error_type: 'required' });
+        if (emailBad) track('form_error', { form_id: 'launch_alert', field_name: 'email', error_type: emailBad });
+        if (!n) { name.focus(); return; }
+        if (emailBad) { email.focus(); return; }
+        name.value = ''; email.value = ''; form.reset();
+        form.hidden = true;
+        done.hidden = false;
+        done.focus?.();
+        trackOnce('lead:launch_alert', 'generate_lead', { lead_type: 'launch_alert' });
+      });
     }
   }
 </script>

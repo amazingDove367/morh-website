@@ -1,5 +1,5 @@
 ---
-/* 공통 푸터: 브랜드 문장 · 쇼핑/도움 링크 · 사이트 성격 한 줄(반복 경고 대신 한 번만) */
+/* 공통 푸터: 브랜드 문장 · 쇼핑/도움 링크 */
 import { localePath, type Locale } from '../../i18n/locales';
 import { DICTS } from '../../i18n';
 interface Props { locale: Locale }
@@ -16,20 +16,20 @@ const product = localePath(locale, '/product/');
     <nav aria-label={t.footer.shop}>
       <h2>{t.footer.shop}</h2>
       <ul role="list">
-        <li><a href={product}>{t.common.product}</a></li>
-        <li><a href={`${product}#reviews`}>{t.common.reviews}</a></li>
+        <li><a href={product} data-ga="nav_click" data-ga-menu-name="product" data-ga-menu-location="footer">{t.common.product}</a></li>
+        <li><a href={`${product}#reviews`} data-ga="nav_click" data-ga-menu-name="reviews" data-ga-menu-location="footer">{t.common.reviews}</a></li>
       </ul>
     </nav>
     <nav aria-label={t.footer.help}>
       <h2>{t.footer.help}</h2>
       <ul role="list">
-        <li><a href={`${product}#info-shipping`}>{t.common.shippingInfo}</a></li>
-        <li><a href={`${product}#info-returns`}>{t.common.returnsInfo}</a></li>
-        <li><a class="morh-footer__privacy" href={localePath(locale, '/privacy/')}>{t.common.privacy}</a></li>
+        <li><a href={`${product}#info-shipping`} data-ga="nav_click" data-ga-menu-name="shipping" data-ga-menu-location="footer">{t.common.shippingInfo}</a></li>
+        <li><a href={`${product}#info-returns`} data-ga="nav_click" data-ga-menu-name="returns" data-ga-menu-location="footer">{t.common.returnsInfo}</a></li>
+        <li><a class="morh-footer__privacy" href={localePath(locale, '/privacy/')} data-ga="nav_click" data-ga-menu-name="privacy" data-ga-menu-location="footer">{t.common.privacy}</a></li>
       </ul>
     </nav>
   </div>
-  <p class="wrap morh-footer__about">{t.footer.about}</p>
+  <p class="wrap morh-footer__about" lang="en">© MORH</p>
 </footer>
 
 <style>

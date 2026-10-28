@@ -133,12 +133,14 @@ const pages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
 </style>
 
 <script>
+  import { track } from '../../scripts/analytics';
   const root = document.querySelector<HTMLElement>('[data-tabs]');
   if (root) {
     const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
     const rtl = document.documentElement.dir === 'rtl';
     const reduce = document.documentElement.classList.contains('reduce-motion');
-    const select = (t: HTMLButtonElement, focus = true) => {
+    const select = (t: HTMLButtonElement, focus = true, method?: string) => {
+      if (method && t.getAttribute('aria-selected') !== 'true') track('tab_click', { tab_name: t.id.replace('tab-', ''), method });
       tabs.forEach((x) => {
         const on = x === t;
         x.setAttribute('aria-selected', String(on));
@@ -148,7 +150,7 @@ const pages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
       if (focus) t.focus();
     };
     tabs.forEach((t, i) => {
-      t.addEventListener('click', () => select(t));
+      t.addEventListener('click', () => select(t, true, 'click'));
       t.addEventListener('keydown', (e) => {
         const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
         let j = -1;
@@ -156,7 +158,7 @@ const pages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
         if (e.key === back) j = (i - 1 + tabs.length) % tabs.length;
         if (e.key === 'Home') j = 0;
         if (e.key === 'End') j = tabs.length - 1;
-        if (j >= 0) { e.preventDefault(); select(tabs[j]); }
+        if (j >= 0) { e.preventDefault(); select(tabs[j], true, 'keyboard'); }
       });
     });
 
@@ -166,8 +168,10 @@ const pages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
     const pager = root.querySelector<HTMLElement>('[data-pager]');
     const pages = Math.max(1, ...items.map((li) => Number(li.dataset.page)));
     let page = 1;
-    const goTo = (n: number, move: boolean) => {
+    const goTo = (n: number, move: boolean, method?: string) => {
+      const before = page;
       page = Math.min(pages, Math.max(1, n));
+      if (method && page !== before) track('review_page', { page_number: page, method });
       items.forEach((li) => { li.hidden = Number(li.dataset.page) !== page; });
       pager?.querySelectorAll<HTMLButtonElement>('[data-page-go]').forEach((b) => {
         if (Number(b.dataset.pageGo) === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
@@ -183,8 +187,8 @@ const pages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
     };
     if (pager) {
       pager.hidden = false;
-      pager.querySelectorAll<HTMLButtonElement>('[data-page-go]').forEach((b) => b.addEventListener('click', () => goTo(Number(b.dataset.pageGo), true)));
-      pager.querySelectorAll<HTMLButtonElement>('[data-page-step]').forEach((b) => b.addEventListener('click', () => goTo(page + Number(b.dataset.pageStep), true)));
+      pager.querySelectorAll<HTMLButtonElement>('[data-page-go]').forEach((b) => b.addEventListener('click', () => goTo(Number(b.dataset.pageGo), true, 'number')));
+      pager.querySelectorAll<HTMLButtonElement>('[data-page-step]').forEach((b) => b.addEventListener('click', () => goTo(page + Number(b.dataset.pageStep), true, Number(b.dataset.pageStep) < 0 ? 'prev' : 'next')));
       goTo(1, false);
     }
 
@@ -210,5 +214,10 @@ const pages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
     };
     addEventListener('hashchange', fromHash);
     if (location.hash) requestAnimationFrame(fromHash);
+
+    // 제품 정보 아코디언 열기(고정 키로 보내므로 문구를 바꿔도 측정은 그대로)
+    root.querySelectorAll<HTMLDetailsElement>('[data-product-info] details').forEach((d) => {
+      d.addEventListener('toggle', () => { if (d.open) track('faq_open', { faq_question: d.id.replace('info-', '') }); });
+    });
   }
 </script>

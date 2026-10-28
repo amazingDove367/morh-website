@@ -11,7 +11,7 @@ const { locale } = Astro.props as { locale: Locale };
 const t = DICTS[locale];
 const PRODUCT = localePath(locale, '/product/');
 ---
-<Base locale={locale} path="/" title={t.meta.homeTitle} description={t.meta.homeDesc}>
+<Base pageType="home" locale={locale} path="/" title={t.meta.homeTitle} description={t.meta.homeDesc}>
   <div class="home">
     <RitualScene locale={locale} />
 
@@ -22,11 +22,11 @@ const PRODUCT = localePath(locale, '/product/');
         <p class="about__sub">{t.home.sloganKo} · {t.home.campaign}</p>
         <p class="about__body">{t.home.aboutBody}</p>
         <div class="about__links">
-          <a class="btn" href={PRODUCT}>{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
-          <a class="text-link" href={`${PRODUCT}#reviews`}>{t.common.reviews}</a>
+          <a class="btn" href={PRODUCT} data-ga="cta_click" data-ga-cta-location="about_product">{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="text-link" href={`${PRODUCT}#reviews`} data-ga="review_more" data-ga-link-location="home_about">{t.common.reviews}</a>
         </div>
       </div>
-      <a class="about__card" href={PRODUCT}>
+      <a class="about__card" href={PRODUCT} data-ga="cta_click" data-ga-cta-location="about_card">
         <img src={withBase(viewImg('front', 800))} srcset={`${withBase(viewImg('front', 400))} 400w, ${withBase(viewImg('front', 800))} 800w`}
              sizes="(max-width: 900px) 80vw, 34vw" width="800" height="800" loading="lazy" decoding="async" alt={t.home.cardAlt} />
         <span class="about__name">{t.common.product}</span>

@@ -15,6 +15,7 @@
     0.88–1.00  FINAL  모래시계 축소·이동, 카피와 버튼
 */
 import geom from '../data/ritual-geometry.json';
+import { track } from './analytics';
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const seg = (p: number, a: number, b: number) => clamp((p - a) / (b - a));
@@ -406,6 +407,8 @@ export function initRitual() {
     - 값이 같으면 다시 그리지 않음
   */
   const TAU = 0.07;
+  const MILESTONES: [number, string][] = [[0.12, 'open'], [0.3, 'pour'], [0.56, 'days'], [0.95, 'final']];
+  const reached = new Set<string>();
   let ticking = false, force = false;
   let top0 = 0, shown = -1, lastT = 0, drawn = -1;
   function progress() {
@@ -423,6 +426,10 @@ export function initRitual() {
     else shown += (target - shown) * (1 - Math.exp(-dt / TAU));
     if (Math.abs(target - shown) < 0.0004) shown = target;
     if (force || shown !== drawn) { frame(shown); drawn = shown; force = false; }
+    // 장면 도달 측정: 각 장면은 페이지당 한 번(되돌아가도 다시 보내지 않음)
+    for (const [at, scene] of MILESTONES) {
+      if (target >= at && !reached.has(scene)) { reached.add(scene); track('ritual_progress', { scene, progress: Math.round(at * 100) }); }
+    }
     if (shown !== target) request(); else lastT = 0;
   };
   function request(redraw = false) {

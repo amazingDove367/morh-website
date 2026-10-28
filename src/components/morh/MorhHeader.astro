@@ -1,7 +1,7 @@
 ---
 /*
   홈·상세 공통 헤더 (레퍼런스 '텍스쳐.png'): 왼쪽 SHOP · 가운데 버건디 MORH · 오른쪽 ABOUT / BAG / 언어
-  아래 얇은 구분선과 반복 텍스트 띠. 헤더만 상단에 고정되고 텍스트 띠는 함께 스크롤됩니다.
+  아래 얇은 구분선. (반복 텍스트 띠는 내비게이션처럼 보인다는 피드백으로 2026-10-28 삭제)
   언어 선택: 같은 화면의 다른 언어 주소로 이동하는 링크 목록(URL 이 언어 상태의 기준)
 */
 import { LOCALES, LOCALE_META, localePath, type Locale } from '../../i18n/locales';
@@ -10,18 +10,19 @@ interface Props { locale: Locale; path: string; bagOpensCheckout?: boolean }
 const { locale, path, bagOpensCheckout = false } = Astro.props;
 const t = DICTS[locale];
 const product = localePath(locale, '/product/');
-const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
 ---
 <header class="morh-header">
   <div class="morh-header__inner">
     <nav class="morh-header__nav morh-header__nav--s" aria-label={t.a11y.shopNav}>
-      <a href={product} aria-current={path === '/product/' ? 'page' : undefined}>{t.nav.shop}</a>
+      <a href={product} aria-current={path === '/product/' ? 'page' : undefined} data-ga="nav_click" data-ga-menu-name="shop" data-ga-menu-location="header">{t.nav.shop}</a>
     </nav>
-    <a class="morh-header__logo" href={localePath(locale, '/')} aria-label={t.a11y.home}>MORH</a>
+    <a class="morh-header__logo" href={localePath(locale, '/')} aria-label={t.a11y.home} data-ga="nav_click" data-ga-menu-name="logo" data-ga-menu-location="header">MORH</a>
     <div class="morh-header__end">
       <nav class="morh-header__nav" aria-label={t.a11y.mainNav}>
-        <a href={`${localePath(locale, '/')}#about`}>{t.nav.about}</a>
-        <a href={bagOpensCheckout ? localePath(locale, '/checkout/') : product} aria-label={t.nav.bagLabel} data-bag>{t.nav.bag}</a>
+        <a href={`${localePath(locale, '/')}#about`} data-ga="nav_click" data-ga-menu-name="about" data-ga-menu-location="header">{t.nav.about}</a>
+        {bagOpensCheckout
+          ? <a href={`${localePath(locale, '/checkout/')}?qty=1`} aria-label={t.nav.bagLabel} data-bag data-buy="header">{t.nav.bag}</a>
+          : <a href={product} aria-label={t.nav.bagLabel} data-bag data-ga="nav_click" data-ga-menu-name="bag" data-ga-menu-location="header">{t.nav.bag}</a>}
       </nav>
       <details class="lang" data-lang>
         <summary aria-label={`${t.a11y.language} — ${t.a11y.currentLanguage}: ${LOCALE_META[locale].label}`}>
@@ -31,7 +32,8 @@ const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
         <ul role="list">
           {LOCALES.map((l) => (
             <li>
-              <a href={localePath(l, path)} hreflang={LOCALE_META[l].html} lang={LOCALE_META[l].html} aria-current={l === locale ? 'true' : undefined}>
+              <a href={localePath(l, path)} hreflang={LOCALE_META[l].html} lang={LOCALE_META[l].html} aria-current={l === locale ? 'true' : undefined}
+                 data-ga="language_change" data-ga-language-from={locale} data-ga-language-to={l}>
                 {LOCALE_META[l].label}
               </a>
             </li>
@@ -41,9 +43,6 @@ const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
     </div>
   </div>
 </header>
-<div class="morh-band" aria-hidden="true">
-  <p>{words.map((w) => <span>{w}</span>)}</p>
-</div>
 
 <style>
   .morh-header { position: sticky; top: 0; z-index: var(--z-header); background: var(--c-paper); border-bottom: var(--border); }
@@ -74,12 +73,6 @@ const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
   .lang a { display: block; padding: 10px 16px; font-size: 0.875rem; text-decoration: none; color: var(--c-ink); }
   .lang a:hover { background: var(--c-ivory); }
   .lang a[aria-current='true'] { color: var(--c-burgundy); font-weight: 650; }
-  .morh-band { border-bottom: var(--border); overflow: hidden; background: var(--c-paper); }
-  .morh-band p {
-    display: flex; gap: 1.6em; white-space: nowrap; padding: 6px var(--gutter); direction: ltr;
-    font-size: 0.5625rem; font-weight: 600; letter-spacing: 0.12em; color: var(--c-ink-soft);
-  }
-  .morh-band span + span::before { content: '/'; margin-right: 1.6em; font-weight: 400; }
   @media (max-width: 719px) {
     .morh-header__inner { grid-template-columns: auto 1fr auto; gap: 10px; }
     .morh-header__logo { font-size: 1.45rem; justify-self: center; }
@@ -90,8 +83,10 @@ const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
 </style>
 
 <script>
-  // 언어 메뉴: 바깥을 누르거나 Esc 로 닫기
+  import { track } from '../../scripts/analytics';
+  // 언어 메뉴: 바깥을 누르거나 Esc 로 닫기, 열 때 측정
   document.querySelectorAll<HTMLDetailsElement>('[data-lang]').forEach((d) => {
+    d.addEventListener('toggle', () => { if (d.open) track('language_menu_open'); });
     document.addEventListener('click', (e) => { if (d.open && !d.contains(e.target as Node)) d.open = false; });
     d.addEventListener('keydown', (e) => { if (e.key === 'Escape' && d.open) { d.open = false; d.querySelector('summary')?.focus(); } });
   });
