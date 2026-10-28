@@ -3,7 +3,7 @@
   - 계산은 src/data/commerce.ts 의 orderSummary 와 같은 규칙(화면 data-* 값 사용)
   - 개인정보는 받지 않음. 완료 화면에는 주문 내역(수량·배송 지역·금액)만 sessionStorage 로 전달
 */
-import { track } from './analytics';
+import { track, ecommerce } from './analytics';
 import { money } from '../i18n/format';
 import type { Locale } from '../i18n/locales';
 
@@ -40,15 +40,23 @@ export function initCheckout() {
     });
   };
   root.querySelectorAll<HTMLButtonElement>('[data-co-qty]').forEach((b) => b.addEventListener('click', () => {
+    const before = qty;
     qty = Math.min(max, Math.max(1, qty + Number(b.dataset.coQty)));
     render();
+    if (qty !== before) track('quantity_change', { quantity: qty, direction: qty > before ? 'increase' : 'decrease', location: 'checkout' });
   }));
-  root.querySelectorAll('[data-region]').forEach((r) => r.addEventListener('change', render));
+  root.querySelectorAll('[data-region]').forEach((r) => r.addEventListener('change', () => {
+    render();
+    track('shipping_region_select', { shipping_tier: region() });
+  }));
 
   render();
-  track('begin_demo_checkout', { quantity: qty });
+  track('begin_checkout', ecommerce(qty, { checkout_type: 'demo' }));
 
+  // 결제하기 = 1차 전환(주요 이벤트). 실제 결제가 없으므로 purchase 가 아닌 add_payment_info
   pay.addEventListener('click', () => {
+    const s = calc();
+    track('add_payment_info', ecommerce(qty, { payment_type: 'pay_button', shipping_tier: s.region, shipping: s.shipping, checkout_type: 'demo' }));
     try { sessionStorage.setItem(SUMMARY_KEY, JSON.stringify(calc())); } catch { /* 저장소를 쓸 수 없어도 완료 화면은 표시 */ }
     location.assign(d.complete!);
   });

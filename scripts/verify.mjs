@@ -237,13 +237,12 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   ok('[알림] 이메일 형식 오류', (await page.textContent('#lead-email-err')).length > 0 && (await page.isHidden('[data-lead-done]')));
   await page.fill('#lead-email', 'hong@example.com');
   await page.click('#cta-lead');
-  const lead = await page.evaluate(() => ({ done: !document.querySelector('[data-lead-done]').hidden, formHidden: document.getElementById('lead-form').hidden, n: document.getElementById('lead-name').value, m: document.getElementById('lead-email').value, events: window.__events, store: JSON.stringify({ ...sessionStorage }) + JSON.stringify({ ...localStorage }) + document.cookie }));
-  ok('[알림] 신청 → 감사 메시지, 입력값 즉시 삭제, 저장 안 함 안내', lead.done && lead.formHidden && lead.n === '' && lead.m === '' && (await page.textContent('.lead__note')).includes('저장하지 않습니다'));
+  const lead = await page.evaluate(() => ({ done: !document.querySelector('[data-lead-done]').hidden, formHidden: document.getElementById('lead-form').hidden && document.getElementById('lead-form').offsetHeight === 0, n: document.getElementById('lead-name').value, m: document.getElementById('lead-email').value, events: window.__events, store: JSON.stringify({ ...sessionStorage }) + JSON.stringify({ ...localStorage }) + document.cookie }));
+  const doneTxt = await page.textContent('[data-lead-done]');
+  ok('[알림] 신청 전에는 저장 안내 없음 → 신청 후 저장되지 않았다는 안내·감사 인사·홈 버튼, 입력값 즉시 삭제', lead.done && lead.formHidden && lead.n === '' && lead.m === '' && doneTxt.includes('저장되지 않고') && doneTxt.includes('감사') && (await page.isVisible('[data-lead-done] a[href$="/"]')) && !(await page.locator('.lead__note').count()), doneTxt.slice(0, 60));
   const all = JSON.stringify({ url: page.url(), store: done.store, lstore: lead.store, events: lead.events, ev1, requests });
   ok('[주문·알림] 입력한 이름·이메일이 URL·저장소·이벤트·요청 어디에도 없음', !/홍길동|hong@/.test(all), all.slice(0, 300));
-  ok('[측정] 주문 시작 → 결제하기 이후 완료 → generate_lead(launch_alert), purchase 없음', ev1.includes('begin_demo_checkout') && lead.events.some((e) => e[0] === 'demo_checkout_complete') && lead.events.some((e) => e[0] === 'generate_lead' && e[1].lead_type === 'launch_alert') && !/"purchase"/.test(all));
-  await page.reload({ waitUntil: 'networkidle' });
-  ok('[주문] 완료 화면 새로고침 시 완료 이벤트 중복 없음', (await page.evaluate(() => window.__events.filter((e) => e[0] === 'demo_checkout_complete').length)) === 0);
+  ok('[측정] 주문서 시작(begin_checkout) → 알림 신청(generate_lead: launch_alert), purchase 없음', ev1.includes('begin_checkout') && lead.events.some((e) => e[0] === 'generate_lead' && e[1].lead_type === 'launch_alert') && !/"purchase"/.test(all));
   ok('[주문] 콘솔 오류 없음', errors.length === 0, errors);
   await ctx.close();
 }
@@ -259,6 +258,79 @@ for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
   const { ctx, page } = await open(path);
   const txt = await page.evaluate(() => document.body.innerText);
   ok(`[문구] ${path} 에 포트폴리오·체험·데모 문구 없음`, !/포트폴리오|체험|데모/.test(txt), (txt.match(/.{0,20}(포트폴리오|체험|데모).{0,20}/) || [''])[0]);
+  await ctx.close();
+}
+
+/* ───────── 측정 이벤트 전체 ───────── */
+{
+  // 페이지를 넘어가는 클릭도 확인하도록, 테스트에서는 gtag 대신 탭 저장소(sessionStorage)에 기록
+  const ctx = await browser.newContext(DESKTOP);
+  await ctx.addInitScript(() => {
+    window.gtag = (cmd, name, params) => {
+      if (cmd !== 'event') return;
+      const l = JSON.parse(sessionStorage.getItem('__ga') || '[]'); l.push([name, params]); sessionStorage.setItem('__ga', JSON.stringify(l));
+    };
+  });
+  const page = await ctx.newPage();
+  const go = async (path) => { await page.goto(BASE + path, { waitUntil: 'networkidle' }); await page.waitForTimeout(300); };
+  // 홈: 장면 진행 · 헤더 · 언어 메뉴
+  await go('/');
+  await page.evaluate(() => { const sec = document.querySelector('[data-ritual]'); scrollTo(0, sec.getBoundingClientRect().top + scrollY + sec.offsetHeight); });
+  await page.waitForTimeout(800);
+  await page.click('[data-lang] summary');
+  await page.evaluate(() => document.querySelector('[data-ga="cta_click"][data-ga-cta-location="about_product"]').click());
+  await page.waitForLoadState('networkidle');
+  // 상세
+  await go('/product/');
+  await page.click('.pg__nav--next');
+  await page.click('#acc-product-btn');
+  await page.click('#acc-texture-btn');
+  await page.click('[data-pg-zoom-step="0.5"]');
+  await page.evaluate(() => document.querySelector('[data-pg-stage]').scrollIntoView({ block: 'center' }));
+  const st = await page.locator('[data-pg-stage]').boundingBox();
+  await page.mouse.move(st.x + st.width / 2, st.y + st.height / 2); await page.mouse.down(); await page.mouse.move(st.x + st.width / 2 + 80, st.y + st.height / 2 + 40, { steps: 5 }); await page.mouse.up();
+  await page.click('#acc-texture-btn');
+  await page.click('[data-qty="1"]');
+  await page.locator('.rs__thumb').first().click(); await page.click('[data-lb-close]');
+  await page.locator('.rs__thumb').nth(1).click(); await page.click('[data-lb-step="1"]'); await page.keyboard.press('Escape');
+  await page.click('.rs__all'); await page.waitForTimeout(500);
+  await page.click('[data-page-go="2"]'); await page.waitForTimeout(400);
+  await page.click('#tab-detail');
+  await page.locator('#info-shipping summary').click();
+  await Promise.all([page.waitForURL(/checkout/), page.click('#cta-main')]);
+  await page.waitForLoadState('networkidle');
+  // 주문/결제
+  await page.click('[data-co-qty="1"]');
+  await page.check('[data-region][value="remote"]');
+  await Promise.all([page.waitForURL(/complete/), page.click('#cta-pay')]);
+  await page.waitForLoadState('networkidle');
+  // 공개 화면 · 알림 신청
+  await page.click('.done__more');
+  await page.click('#cta-lead');
+  await page.fill('#lead-name', '김테스트'); await page.fill('#lead-email', 'tester@example.com');
+  await page.locator('#lead-email').blur();
+  await page.click('#cta-lead');
+  await page.click('[data-lead-done] a');
+  await page.waitForLoadState('networkidle');
+  // 푸터 · 언어 변경
+  await page.click('.morh-footer a[data-ga-menu-name="privacy"]'); await page.waitForLoadState('networkidle');
+  await page.click('[data-lang] summary');
+  await Promise.all([page.waitForURL(/\/en\//), page.click('[data-lang] a[hreflang="en"]')]);
+  await page.waitForLoadState('networkidle');
+  const log = await page.evaluate(() => JSON.parse(sessionStorage.getItem('__ga') || '[]'));
+  const src = (await import('node:fs')).readFileSync(new URL('../src/scripts/analytics.ts', import.meta.url), 'utf8');
+  const defined = [...src.slice(src.indexOf('export const EVENTS'), src.indexOf('} as const')).matchAll(/^  (\w+): \{ tier/gm)].map((m) => m[1]);
+  const seen = new Set(log.map((e) => e[0]));
+  const missing = defined.filter((n) => !seen.has(n));
+  ok(`[측정] 정의한 이벤트 ${defined.length}개가 모두 실제 행동으로 발생`, missing.length === 0, missing);
+  const pay = log.find((e) => e[0] === 'add_payment_info')?.[1];
+  ok('[측정] 결제하기(add_payment_info): 상세 +1·주문서 +1 → 3개, KRW 105,000·items·배송 지역', pay && pay.currency === 'KRW' && pay.value === 105000 && pay.items?.[0]?.quantity === 3 && pay.shipping_tier === 'remote', pay);
+  ok('[측정] 모든 이벤트에 page_locale·page_type', log.every((e) => e[1].page_locale && e[1].page_type), log.filter((e) => !e[1].page_type).map((e) => e[0]));
+  ok('[측정] 입력한 이름·이메일이 어떤 이벤트에도 없음(칸 이름만)', !/김테스트|tester@/.test(JSON.stringify(log)) && log.some((e) => e[0] === 'form_field_complete' && e[1].field_name === 'email'));
+  ok('[측정] 핵심 퍼널 순서: view_item → add_to_cart → begin_checkout → add_payment_info → form_start → generate_lead', (() => {
+    const order = ['view_item', 'add_to_cart', 'begin_checkout', 'add_payment_info', 'form_start', 'generate_lead'].map((n) => log.findIndex((e) => e[0] === n));
+    return order.every((v, i) => v >= 0 && (i === 0 || v > order[i - 1]));
+  })());
   await ctx.close();
 }
 

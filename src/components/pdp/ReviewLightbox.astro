@@ -70,6 +70,7 @@ const strings = { stars: r.stars, counter: r.photoCounter };
 </style>
 
 <script>
+  import { track } from '../../scripts/analytics';
   const dlg = document.querySelector<HTMLDialogElement>('[data-lightbox]');
   const raw = document.querySelector('[data-lb-data]');
   if (dlg && raw) {
@@ -106,18 +107,27 @@ const strings = { stars: r.stars, counter: r.photoCounter };
     };
     document.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest<HTMLElement>('[data-review-open]');
-      if (b) open(b.dataset.reviewOpen!, Number(b.dataset.photo || 0), b);
+      if (b) {
+        open(b.dataset.reviewOpen!, Number(b.dataset.photo || 0), b);
+        track('select_content', { content_type: 'review_photo', content_id: b.dataset.reviewOpen!, photo_index: Number(b.dataset.photo || 0) + 1, source: b.closest('[data-review-summary]') ? 'summary' : 'review_list' });
+      }
     });
-    prev.addEventListener('click', () => { idx = Math.max(0, idx - 1); show(); });
-    next.addEventListener('click', () => { if (cur) { idx = Math.min(cur.photos.length - 1, idx + 1); show(); } });
+    const nav = (direction: string, method: string) => track('lightbox_navigate', { direction, method, photo_index: idx + 1 });
+    prev.addEventListener('click', () => { idx = Math.max(0, idx - 1); show(); nav('prev', 'button'); });
+    next.addEventListener('click', () => { if (cur) { idx = Math.min(cur.photos.length - 1, idx + 1); show(); nav('next', 'button'); } });
     dlg.addEventListener('keydown', (e) => {
       if (!cur || cur.photos.length < 2) return;
       const fwd = rtl ? 'ArrowLeft' : 'ArrowRight', back = rtl ? 'ArrowRight' : 'ArrowLeft';
-      if (e.key === fwd && idx < cur.photos.length - 1) { idx++; show(); e.preventDefault(); }
-      if (e.key === back && idx > 0) { idx--; show(); e.preventDefault(); }
+      if (e.key === fwd && idx < cur.photos.length - 1) { idx++; show(); nav('next', 'keyboard'); e.preventDefault(); }
+      if (e.key === back && idx > 0) { idx--; show(); nav('prev', 'keyboard'); e.preventDefault(); }
     });
-    $('[data-lb-close]').addEventListener('click', () => dlg.close());
-    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
-    dlg.addEventListener('close', () => { opener?.focus(); opener = null; });
+    let closeMethod = 'esc';
+    $('[data-lb-close]').addEventListener('click', () => { closeMethod = 'button'; dlg.close(); });
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) { closeMethod = 'backdrop'; dlg.close(); } });
+    dlg.addEventListener('close', () => {
+      track('lightbox_close', { method: closeMethod });
+      closeMethod = 'esc';
+      opener?.focus(); opener = null;
+    });
   }
 </script>

@@ -15,13 +15,15 @@ const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
 <header class="morh-header">
   <div class="morh-header__inner">
     <nav class="morh-header__nav morh-header__nav--s" aria-label={t.a11y.shopNav}>
-      <a href={product} aria-current={path === '/product/' ? 'page' : undefined}>{t.nav.shop}</a>
+      <a href={product} aria-current={path === '/product/' ? 'page' : undefined} data-ga="nav_click" data-ga-menu-name="shop" data-ga-menu-location="header">{t.nav.shop}</a>
     </nav>
-    <a class="morh-header__logo" href={localePath(locale, '/')} aria-label={t.a11y.home}>MORH</a>
+    <a class="morh-header__logo" href={localePath(locale, '/')} aria-label={t.a11y.home} data-ga="nav_click" data-ga-menu-name="logo" data-ga-menu-location="header">MORH</a>
     <div class="morh-header__end">
       <nav class="morh-header__nav" aria-label={t.a11y.mainNav}>
-        <a href={`${localePath(locale, '/')}#about`}>{t.nav.about}</a>
-        <a href={bagOpensCheckout ? localePath(locale, '/checkout/') : product} aria-label={t.nav.bagLabel} data-bag>{t.nav.bag}</a>
+        <a href={`${localePath(locale, '/')}#about`} data-ga="nav_click" data-ga-menu-name="about" data-ga-menu-location="header">{t.nav.about}</a>
+        {bagOpensCheckout
+          ? <a href={`${localePath(locale, '/checkout/')}?qty=1`} aria-label={t.nav.bagLabel} data-bag data-buy="header">{t.nav.bag}</a>
+          : <a href={product} aria-label={t.nav.bagLabel} data-bag data-ga="nav_click" data-ga-menu-name="bag" data-ga-menu-location="header">{t.nav.bag}</a>}
       </nav>
       <details class="lang" data-lang>
         <summary aria-label={`${t.a11y.language} — ${t.a11y.currentLanguage}: ${LOCALE_META[locale].label}`}>
@@ -31,7 +33,8 @@ const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
         <ul role="list">
           {LOCALES.map((l) => (
             <li>
-              <a href={localePath(l, path)} hreflang={LOCALE_META[l].html} lang={LOCALE_META[l].html} aria-current={l === locale ? 'true' : undefined}>
+              <a href={localePath(l, path)} hreflang={LOCALE_META[l].html} lang={LOCALE_META[l].html} aria-current={l === locale ? 'true' : undefined}
+                 data-ga="language_change" data-ga-language-from={locale} data-ga-language-to={l}>
                 {LOCALE_META[l].label}
               </a>
             </li>
@@ -90,8 +93,10 @@ const words = Array.from({ length: 14 }, () => ['MORH', 'DAILY RITUAL']).flat();
 </style>
 
 <script>
-  // 언어 메뉴: 바깥을 누르거나 Esc 로 닫기
+  import { track } from '../../scripts/analytics';
+  // 언어 메뉴: 바깥을 누르거나 Esc 로 닫기, 열 때 측정
   document.querySelectorAll<HTMLDetailsElement>('[data-lang]').forEach((d) => {
+    d.addEventListener('toggle', () => { if (d.open) track('language_menu_open'); });
     document.addEventListener('click', (e) => { if (d.open && !d.contains(e.target as Node)) d.open = false; });
     d.addEventListener('keydown', (e) => { if (e.key === 'Escape' && d.open) { d.open = false; d.querySelector('summary')?.focus(); } });
   });

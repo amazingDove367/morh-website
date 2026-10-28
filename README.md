@@ -106,30 +106,33 @@ npm run perf                # 홈 장면 프레임 측정(헤드리스 Chrome)
 
 ## 측정 이벤트와 전환 지표
 
-GA4 측정 ID 를 설정한 환경에서만 전송합니다. 이름·연락처·주소 등 입력값은 어떤 이벤트에도 넣지 않습니다.
+GA4 측정 ID 를 설정한 환경에서만 GA4 로 전송합니다(`PUBLIC_GA4_ID`). 이름·이메일 등 입력값은 어떤 이벤트에도 넣지 않고, 입력 칸은 칸 이름만 보냅니다.
+전체 목록은 `src/scripts/analytics.ts` 의 `EVENTS`, 설계 이유는 Notion 'MORH 웹사이트 — 버전 기록'에 있습니다.
 
-| 이벤트 | 발생 시점 | 함께 보내는 값 |
-|---|---|---|
-| `view_item` | 상세페이지 진입 | `item_id`, `locale` |
-| `buy_click` | 구매하기 버튼 클릭 | `placement`(panel·mobile_bar), `quantity`, `locale` |
-| `begin_demo_checkout` | 주문/결제 화면 진입 | `quantity`, `locale` |
-| `demo_checkout_complete` | 결제하기 이후 화면 도달(세션당 1회, 새로고침 중복 없음) | `quantity`, `locale` |
-| `generate_lead` | 출시 알림 받기 신청(세션당 1회) | `lead_type: launch_alert`, `locale` |
+**핵심 이벤트(전환 퍼널)** — ★ 는 GA4 주요 이벤트
 
-- **상세 → 구매 클릭률** = `buy_click` 세션 ÷ `view_item` 세션
-- **주문서 진입률** = `begin_demo_checkout` ÷ `buy_click`
-- **결제하기율(1차 전환)** = `demo_checkout_complete` ÷ `begin_demo_checkout`
-- **알림 신청률(2차 전환)** = `generate_lead` ÷ `demo_checkout_complete`
-- 이벤트 이름·파라미터는 GA4 설계 확정 후 정리 예정(설계 문서: Notion 'MORH 웹사이트 — 버전 기록')
+| 이벤트 | 사용자 행동 |
+|---|---|
+| `view_item` | 상세페이지 진입 |
+| `add_to_cart` | 구매하기 클릭(정보 패널·모바일 하단 바·헤더 BAG) |
+| `begin_checkout` | 주문/결제 화면 진입 |
+| ★ `add_payment_info` | **결제하기 클릭 — 1차 전환** |
+| `form_start` | 출시 알림 입력 시작 |
+| ★ `generate_lead` | **출시 알림 신청 — 2차 전환** (`lead_type: launch_alert`) |
 
-`demo_checkout_complete` 는 실제 구매(`purchase`)나 매출이 아닙니다. 보고서에서 구매·매출로 집계하지 않습니다.
+**보조 이벤트(탐색·관심·이탈 진단)** — `nav_click` · `cta_click` · `language_menu_open` · `language_change` · `ritual_progress` · `select_content`(제품 사진·패널 아코디언·후기 사진) · `texture_open/close/zoom/pan` · `quantity_change` · `review_more` · `review_page` · `lightbox_navigate/close` · `tab_click` · `faq_open` · `shipping_region_select` · `form_field_focus/complete` · `form_error`
+
+- 버튼·링크는 HTML 에 `data-ga="이벤트" data-ga-파라미터="값"` 을 붙이면 측정됩니다(문구를 바꿔도 측정은 그대로).
+- 주소 끝에 `?ga_debug=1` 을 붙이면 GA4 DebugView 로 보내고, 화면 오른쪽 아래에 확인 패널이 뜹니다.
+- **결제하기율(1차 전환)** = `add_payment_info` ÷ `begin_checkout` · **알림 신청률(2차 전환)** = `generate_lead` ÷ `add_payment_info`
+- 실제 결제가 없으므로 `purchase` 는 쓰지 않습니다.
 
 ## 결제 여부와 데이터 처리
 
 - 결제·주문·배송은 일어나지 않습니다. 주문 화면 상단과 완료 화면에서 짧게 안내합니다.
 - 주문/결제 화면에서는 배송 지역만 고르고 '결제하기'를 누릅니다. 개인정보는 받지 않습니다.
 - 다음 화면에서 사이트가 퍼포먼스 마케팅 포트폴리오임을 밝히고, '출시되면 알림 받기'(이름·이메일)를 선택적으로 받습니다.
-  저장소가 정해지기 전까지 이 값은 저장하지 않으며, 신청 버튼 아래에 그 사실을 표시합니다.
+  저장소가 정해지기 전까지 이 값은 저장하지 않으며, 신청 후 화면에서 그 사실과 감사 인사를 보여 줍니다.
   입력칸에는 `name` 속성이 없어 값이 주소창·서버로 가지 않으며, 완료 즉시 화면에서 지웁니다.
 - 완료 화면에 보여 줄 요약(수량·배송 지역 유형·금액)만 현재 탭의 `sessionStorage` 에 둡니다. 개인정보는 저장하지 않습니다.
 - 기존 V1 의 '저장하지 않는다는 점에 동의' 팝업은 수집이 없는 상황에 맞지 않아, 동의 대신 개인정보 처리 안내 페이지로 바꿨습니다.
@@ -154,7 +157,7 @@ GA4 측정 ID 를 설정한 환경에서만 전송합니다. 이름·연락처·
 
 ## 확인된 기능과 남은 작업
 
-확인된 기능(브라우저 검증 106항목, `npm run verify`): 홈 장면의 연결·확대·14일 동기화·역방향 스크롤·화면 크기 변경·움직임 줄이기,
+확인된 기능(브라우저 검증 110항목, `npm run verify`): 홈 장면의 연결·확대·14일 동기화·역방향 스크롤·화면 크기 변경·움직임 줄이기,
 상세페이지 가격·수량·텍스처 확대·후기 요약·후기 페이지·사진 확대·키보드 조작, 주문 금액·도서산간·결제하기 이후 공개 화면·알림 받기 검증, 결제 전 화면의 포트폴리오·체험 문구 없음,
 입력값 미전송, 이벤트 중복 없음, 5개 언어와 아랍어 RTL, 미리보기 검색 차단.
 

@@ -15,7 +15,7 @@ const pv = t.privacy;
 const gaOn = /^G-[A-Z0-9]{4,}$/.test((import.meta.env.PUBLIC_GA4_ID || '').trim());
 const body = (v: string) => (v === 'ANALYTICS' ? (gaOn ? pv.analyticsOn : pv.analyticsOff) : v === 'PENDING' ? pv.pending : v);
 ---
-<Base locale={locale} path="/privacy/" title={t.meta.privacyTitle} description={t.meta.privacyDesc}>
+<Base pageType="privacy" locale={locale} path="/privacy/" title={t.meta.privacyTitle} description={t.meta.privacyDesc}>
   <article class="policy wrap" aria-labelledby="policy-title">
     <h1 id="policy-title">{pv.title}</h1>
     <p class="policy__date">{pv.updated}</p>

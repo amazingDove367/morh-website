@@ -31,7 +31,7 @@ const [a, b] = sum.tags;
         </p>
         <p class="rs__count">
           <span data-rs-count={sum.count}>{fill(r.count, { n: sum.count })}</span>
-          <a href="#reviews" data-tab-link="reviews" class="rs__all">{r.all} <span class="arrow" aria-hidden="true">→</span></a>
+          <a href="#reviews" data-tab-link="reviews" class="rs__all" data-ga="review_more" data-ga-link-location="summary_all" data-ga-review-count={sum.count}>{r.all} <span class="arrow" aria-hidden="true">→</span></a>
         </p>
       </div>
       {sum.sample && <p class="rs__note" data-sample-notice>{r.notice} {sum.photoReviews.length > 0 && r.photoNote}</p>}
@@ -48,7 +48,7 @@ const [a, b] = sum.tags;
             </li>
           ))}
           <li>
-            <a class="rs__more" href="#reviews" data-tab-link="reviews">{r.more} <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="rs__more" href="#reviews" data-tab-link="reviews" data-ga="review_more" data-ga-link-location="summary_more" data-ga-review-count={sum.count}>{r.more} <span class="arrow" aria-hidden="true">→</span></a>
           </li>
         </ul>
       )}
