@@ -212,25 +212,39 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   let s = await sum();
   ok('[주문] 수량 2 전달 · 84,000 − 14,000 + 3,000 = 73,000원', s.subtotal === '84,000원' && s.benefit === '−14,000원' && s.shipping === '3,000원' && s.total === '73,000원', s);
   ok('[주문] 주소창에서 수량 값 정리', !page.url().includes('?'));
+  const before = await page.evaluate(() => {
+    const d = document.getElementById('ship-dialog'); const txt = document.body.innerText.replace(d.innerText, '');
+    return { txt, pay: document.getElementById('cta-pay').textContent.trim(), title: document.querySelector('h1').textContent };
+  });
+  ok('[주문] 결제 전 화면에 포트폴리오·체험 문구 없음, 버튼은 결제하기', !/포트폴리오|체험/.test(before.txt) && before.pay === '결제하기' && before.title === '주문/결제', before.title + ' / ' + before.pay);
   await page.check('[data-region][value="remote"]');
   s = await sum();
   ok('[주문] 도서산간: 배송비 총 5,000원(추가 아님) → 75,000원', s.shipping === '5,000원' && s.total === '75,000원', s);
-  await page.click('#cta-submit');
-  ok('[주문] 확인 체크 없이 완료 불가 + 오류 문구', !(await page.isHidden('#co-confirm-err')) && page.url().includes('/checkout/') && !page.url().includes('complete'));
-  await page.check('[data-mode][value="own"]');
-  await page.check('#co-confirm');
-  await page.fill('#co-name', '홍길동'); await page.fill('#co-phone', '12'); await page.fill('#co-address', '테스트 주소');
-  await page.click('#cta-submit');
-  ok('[주문] 직접 입력: 잘못된 연락처 오류', (await page.textContent('#co-phone-err')).length > 0 && !page.url().includes('complete'));
-  await page.fill('#co-phone', '010-1234-5678');
+  await page.click('#cta-pay');
+  const dlg = await page.evaluate(() => ({ open: document.getElementById('ship-dialog').open, notice: document.getElementById('ship-notice').textContent, focus: document.activeElement.id }));
+  ok('[주문] 결제하기 → 배송 정보 입력 창(사이트 안내·입력값 미전송 안내 표시)', dlg.open && dlg.notice.includes('포트폴리오') && dlg.notice.includes('보내지 않습니다') && dlg.focus === 'ship-name', dlg);
+  await page.click('#cta-complete');
+  ok('[주문] 빈 칸으로 주문 완료 불가 + 항목별 오류', (await page.isVisible('#ship-name-err')) && (await page.isVisible('#ship-address-err')) && page.url().endsWith('/checkout/'));
+  await page.fill('#ship-name', '홍길동'); await page.click('[data-ship-close]');
+  const closed = await page.evaluate(() => ({ open: document.getElementById('ship-dialog').open, v: document.getElementById('ship-name').value, focus: document.activeElement.id }));
+  ok('[주문] × 닫기: 창 닫힘·입력값 삭제·결제하기로 포커스 복귀', !closed.open && closed.v === '' && closed.focus === 'cta-pay', closed);
+  await page.click('#cta-pay'); await page.fill('#ship-name', '홍길동'); await page.click('[data-ship-exit]');
+  ok('[주문] 나가기: 창 닫힘·입력값 삭제', await page.evaluate(() => !document.getElementById('ship-dialog').open && document.getElementById('ship-name').value === ''));
+  await page.click('#cta-pay'); await page.fill('#ship-name', '홍길동'); await page.keyboard.press('Escape');
+  ok('[주문] Esc: 창 닫힘·입력값 삭제', await page.evaluate(() => !document.getElementById('ship-dialog').open && document.getElementById('ship-name').value === ''));
+  await page.click('#cta-pay');
+  await page.fill('#ship-name', '홍길동'); await page.fill('#ship-phone', '12'); await page.fill('#ship-address', '테스트 주소');
+  await page.click('#cta-complete');
+  ok('[주문] 잘못된 연락처 오류', (await page.textContent('#ship-phone-err')).length > 0 && !page.url().includes('complete'));
+  await page.fill('#ship-phone', '010-1234-5678');
   const ev1 = await page.evaluate(() => window.__events.map((e) => e[0]));
-  await Promise.all([page.waitForURL(/complete/), page.click('#cta-submit')]);
+  await Promise.all([page.waitForURL(/complete/), page.click('#cta-complete')]);
   await page.waitForLoadState('networkidle');
-  const done = await page.evaluate(() => ({ title: document.querySelector('h1').textContent, sum: document.querySelector('[data-summary-list]').textContent, store: sessionStorage.getItem('morh:demo-order'), events: window.__events }));
-  ok('[주문] 완료 화면: 체험 완료 안내 + 요약(75,000원)', done.title.includes('체험') && done.sum.includes('75,000원'), done);
+  const done = await page.evaluate(() => ({ title: document.querySelector('h1').textContent, text: document.body.innerText, img: document.querySelector('.done__figure img').naturalWidth, sum: document.querySelector('[data-summary-list]').textContent, store: sessionStorage.getItem('morh:demo-order'), events: window.__events }));
+  ok('[주문] 완료 화면: 감사 인사 + 포트폴리오 공개 + 사진 + 주문 내역(75,000원)', done.title.includes('감사') && done.text.includes('포트폴리오') && done.text.includes('반짝이는') && done.img > 0 && done.sum.includes('75,000원'), done.title);
   const all = JSON.stringify({ url: page.url(), store: done.store, events: done.events, ev1, requests });
   ok('[주문] 입력한 이름·연락처·주소가 URL·저장소·이벤트·요청 어디에도 없음', !/홍길동|1234-5678|01012345678|테스트 주소/.test(all), all.slice(0, 300));
-  ok('[주문] 측정 이벤트 구분: begin_demo_checkout → demo_checkout_complete(구매 이벤트 아님)', ev1.includes('begin_demo_checkout') && done.events.some((e) => e[0] === 'demo_checkout_complete') && !/"purchase"/.test(all));
+  ok('[주문] 측정 이벤트: 주문 시작 → 주문 완료(구매 이벤트 아님)', ev1.includes('begin_demo_checkout') && done.events.some((e) => e[0] === 'demo_checkout_complete') && !/"purchase"/.test(all));
   await page.reload({ waitUntil: 'networkidle' });
   ok('[주문] 완료 화면 새로고침 시 완료 이벤트 중복 없음', (await page.evaluate(() => window.__events.filter((e) => e[0] === 'demo_checkout_complete').length)) === 0);
   ok('[주문] 콘솔 오류 없음', errors.length === 0, errors);
@@ -240,6 +254,14 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
 {
   const { ctx, page } = await open('/checkout/?qty=1', MOBILE);
   ok('[주문 모바일] 가로 넘침 없음', (await overflowX(page)) <= 0);
+  await ctx.close();
+}
+
+// 결제 전 화면(홈·상세·개인정보)에 포트폴리오·체험 문구 없음
+for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
+  const { ctx, page } = await open(path);
+  const txt = await page.evaluate(() => { const d = document.getElementById('ship-dialog'); return document.body.innerText.replace(d ? d.innerText : '', ''); });
+  ok(`[문구] ${path} 에 포트폴리오·체험·데모 문구 없음`, !/포트폴리오|체험|데모/.test(txt), (txt.match(/.{0,20}(포트폴리오|체험|데모).{0,20}/) || [''])[0]);
   await ctx.close();
 }
 
@@ -268,7 +290,7 @@ for (const [pre, lang, dir] of LOCS) {
   });
   ok('[ar] RTL 배치: 정보 패널 왼쪽·갤러리 오른쪽, 이전 버튼 오른쪽, 사진·로고 반전 없음, 서양식 숫자 가격', rtl.panelLeftOfGallery && rtl.prevOnRight && rtl.imgTransform === 'none' && rtl.logo === 'ltr' && /35,000/.test(rtl.price), rtl);
   await page.goto(BASE + '/ar/checkout/?qty=1', { waitUntil: 'networkidle' });
-  const inp = await page.evaluate(() => getComputedStyle(document.querySelector('#co-name')).direction);
+  const inp = await page.evaluate(() => getComputedStyle(document.querySelector('#ship-name')).direction);
   ok('[ar] 입력란 오른쪽→왼쪽', inp === 'rtl');
   await ctx.close();
 }
