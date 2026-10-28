@@ -22,9 +22,11 @@ interface Props {
   jsonld?: Record<string, unknown>;
   ogImage?: string;
   bagOpensCheckout?: boolean;
+  /** 측정용 화면 종류(page_type) */
+  pageType: 'home' | 'product' | 'checkout' | 'complete' | 'privacy' | 'not_found' | 'qa';
 }
 
-const { locale, path, title, description, noindex = false, jsonld, ogImage = '/images/morh-front-1254.webp', bagOpensCheckout = false } = Astro.props;
+const { locale, path, title, description, noindex = false, jsonld, ogImage = '/images/morh-front-1254.webp', bagOpensCheckout = false, pageType } = Astro.props;
 const t = DICTS[locale];
 const meta = LOCALE_META[locale];
 const env = import.meta.env;
@@ -35,7 +37,7 @@ const ga = (env.PUBLIC_GA4_ID || '').trim();
 const gaValid = /^G-[A-Z0-9]{4,}$/.test(ga);
 ---
 <!doctype html>
-<html lang={meta.html} dir={meta.dir}>
+<html lang={meta.html} dir={meta.dir} data-locale={locale}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -70,13 +72,14 @@ const gaValid = /^G-[A-Z0-9]{4,}$/.test(ga);
         window.dataLayer = window.dataLayer || [];
         window.gtag = function () { window.dataLayer.push(arguments); };
         window.gtag('js', new Date());
-        window.gtag('config', ga);
+        // ?ga_debug=1 로 열면 GA4 DebugView 에 바로 표시
+        window.gtag('config', ga, new URLSearchParams(location.search).get('ga_debug') === '1' ? { debug_mode: true } : {});
       </script>
     </>
   )}
 </head>
-<body>
-  <a class="skip-link" href="#main">{t.a11y.skip}</a>
+<body data-page={pageType}>
+  <a class="skip-link" href="#main" data-ga="nav_click" data-ga-menu-name="skip_to_content" data-ga-menu-location="header">{t.a11y.skip}</a>
   <MorhHeader locale={locale} path={path} bagOpensCheckout={bagOpensCheckout} />
   <main id="main">
     <slot />
@@ -84,5 +87,9 @@ const gaValid = /^G-[A-Z0-9]{4,}$/.test(ga);
   <MorhBand />
   <MorhFooter locale={locale} />
   <slot name="after" />
+  <script>
+    import { initClickTracking } from '../scripts/analytics';
+    initClickTracking();
+  </script>
 </body>
 </html>

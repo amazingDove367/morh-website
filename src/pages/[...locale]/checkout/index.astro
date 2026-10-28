@@ -17,7 +17,7 @@ const t = DICTS[locale];
 const c = t.checkout;
 const s = orderSummary(1, 'standard');
 ---
-<Base locale={locale} path="/checkout/" title={t.meta.checkoutTitle} description={t.meta.checkoutDesc} noindex>
+<Base pageType="checkout" locale={locale} path="/checkout/" title={t.meta.checkoutTitle} description={t.meta.checkoutDesc} noindex>
   <div class="co wrap" data-checkout data-locale={locale} data-complete={localePath(locale, '/checkout/complete/')}
        data-base={PRICE.base} data-first={PRICE.firstPurchase} data-ship={SHIPPING.standard} data-remote={SHIPPING.remoteTotal}
        data-max={PRODUCT.maxQty}>
@@ -63,7 +63,7 @@ const s = orderSummary(1, 'standard');
             <div class="co__total"><dt>{c.total}</dt><dd data-sum="total">{money(locale, s.total)}</dd></div>
           </dl>
           <button type="button" class="btn btn--block co__pay" id="cta-pay">{c.pay}</button>
-          <a class="text-link co__back" href={localePath(locale, '/product/')}><span class="arrow flip-back" aria-hidden="true">←</span> {c.back}</a>
+          <a class="text-link co__back" href={localePath(locale, '/product/')} data-ga="cta_click" data-ga-cta-location="checkout_back"><span class="arrow flip-back" aria-hidden="true">←</span> {c.back}</a>
         </section>
       </aside>
     </div>

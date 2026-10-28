@@ -20,14 +20,14 @@ const checkout = localePath(locale, '/checkout/');
 ---
 <section class="pp" aria-labelledby="product-title" data-buy-panel
   data-checkout={checkout} data-unit={PRICE.firstPurchase} data-max={PRODUCT.maxQty} data-locale={locale}>
-  <a class="pp__row pp__explore" href={`${localePath(locale, '/')}#ritual`}>{p.explore} <span class="arrow" aria-hidden="true">→</span></a>
+  <a class="pp__row pp__explore" href={`${localePath(locale, '/')}#ritual`} data-ga="cta_click" data-ga-cta-location="panel_explore">{p.explore} <span class="arrow" aria-hidden="true">→</span></a>
 
   <div class="pp__row pp__head">
     <p class="pp__eyebrow">MORH · {t.common.category} · {t.common.volume}</p>
     <h1 id="product-title" class="pp__title">{t.common.product}</h1>
     <p class="pp__tagline"><span lang="en" dir="ltr">{p.tagline}</span></p>
     {sum.count > 0 && (
-      <a class="pp__rating" href="#reviews" data-tab-link="reviews">
+      <a class="pp__rating" href="#reviews" data-tab-link="reviews" data-ga="review_more" data-ga-link-location="panel_rating" data-ga-review-count={sum.count}>
         <span class="pp__stars" aria-hidden="true">★</span> {num(locale, sum.average, 1)}
         <span class="muted">· {fill(p.rating, { n: sum.count })}</span>
       </a>
@@ -161,7 +161,7 @@ const checkout = localePath(locale, '/checkout/');
 </style>
 
 <script>
-  import { track } from '../../scripts/analytics';
+  import { track, ecommerce } from '../../scripts/analytics';
   import { money } from '../../i18n/format';
   import type { Locale } from '../../i18n/locales';
 
@@ -181,11 +181,14 @@ const checkout = localePath(locale, '/checkout/');
       document.querySelectorAll<HTMLAnchorElement>('[data-buy]').forEach((a) => { a.href = `${checkout}?qty=${qty}`; });
     };
     document.querySelectorAll<HTMLButtonElement>('[data-qty]').forEach((b) => b.addEventListener('click', () => {
+      const before = qty;
       qty = Math.min(max, Math.max(1, qty + Number(b.dataset.qty)));
       render();
+      if (qty !== before) track('quantity_change', { quantity: qty, direction: qty > before ? 'increase' : 'decrease', location: 'product_panel' });
     }));
+    // 구매하기(정보 패널·모바일 하단 바·헤더 BAG) = 구매 의향
     document.querySelectorAll<HTMLAnchorElement>('[data-buy]').forEach((a) => a.addEventListener('click', () => {
-      track('buy_click', { placement: a.dataset.buy || 'panel', quantity: qty });
+      track('add_to_cart', ecommerce(qty, { button_location: a.dataset.buy || 'panel' }));
     }));
     render();
   }
@@ -204,7 +207,9 @@ const checkout = localePath(locale, '/checkout/');
       if (tex !== textureOpen) {
         textureOpen = tex;
         document.dispatchEvent(new CustomEvent('morh:texture', { detail: { open: tex } }));
+        track(tex ? 'texture_open' : 'texture_close', { content_id: 'texture' });
       }
+      if (target && !tex) track('select_content', { content_type: 'panel_accordion', content_id: target.dataset.accBtn! });
     };
     btns.forEach((b) => b.addEventListener('click', () => set(b.getAttribute('aria-expanded') === 'true' ? null : b)));
   }

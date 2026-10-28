@@ -32,7 +32,7 @@ const jsonld = {
   image: VIEW_KEYS.map((k) => `${site}${withBase(viewImg(k, 1254))}`),
 };
 ---
-<Base locale={locale} path="/product/" title={t.meta.productTitle} description={t.meta.productDesc} jsonld={jsonld} noindex={noindex} bagOpensCheckout>
+<Base pageType="product" locale={locale} path="/product/" title={t.meta.productTitle} description={t.meta.productDesc} jsonld={jsonld} noindex={noindex} bagOpensCheckout>
   <div class="wrap pdp">
     <div class="pdp__grid">
       <div class="pdp__media"><PdpGallery locale={locale} /></div>
@@ -48,8 +48,8 @@ const jsonld = {
 </Base>
 
 <script>
-  import { track } from '../../scripts/analytics';
-  track('view_item', { item_id: 'morh-brightening-cream' });
+  import { track, ecommerce } from '../../scripts/analytics';
+  track('view_item', ecommerce(1));
 </script>
 
 <style>

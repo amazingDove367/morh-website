@@ -106,6 +106,7 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
 </style>
 
 <script>
+  import { track } from '../../scripts/analytics';
   const root = document.querySelector<HTMLElement>('[data-pdp-gallery]');
   if (root) {
     const stage = root.querySelector<HTMLElement>('[data-pg-stage]')!;
@@ -123,10 +124,13 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
     const labels = str.labels;
     const photoOf = (n: string) => str.photoOf.replace('{a}', n);
     const ORBIT = 4;
-    let idx = 0, texture = false, s = 1, tx = 0, ty = 0;
+    let idx = 0, texture = false, s = 1, tx = 0, ty = 0, panned = false;
+    const zoomLevel = () => Math.round(s * 2) / 2;
 
-    function show(i: number) {
+    /** method 가 있으면 사용자가 바꾼 것 → 측정 */
+    function show(i: number, method?: string) {
       idx = (i + imgs.length) % imgs.length;
+      if (method) track('select_content', { content_type: 'product_photo', content_id: imgs[idx].dataset.view!, method });
       imgs.forEach((im, k) => { im.hidden = k !== idx; });
       idxEl.textContent = String(idx + 1).padStart(2, '0');
       const name = labels[imgs[idx].dataset.view!];
@@ -153,7 +157,11 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
       zoomOut.textContent = `${Math.round(s * 10) / 10}×`;
       root!.classList.toggle('is-zoomed', s > 1.001);
     }
-    function setZoom(v: number) { s = Math.min(3, Math.max(1, v)); applyZoom(); }
+    function setZoom(v: number, method?: string) {
+      s = Math.min(3, Math.max(1, v)); applyZoom();
+      if (method) track('texture_zoom', { zoom_level: zoomLevel(), method });
+    }
+    const markPan = (method: string) => { if (!panned) { panned = true; track('texture_pan', { zoom_level: zoomLevel(), method }); } };
 
     function setTexture(on: boolean) {
       texture = on;
@@ -164,16 +172,17 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
       zoomBox.hidden = !on;
       count.style.visibility = on ? 'hidden' : '';
       live.textContent = on ? str.texLive : photoOf(labels[imgs[idx].dataset.view!]);
-      s = 1; tx = 0; ty = 0; applyZoom();
+      s = 1; tx = 0; ty = 0; panned = false; applyZoom();
       stage.tabIndex = on ? 0 : -1;
       stage.setAttribute('aria-label', on ? str.texStage : '');
       if (!on) stage.removeAttribute('aria-label');
     }
     document.addEventListener('morh:texture', (e) => setTexture((e as CustomEvent<{ open: boolean }>).detail.open));
 
-    root.querySelectorAll<HTMLButtonElement>('[data-pg-step]').forEach((b) => b.addEventListener('click', () => show(idx + Number(b.dataset.pgStep))));
+    root.querySelectorAll<HTMLButtonElement>('[data-pg-step]').forEach((b) => b.addEventListener('click', () => show(idx + Number(b.dataset.pgStep), 'arrow')));
     range.addEventListener('input', () => setZoom(Number(range.value)));
-    root.querySelectorAll<HTMLButtonElement>('[data-pg-zoom-step]').forEach((b) => b.addEventListener('click', () => setZoom(s + Number(b.dataset.pgZoomStep))));
+    range.addEventListener('change', () => track('texture_zoom', { zoom_level: zoomLevel(), method: 'slider' }));
+    root.querySelectorAll<HTMLButtonElement>('[data-pg-zoom-step]').forEach((b) => b.addEventListener('click', () => setZoom(s + Number(b.dataset.pgZoomStep), 'button')));
 
     // 끌기: 제품 모드 = 각도 전환(60px 마다 한 장), 텍스처 확대 모드 = 위치 이동
     let down: { x: number; y: number; tx: number; ty: number; i: number } | null = null;
@@ -187,11 +196,11 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       if (texture) {
-        if (s > 1.001) { tx = down.tx + dx; ty = down.ty + dy; applyZoom(); }
+        if (s > 1.001) { tx = down.tx + dx; ty = down.ty + dy; applyZoom(); if (Math.abs(dx) + Math.abs(dy) > 12) markPan('drag'); }
       } else if (down.i < ORBIT) {
         const steps = Math.trunc(-dx / 60);
         const next = (((down.i + steps) % ORBIT) + ORBIT) % ORBIT;
-        if (next !== idx) show(next);
+        if (next !== idx) show(next, 'drag');
       }
     });
     const end = (e: PointerEvent) => {
@@ -201,6 +210,7 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
       if (texture && moved < 6 && s <= 1.001) {
         const r = stage.getBoundingClientRect();
         s = 2; tx = (r.width / 2 - (e.clientX - r.left)) * (s - 1); ty = (r.height / 2 - (e.clientY - r.top)) * (s - 1); applyZoom();
+        track('texture_zoom', { zoom_level: 2, method: 'tap' });
       }
       down = null; stage.classList.remove('is-dragging');
     };
@@ -210,28 +220,28 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
     // 키보드: 360 표시에서 ←/→, 텍스처 사진에서 방향키 이동 · +/- 확대
     orbit.addEventListener('keydown', (e) => {
       const map: Record<string, number> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
-      if (e.key in map) { e.preventDefault(); show((((Math.min(idx, ORBIT - 1) + map[e.key]) % ORBIT) + ORBIT) % ORBIT); }
-      if (e.key === 'Home') { e.preventDefault(); show(0); }
-      if (e.key === 'End') { e.preventDefault(); show(ORBIT - 1); }
+      if (e.key in map) { e.preventDefault(); show((((Math.min(idx, ORBIT - 1) + map[e.key]) % ORBIT) + ORBIT) % ORBIT, 'keyboard'); }
+      if (e.key === 'Home') { e.preventDefault(); show(0, 'keyboard'); }
+      if (e.key === 'End') { e.preventDefault(); show(ORBIT - 1, 'keyboard'); }
     });
     let odown: number | null = null, oi = 0;
     orbit.addEventListener('pointerdown', (e) => { odown = e.clientX; oi = Math.min(idx, ORBIT - 1); orbit.setPointerCapture(e.pointerId); });
     orbit.addEventListener('pointermove', (e) => {
       if (odown === null) return;
       const next = (((oi + Math.trunc((e.clientX - odown) / 24)) % ORBIT) + ORBIT) % ORBIT;
-      if (next !== idx) show(next);
+      if (next !== idx) show(next, 'orbit');
     });
     orbit.addEventListener('pointerup', () => { odown = null; });
     stage.addEventListener('keydown', (e) => {
       if (!texture) return;
       const st = 40;
       const k = e.key;
-      if (k === '+' || k === '=') { setZoom(s + 0.5); e.preventDefault(); }
-      else if (k === '-') { setZoom(s - 0.5); e.preventDefault(); }
+      if (k === '+' || k === '=') { setZoom(s + 0.5, 'keyboard'); e.preventDefault(); }
+      else if (k === '-') { setZoom(s - 0.5, 'keyboard'); e.preventDefault(); }
       else if (s > 1.001 && k.startsWith('Arrow')) {
         if (k === 'ArrowLeft') tx += st; if (k === 'ArrowRight') tx -= st;
         if (k === 'ArrowUp') ty += st; if (k === 'ArrowDown') ty -= st;
-        applyZoom(); e.preventDefault();
+        applyZoom(); markPan('keyboard'); e.preventDefault();
       }
     });
     addEventListener('resize', () => texture && applyZoom());
