@@ -1,7 +1,7 @@
 ---
-/* 주문 체험 완료 화면: 포트폴리오 체험 완료임을 분명히 안내하고, 개인정보가 아닌 체험 주문 요약만 표시 */
+/* 주문 완료 화면: 여기서 사이트가 포트폴리오임을 밝히고 감사 인사를 전함. 개인정보가 아닌 주문 내역만 표시 */
 import Base from '../../../../layouts/Base.astro';
-import { localePath, localeStaticPaths, type Locale } from '../../../../i18n/locales';
+import { localePath, localeStaticPaths, withBase, type Locale } from '../../../../i18n/locales';
 import { DICTS } from '../../../../i18n';
 
 export const getStaticPaths = localeStaticPaths;
@@ -12,15 +12,19 @@ const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, 
 ---
 <Base locale={locale} path="/checkout/complete/" title={t.meta.completeTitle} description={t.meta.completeDesc} noindex>
   <section class="done wrap" aria-labelledby="done-title" data-complete data-locale={locale} data-strings={JSON.stringify(strings)}>
-    <div class="done__check" aria-hidden="true">✓</div>
+    <figure class="done__figure">
+      <img src={withBase('/images/ritual/hg-day14-794.webp')} srcset={`${withBase('/images/ritual/hg-day14-480.webp')} 480w, ${withBase('/images/ritual/hg-day14-794.webp')} 794w`}
+           sizes="(max-width: 720px) 52vw, 260px" width="794" height="1388" alt={t.complete.imageAlt} />
+      <figcaption lang="en">{t.complete.caption}</figcaption>
+    </figure>
     <h1 id="done-title">{t.complete.title}</h1>
-    <p>{t.complete.body}</p>
+    <p class="done__blessing">{t.complete.blessing}</p>
+    <p class="done__reveal">{t.complete.reveal}</p>
     <p class="done__wiped">{t.complete.wiped}</p>
     <div class="done__summary" data-summary hidden>
       <h2>{t.complete.summary}</h2>
       <dl data-summary-list></dl>
     </div>
-    <p class="muted" data-summary-none hidden>{t.complete.none}</p>
     <div class="done__actions">
       <a class="btn" href={localePath(locale, '/')}>{t.common.toHome}</a>
       <a class="btn btn--ghost" href={localePath(locale, '/product/')}>{t.complete.again}</a>
@@ -29,16 +33,20 @@ const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, 
 </Base>
 
 <style>
-  .done { max-width: 640px; padding-block: var(--s-9); display: grid; gap: var(--s-4); justify-items: center; text-align: center; }
-  .done__check { width: 64px; height: 64px; border-radius: 50%; background: var(--c-burgundy); color: #fff; display: grid; place-items: center; font-size: 1.75rem; }
-  .done h1 { font-size: var(--fs-h2); }
+  .done { max-width: 640px; padding-block: var(--s-8) var(--s-9); display: grid; gap: var(--s-4); justify-items: center; text-align: center; }
+  .done__figure { margin: 0; display: grid; gap: 8px; justify-items: center; }
+  .done__figure img { width: min(260px, 52vw); height: auto; }
+  .done__figure figcaption { font-family: var(--f-serif); font-size: 0.9375rem; letter-spacing: 0.06em; color: var(--c-burgundy); }
+  .done h1 { font-size: var(--fs-h2); color: var(--c-burgundy); }
+  .done__blessing { font-size: var(--fs-lead); line-height: 1.75; max-width: 34em; }
+  .done__reveal { color: var(--c-ink-soft); }
   .done__wiped { padding: 10px 14px; border: 1px solid var(--c-line); background: var(--c-ivory); font-size: 0.875rem; }
   .done__summary { width: 100%; border: 1px solid var(--c-line-strong); padding: 18px 20px; text-align: start; display: grid; gap: 10px; }
   .done__summary[hidden] { display: none; }
   .done__summary h2 { font-size: 0.8125rem; letter-spacing: 0.06em; }
   .done__summary dl { display: grid; gap: 6px; font-size: 0.9375rem; }
-  .done__summary dl div { display: flex; justify-content: space-between; gap: 12px; }
-  .done__summary dd { font-variant-numeric: tabular-nums; }
+  .done__summary :global(dl div) { display: flex; justify-content: space-between; gap: 12px; }
+  .done__summary :global(dd) { font-variant-numeric: tabular-nums; margin: 0; }
   .done__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); justify-content: center; margin-top: var(--s-3); }
 </style>
 
@@ -69,10 +77,8 @@ const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, 
         div.append(dt, dd); dl.append(div);
       });
       root.querySelector<HTMLElement>('[data-summary]')!.hidden = false;
-      // 실제 구매가 아닌 '주문 체험 완료' — 세션당 1회
+      // 실제 구매(purchase)가 아닌 주문 완료 화면 도달 — 세션당 1회
       trackOnce(`complete:${order.total}:${order.qty}`, 'demo_checkout_complete', { quantity: order.qty });
-    } else {
-      root.querySelector<HTMLElement>('[data-summary-none]')!.hidden = false;
     }
   }
 </script>

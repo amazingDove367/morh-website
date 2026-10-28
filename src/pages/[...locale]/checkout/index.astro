@@ -1,10 +1,11 @@
 ---
 /*
-  주문 체험 화면 (실제 주문·결제·배송 없음)
-  - 상품 사진·이름 · 수량 · 상품 금액 · 첫 구매 혜택 · 배송비 · 주문 요약과 총액 · 배송 정보 · 최종 확인
-  - 기본은 '체험용 가상 배송정보'. 직접 입력은 선택이며, 입력칸에 name 속성이 없어 폼이 제출돼도 값이 주소·서버로 가지 않음
-  - 완료 시 입력값을 지우고, 개인정보가 아닌 요약(수량·지역 유형·금액)만 sessionStorage 에 남겨 완료 화면에 표시
-  - 버튼은 결제가 아닌 '주문 체험 완료하기'
+  주문/결제 화면
+  - 주문 상품(수량) · 배송 지역 · 결제 금액(상품 금액·첫 구매 혜택·배송비·총액) → '결제하기'
+  - '결제하기'를 누르면 배송 정보 입력 창(받는 분·연락처·주소)이 열림. 이 창에서 처음으로 사이트 성격과
+    입력값이 전송·저장되지 않는다는 점을 안내하고, 닫기(×)·나가기로 언제든 빠져나갈 수 있음
+  - 입력칸에는 name 속성이 없어 값이 주소창·서버로 가지 않음. '주문 완료' 시 즉시 지우고,
+    개인정보가 아닌 주문 내역(수량·지역·금액)만 sessionStorage 로 완료 화면에 전달
 */
 import Base from '../../../layouts/Base.astro';
 import { PRICE, SHIPPING, PRODUCT, orderSummary } from '../../../data/commerce';
@@ -17,16 +18,15 @@ const { locale } = Astro.props as { locale: Locale };
 const t = DICTS[locale];
 const c = t.checkout;
 const s = orderSummary(1, 'standard');
-const strings = { errConfirm: c.errConfirm, errPhone: c.errPhone, errRequired: c.errRequired };
+const strings = { errPhone: c.errPhone, errRequired: c.errRequired };
 ---
 <Base locale={locale} path="/checkout/" title={t.meta.checkoutTitle} description={t.meta.checkoutDesc} noindex>
   <div class="co wrap" data-checkout data-locale={locale} data-complete={localePath(locale, '/checkout/complete/')}
        data-base={PRICE.base} data-first={PRICE.firstPurchase} data-ship={SHIPPING.standard} data-remote={SHIPPING.remoteTotal}
        data-max={PRODUCT.maxQty} data-strings={JSON.stringify(strings)}>
     <h1 class="co__title">{c.title}</h1>
-    <p class="co__notice" role="note">{c.notice}</p>
 
-    <form id="checkout-form" class="co__grid" novalidate autocomplete="off" action="#" method="dialog">
+    <div class="co__grid">
       <div class="co__main">
         <section class="co__box" aria-labelledby="co-item">
           <h2 id="co-item">{c.item}</h2>
@@ -45,27 +45,12 @@ const strings = { errConfirm: c.errConfirm, errPhone: c.errPhone, errRequired: c
           </div>
         </section>
 
-        <section class="co__box" aria-labelledby="co-ship">
-          <h2 id="co-ship">{c.shipTo}</h2>
-          <fieldset class="co__choice">
-            <legend class="visually-hidden">{c.shipTo}</legend>
-            <label class="co__radio"><input type="radio" name="ship-mode" value="sample" checked data-mode /> <span><b>{c.useSample}</b><small>{c.useSampleHint}</small></span></label>
-            <div class="co__sample" data-sample-box>
-              <p>{c.sampleName} · {c.samplePhone}</p>
-              <p>{c.sampleAddress}</p>
-            </div>
-            <label class="co__radio"><input type="radio" name="ship-mode" value="own" data-mode /> <span><b>{c.useOwn}</b><small>{c.useOwnHint}</small></span></label>
-            <div class="co__own" data-own-box hidden>
-              <!-- name 속성 없음: 값이 주소창·서버로 넘어가지 않음 -->
-              <label class="field"><span>{c.name}</span><input id="co-name" type="text" maxlength="20" autocomplete="off" /></label>
-              <label class="field"><span>{c.phone}</span><input id="co-phone" type="tel" inputmode="tel" maxlength="16" autocomplete="off" aria-describedby="co-phone-err" /><small id="co-phone-err" class="co__err" hidden></small></label>
-              <label class="field"><span>{c.address}</span><input id="co-address" type="text" maxlength="80" autocomplete="off" /></label>
-            </div>
-          </fieldset>
+        <section class="co__box" aria-labelledby="co-region">
+          <h2 id="co-region">{c.region}</h2>
           <fieldset class="co__region">
-            <legend>{c.region}</legend>
-            <label class="co__radio co__radio--inline"><input type="radio" name="region" value="standard" checked data-region /> <span>{c.regionStandard} · {money(locale, SHIPPING.standard)}</span></label>
-            <label class="co__radio co__radio--inline"><input type="radio" name="region" value="remote" data-region /> <span>{c.regionRemote} · {money(locale, SHIPPING.remoteTotal)}</span></label>
+            <legend class="visually-hidden">{c.region}</legend>
+            <label class="co__radio"><input type="radio" name="region" value="standard" checked data-region /> <span>{c.regionStandard} · {money(locale, SHIPPING.standard)}</span></label>
+            <label class="co__radio"><input type="radio" name="region" value="remote" data-region /> <span>{c.regionRemote} · {money(locale, SHIPPING.remoteTotal)}</span></label>
             <p class="co__hint">{c.regionHint}</p>
           </fieldset>
         </section>
@@ -80,23 +65,36 @@ const strings = { errConfirm: c.errConfirm, errPhone: c.errPhone, errRequired: c
             <div><dt>{c.shipping}</dt><dd data-sum="shipping">{money(locale, s.shipping)}</dd></div>
             <div class="co__total"><dt>{c.total}</dt><dd data-sum="total">{money(locale, s.total)}</dd></div>
           </dl>
-          <p class="co__hint">{c.totalNote}</p>
-          <label class="check"><input type="checkbox" id="co-confirm" aria-describedby="co-confirm-err" /> {c.confirm}</label>
-          <p id="co-confirm-err" class="co__err" hidden></p>
-          <button type="submit" class="btn btn--block" id="cta-submit">{c.submit}</button>
+          <button type="button" class="btn btn--block co__pay" id="cta-pay" aria-haspopup="dialog">{c.pay}</button>
           <a class="text-link co__back" href={localePath(locale, '/product/')}><span class="arrow flip-back" aria-hidden="true">←</span> {c.back}</a>
-          <a class="co__privacy" href={localePath(locale, '/privacy/')}>{t.common.privacy}</a>
         </section>
       </aside>
-    </form>
+    </div>
   </div>
+
+  <dialog class="ship" id="ship-dialog" aria-labelledby="ship-title" aria-describedby="ship-notice">
+    <form id="ship-form" class="ship__form" novalidate autocomplete="off" method="dialog">
+      <div class="ship__head">
+        <h2 id="ship-title">{c.sheetTitle}</h2>
+        <button type="button" class="ship__x" data-ship-close aria-label={t.a11y.close}>×</button>
+      </div>
+      <p class="ship__notice" id="ship-notice">{c.sheetNotice}</p>
+      <!-- name 속성 없음: 값이 주소창·서버로 넘어가지 않음 -->
+      <label class="field"><span>{c.name}</span><input id="ship-name" type="text" maxlength="20" placeholder={c.namePh} required aria-describedby="ship-name-err" /><small id="ship-name-err" class="co__err" hidden></small></label>
+      <label class="field"><span>{c.phone}</span><input id="ship-phone" type="tel" inputmode="tel" maxlength="16" placeholder={c.phonePh} required aria-describedby="ship-phone-err" /><small id="ship-phone-err" class="co__err" hidden></small></label>
+      <label class="field"><span>{c.address}</span><input id="ship-address" type="text" maxlength="100" placeholder={c.addressPh} required aria-describedby="ship-address-hint ship-address-err" /><small id="ship-address-hint">{c.addressHint}</small><small id="ship-address-err" class="co__err" hidden></small></label>
+      <div class="ship__actions">
+        <button type="button" class="btn btn--ghost" data-ship-exit>{c.exit}</button>
+        <button type="submit" class="btn" id="cta-complete">{c.complete}</button>
+      </div>
+    </form>
+  </dialog>
 </Base>
 
 <style>
   .co { padding-block: var(--s-6) var(--s-8); display: grid; gap: var(--s-4); }
   .co__title { font-size: var(--fs-h2); }
-  .co__notice { border: 1px solid var(--c-line-strong); background: var(--c-ivory); padding: 12px 16px; font-size: 0.875rem; }
-  .co__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--s-6); align-items: start; margin-top: var(--s-3); }
+  .co__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--s-6); align-items: start; margin-top: var(--s-2); }
   .co__main { display: grid; gap: var(--s-5); }
   .co__box { border: 1px solid var(--c-line-strong); padding: 20px; display: grid; gap: var(--s-4); }
   .co__box h2 { font-size: 0.8125rem; letter-spacing: 0.06em; font-weight: 700; }
@@ -114,12 +112,6 @@ const strings = { errConfirm: c.errConfirm, errPhone: c.errPhone, errRequired: c
   legend { font-weight: 600; font-size: 0.875rem; margin-bottom: var(--s-2); }
   .co__radio { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
   .co__radio input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--c-burgundy); flex: none; }
-  .co__radio span { display: grid; gap: 2px; }
-  .co__radio small { color: var(--c-ink-soft); font-size: 0.8125rem; }
-  .co__radio--inline span { display: inline; }
-  .co__sample { margin-inline-start: 28px; padding: 10px 14px; background: var(--c-ivory); font-size: 0.875rem; color: var(--c-ink-soft); }
-  .co__own { margin-inline-start: 28px; display: grid; gap: var(--s-3); }
-  .co__own[hidden] { display: none; }
   .co__hint { font-size: 0.8125rem; color: var(--c-ink-soft); }
   .co__err { color: #a0001c; font-size: 0.8125rem; }
   .co__err[hidden] { display: none; }
@@ -129,9 +121,17 @@ const strings = { errConfirm: c.errConfirm, errPhone: c.errPhone, errRequired: c
   .co__summary dd { font-variant-numeric: tabular-nums; }
   .co__minus { color: var(--c-burgundy); }
   .co__total { border-top: 1px solid var(--c-line-strong); padding-top: 10px; margin-top: 4px; font-weight: 700; font-size: 1.0625rem; }
+  .co__pay { margin-top: var(--s-2); min-height: 56px; font-size: 1rem; }
   .co__back { justify-self: start; font-size: 0.875rem; }
+  .ship { border: 1px solid var(--c-line-strong); padding: 0; width: min(520px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); background: var(--c-paper); color: var(--c-ink); }
+  .ship::backdrop { background: rgba(43, 26, 31, 0.5); }
+  .ship__form { display: grid; gap: var(--s-4); padding: 0 22px 22px; }
+  .ship__head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--c-paper); padding-top: 14px; }
+  .ship__head h2 { font-size: 1.0625rem; }
+  .ship__x { width: 44px; height: 44px; border: 0; background: none; font-size: 1.6rem; cursor: pointer; margin-inline-end: -10px; }
+  .ship__notice { font-size: 0.8125rem; line-height: 1.6; padding: 10px 12px; background: var(--c-ivory); border: 1px solid var(--c-line); color: var(--c-ink); }
+  .ship__actions { display: grid; grid-template-columns: 1fr 1.6fr; gap: var(--s-3); margin-top: var(--s-2); }
   :global([dir='rtl']) .flip-back { transform: scaleX(-1); display: inline-block; }
-  .co__privacy { font-size: 0.8125rem; color: var(--c-ink-soft); }
   @media (max-width: 900px) {
     .co__grid { grid-template-columns: 1fr; }
     .co__side { position: static; }
