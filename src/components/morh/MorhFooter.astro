@@ -1,5 +1,5 @@
 ---
-/* 공통 푸터: 브랜드 문장 · 쇼핑/도움 링크 · 사이트 성격 한 줄(반복 경고 대신 한 번만) */
+/* 공통 푸터: 브랜드 문장 · 쇼핑/도움 링크 */
 import { localePath, type Locale } from '../../i18n/locales';
 import { DICTS } from '../../i18n';
 interface Props { locale: Locale }
@@ -29,7 +29,7 @@ const product = localePath(locale, '/product/');
       </ul>
     </nav>
   </div>
-  <p class="wrap morh-footer__about">{t.footer.about}</p>
+  <p class="wrap morh-footer__about" lang="en">© MORH</p>
 </footer>
 
 <style>
