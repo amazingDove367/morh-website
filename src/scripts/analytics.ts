@@ -3,8 +3,9 @@
  *
  * view_item               상품 보기(상세페이지 진입)
  * buy_click               구매하기 버튼 클릭 { placement }
- * begin_demo_checkout     주문 체험 시작(주문 체험 화면 진입)
- * demo_checkout_complete  주문 체험 완료(완료 화면, 세션당 1회) — 실제 구매(purchase)·매출로 보지 않음
+ * begin_demo_checkout     주문/결제 화면 진입
+ * demo_checkout_complete  결제하기 이후 완료 화면 도달(세션당 1회) — 실제 구매(purchase)·매출로 보지 않음
+ * generate_lead           출시 알림 신청 { lead_type: 'launch_alert' } — 이름·이메일은 넣지 않음
  *
  * 개인정보(이름·연락처·주소)와 입력값은 어떤 이벤트에도 넣지 않습니다. 금액은 화면 표시 기준(KRW)입니다.
  */
@@ -13,7 +14,7 @@ declare global {
   interface Window { dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void }
 }
 
-const ALLOWED = new Set(['view_item', 'buy_click', 'begin_demo_checkout', 'demo_checkout_complete']);
+const ALLOWED = new Set(['view_item', 'buy_click', 'begin_demo_checkout', 'demo_checkout_complete', 'generate_lead']);
 
 export function track(name: string, params: Params = {}) {
   if (!ALLOWED.has(name)) return;
