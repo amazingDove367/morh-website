@@ -91,6 +91,7 @@ npm run perf                # 홈 장면 프레임 측정(헤드리스 Chrome)
 | `PUBLIC_SITE_URL` | 비어 있음 | 운영 주소. 있으면 canonical·hreflang·sitemap 생성 |
 | `PUBLIC_INDEXABLE` | `false` | `true` 인 운영 배포에서만 검색 허용. 그 외에는 모든 페이지 noindex, robots.txt 전체 차단 |
 | `PUBLIC_GA4_ID` | 운영 배포: `G-D3ENJ9B8P7` · 로컬: 비어 있음 | GA4 측정 ID. 운영 배포에서만 들어가며, 비어 있으면 분석 스크립트를 넣지 않고 개인정보 안내도 '미사용'으로 표시 |
+| `PUBLIC_GTM_ID` | 운영 배포: `GTM-5DQWMNL6` · 로컬: 비어 있음 | Google 태그 관리자 컨테이너 ID. `<head>` 맨 위(charset 바로 다음)에 들어감. 코드 위치: `src/layouts/Base.astro` |
 | `BASE_PATH` | `/` | 하위 경로 배포 시(예: GitHub Pages 프로젝트 사이트 `/morh-website/`) |
 
 ## 브랜치

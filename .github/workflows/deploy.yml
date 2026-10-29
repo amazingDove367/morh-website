@@ -37,6 +37,8 @@ jobs:
           # GA4 측정 ID(MORH 웹 스트림). 운영 배포에서만 넣어 로컬 미리보기 방문이 통계에 섞이지 않게 함
           # 저장소 변수 PUBLIC_GA4_ID 가 있으면 그 값을 우선 사용
           PUBLIC_GA4_ID: ${{ vars.PUBLIC_GA4_ID || 'G-D3ENJ9B8P7' }}
+          # Google 태그 관리자 컨테이너 ID. GA4 와 같이 운영 배포에서만 넣음
+          PUBLIC_GTM_ID: ${{ vars.PUBLIC_GTM_ID || 'GTM-5DQWMNL6' }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
