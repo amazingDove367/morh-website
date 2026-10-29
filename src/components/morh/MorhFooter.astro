@@ -1,10 +1,12 @@
 ---
-/* 공통 푸터: 브랜드 문장 · 쇼핑/도움 링크 */
+/* 공통 푸터: 브랜드 문장 · 쇼핑/도움 링크 · (한국어만) 포트폴리오 안내 문장 */
 import { localePath, type Locale } from '../../i18n/locales';
 import { DICTS } from '../../i18n';
+import { koStory } from '../../i18n/ko-story';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const t = DICTS[locale];
+const note = locale === 'ko' ? koStory.footer.about : '';
 const product = localePath(locale, '/product/');
 ---
 <footer class="morh-footer">
@@ -29,6 +31,7 @@ const product = localePath(locale, '/product/');
       </ul>
     </nav>
   </div>
+  {note && <p class="wrap morh-footer__about morh-footer__note">{note}</p>}
   <p class="wrap morh-footer__about" lang="en">© MORH</p>
 </footer>
 
@@ -44,5 +47,6 @@ const product = localePath(locale, '/product/');
   .morh-footer a:hover { text-decoration: underline; }
   .morh-footer__privacy { font-weight: 700; }
   .morh-footer__about { margin-top: var(--s-6); padding-top: var(--s-4); border-top: var(--border); color: var(--c-ink-soft); font-size: 0.75rem; }
+  .morh-footer__note + .morh-footer__about { margin-top: var(--s-2); padding-top: 0; border-top: 0; }
   @media (max-width: 720px) { .morh-footer__grid { grid-template-columns: 1fr 1fr; } .morh-footer__grid > div:first-child { grid-column: 1 / -1; } }
 </style>

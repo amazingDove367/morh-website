@@ -213,7 +213,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   ok('[주문] 수량 2 전달 · 84,000 − 14,000 + 3,000 = 73,000원', s.subtotal === '84,000원' && s.benefit === '−14,000원' && s.shipping === '3,000원' && s.total === '73,000원', s);
   ok('[주문] 주소창에서 수량 값 정리', !page.url().includes('?'));
   const before = await page.evaluate(() => {
-    const txt = document.body.innerText;
+    const txt = document.querySelector('main').innerText; // 푸터의 포트폴리오 안내(한국어)는 본문과 별도로 아래에서 확인
     return { txt, pay: document.getElementById('cta-pay').textContent.trim(), title: document.querySelector('h1').textContent };
   });
   ok('[주문] 결제 전 화면에 포트폴리오·체험 문구 없음, 버튼은 결제하기', !/포트폴리오|체험/.test(before.txt) && before.pay === '결제하기' && before.title === '주문/결제', before.title + ' / ' + before.pay);
@@ -253,11 +253,20 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await ctx.close();
 }
 
-// 결제 전 화면(홈·상세·개인정보)에 포트폴리오·체험 문구 없음
+// 결제 전 화면(홈·상세·개인정보) 본문에 포트폴리오·체험 문구 없음 (푸터 안내 문장은 제외)
+const FOOTER_NOTE = 'MORH는 퍼포먼스 마케팅 포트폴리오를 위해 기획한 브랜드입니다. 현재 실제 판매·배송은 하지 않습니다.';
 for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
   const { ctx, page } = await open(path);
-  const txt = await page.evaluate(() => document.body.innerText);
-  ok(`[문구] ${path} 에 포트폴리오·체험·데모 문구 없음`, !/포트폴리오|체험|데모/.test(txt), (txt.match(/.{0,20}(포트폴리오|체험|데모).{0,20}/) || [''])[0]);
+  const txt = await page.evaluate(() => document.querySelector('main').innerText);
+  ok(`[문구] ${path} 본문에 포트폴리오·체험·데모 문구 없음`, !/포트폴리오|체험|데모/.test(txt), (txt.match(/.{0,20}(포트폴리오|체험|데모).{0,20}/) || [''])[0]);
+  await ctx.close();
+}
+// 푸터 안내 문장: 한국어 페이지 전체에 같은 문장 1회, 다른 언어에는 없음
+for (const path of ['/', '/product/', '/checkout/', '/checkout/complete/', '/privacy/', '/en/', '/ja/product/', '/zh-cn/', '/ar/product/']) {
+  const { ctx, page } = await open(path);
+  const notes = await page.evaluate(() => [...document.querySelectorAll('.morh-footer__note')].map((e) => e.textContent.trim()));
+  const ko = !/^\/(en|ja|zh-cn|ar)\//.test(path);
+  ok(`[푸터] ${path} 포트폴리오 안내 문장 ${ko ? '있음' : '없음'}`, ko ? notes.length === 1 && notes[0] === FOOTER_NOTE : notes.length === 0, notes);
   await ctx.close();
 }
 
