@@ -1,6 +1,6 @@
 ---
 /*
-  모든 페이지 공통 레이아웃: 언어·방향(lang/dir), 메타·검색 설정, 헤더·하단 띠·푸터, 분석 스크립트(설정된 경우만)
+  모든 페이지 공통 레이아웃: 언어·방향(lang/dir), 메타·검색 설정, 헤더·하단 띠·푸터, 분석 스크립트(GTM·GA4, 설정된 경우만)
   - 검색 노출: PUBLIC_INDEXABLE=true 인 운영 배포에서만 index. 미리보기·로컬은 항상 noindex
   - canonical·hreflang: PUBLIC_SITE_URL 이 있을 때만(임의 주소를 만들지 않음)
   - 움직임 줄이기: OS 설정 또는 ?motion=off → html.reduce-motion (정적 장면), 그 외 html.js-motion
@@ -35,11 +35,24 @@ const site = (env.PUBLIC_SITE_URL || '').replace(/\/$/, '');
 const abs = (p: string) => (site ? `${site}${p}` : p);
 const ga = (env.PUBLIC_GA4_ID || '').trim();
 const gaValid = /^G-[A-Z0-9]{4,}$/.test(ga);
+// Google 태그 관리자: <head> 맨 위(charset 바로 다음). GA4 코드와 별개로 둠
+const gtm = (env.PUBLIC_GTM_ID || '').trim();
+const gtmValid = /^GTM-[A-Z0-9]{4,}$/.test(gtm);
 ---
 <!doctype html>
 <html lang={meta.html} dir={meta.dir} data-locale={locale}>
 <head>
   <meta charset="utf-8" />
+  {gtmValid && (
+    <>
+      <script async src={`https://www.googletagmanager.com/gtm.js?id=${gtm}`}></script>
+      <script is:inline>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+      </script>
+    </>
+  )}
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{title}</title>
   <meta name="description" content={description} />
