@@ -270,6 +270,9 @@ for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
       if (cmd !== 'event') return;
       const l = JSON.parse(sessionStorage.getItem('__ga') || '[]'); l.push([name, params]); sessionStorage.setItem('__ga', JSON.stringify(l));
     };
+    window.fbq = (cmd, name, params) => {
+      const l = JSON.parse(sessionStorage.getItem('__fb') || '[]'); l.push([cmd, name, params ?? null]); sessionStorage.setItem('__fb', JSON.stringify(l));
+    };
   });
   const page = await ctx.newPage();
   const go = async (path) => { await page.goto(BASE + path, { waitUntil: 'networkidle' }); await page.waitForTimeout(300); };
@@ -331,6 +334,13 @@ for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
     const order = ['view_item', 'add_to_cart', 'begin_checkout', 'add_payment_info', 'form_start', 'generate_lead'].map((n) => log.findIndex((e) => e[0] === n));
     return order.every((v, i) => v >= 0 && (i === 0 || v > order[i - 1]));
   })());
+  // Meta 픽셀: GA4 이벤트마다 같은 순간 1건(표준 이름 매핑, 나머지는 trackCustom), 스크롤 진행은 제외
+  const fb = await page.evaluate(() => JSON.parse(sessionStorage.getItem('__fb') || '[]'));
+  const MAP = { view_item: 'ViewContent', add_to_cart: 'AddToCart', begin_checkout: 'InitiateCheckout', generate_lead: 'Lead' };
+  const expectFb = log.filter((e) => e[0] !== 'ritual_progress').map((e) => (MAP[e[0]] ? ['track', MAP[e[0]]] : ['trackCustom', e[0]]).join(':'));
+  const gotFb = fb.map((e) => `${e[0]}:${e[1]}`);
+  ok('[Meta] GA4 이벤트와 같은 순간 픽셀 이벤트(ViewContent·AddToCart·InitiateCheckout·Lead, 나머지 trackCustom)', JSON.stringify(gotFb) === JSON.stringify(expectFb), { gotFb: gotFb.slice(0, 12), expectFb: expectFb.slice(0, 12) });
+  ok('[Meta] 스크롤 진행(ritual_progress)은 보내지 않음', log.some((e) => e[0] === 'ritual_progress') && !gotFb.some((n) => n.includes('ritual_progress')));
   await ctx.close();
 }
 

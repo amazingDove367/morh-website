@@ -4,6 +4,7 @@
  * 전체 이벤트 목록과 핵심·보조 구분은 EVENTS 에 있습니다(이름·파라미터를 바꾸면 Notion 'MORH 웹사이트 — 버전 기록'도 갱신).
  * - 버튼·링크: HTML 요소에 data-ga="이벤트" data-ga-파라미터="값" 을 붙이면 클릭 시 자동 전송(initClickTracking)
  * - 그 밖의 행동(입력 칸·스크롤·확대 등)은 각 컴포넌트 스크립트에서 track() 호출
+ * - 같은 순간 Meta 픽셀에도 전송(META_EVENTS 매핑, 없는 이름은 trackCustom). 페이지 조회·스크롤은 제외
  * - 모든 이벤트에 page_locale(언어)·page_type(화면 종류)을 붙임
  * - 이름·연락처·이메일·주소 등 입력값은 어떤 이벤트에도 넣지 않음(입력 칸은 칸 이름만 보냄)
  * - 주소 끝에 ?ga_debug=1 → GA4 DebugView 로 보내고(debug_mode) 화면 오른쪽 아래에 확인 패널 표시
@@ -12,7 +13,30 @@ import { PRICE, PRODUCT } from '../data/commerce';
 
 type Params = Record<string, string | number | boolean | unknown[]>;
 declare global {
-  interface Window { dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void; __events?: unknown[] }
+  interface Window { dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void; fbq?: (...a: unknown[]) => void; __events?: unknown[] }
+}
+
+/** GA4 이벤트 → Meta 픽셀 표준 이벤트. 목록에 없는 이벤트는 trackCustom 으로 GA4 이름 그대로 전송 */
+const META_EVENTS: Record<string, string> = {
+  generate_lead: 'Lead',
+  sign_up: 'CompleteRegistration',
+  contact_click: 'Contact',
+  view_item: 'ViewContent',
+  add_to_cart: 'AddToCart',
+  begin_checkout: 'InitiateCheckout',
+  purchase: 'Purchase',
+  search: 'Search',
+};
+/** Meta 로 보내지 않는 이벤트: 페이지 조회·스크롤(홈 장면 스크롤 진행 ritual_progress 포함) */
+const META_SKIP = new Set(['page_view', 'scroll', 'ritual_progress']);
+
+/** GA4 와 같은 순간 Meta 픽셀 이벤트 전송 (픽셀이 없으면 호출되지 않음) */
+function metaTrack(name: string, params: Params) {
+  if (META_SKIP.has(name)) return;
+  const meta = META_EVENTS[name];
+  if (!meta) window.fbq!('trackCustom', name);
+  else if (meta === 'Purchase') window.fbq!('track', meta, { value: params.value, currency: 'KRW' });
+  else window.fbq!('track', meta);
 }
 
 /** 이벤트 목록: tier = 'core'(전환 퍼널) | 'aux'(관심·탐색 진단) / key = GA4 주요 이벤트 */
@@ -68,6 +92,7 @@ export function track(name: EventName, params: Params = {}) {
   };
   // 결제하기처럼 곧바로 페이지를 떠나는 클릭도 전송되도록 beacon 사용
   if (typeof window.gtag === 'function') window.gtag('event', name, { ...payload, transport_type: 'beacon' });
+  if (window.fbq) metaTrack(name, payload);
   window.__events?.push([name, payload]);
   if (debug) panel(name, payload);
 }
