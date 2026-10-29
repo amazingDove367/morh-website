@@ -1,0 +1,102 @@
+---
+/*
+  상세 설명(한국어) ① 공감·셀프 체크 → ② 원인 → ③ 해결
+  - 셀프 체크: 고른 제품의 시간을 더해 한 줄로 보여 줌. 저장하지 않음(새로고침하면 처음 상태)
+*/
+import { koStory } from '../../i18n/ko-story';
+import StoryImage from './StoryImage.astro';
+import Nums from './Nums.astro';
+import '../../styles/story.css';
+const { check: c, cause, solve } = koStory;
+---
+<section class="st" id="self-check" aria-labelledby="st-check-title">
+  <h2 id="st-check-title" class="st__title">{c.title}</h2>
+  <div class="chk" data-selfcheck data-result={c.result} data-none={c.none}>
+    <div class="chk__btns" role="group" aria-label={c.groupLabel}>
+      {c.items.map((it) => (
+        <button type="button" class="chk__btn" aria-pressed="false" data-sec={it.sec}>{it.label}</button>
+      ))}
+    </div>
+    <p class="chk__result" aria-live="polite" data-chk-result>{c.none}</p>
+  </div>
+  <ul role="list" class="scenes">
+    {c.scenes.map((s) => (
+      <li class:list={['scene', { 'scene--text': !s.image }]}>
+        {s.image && <StoryImage name={s.image.name} alt={s.image.alt} ratio="4 / 3" sizes="(max-width: 720px) 100vw, 30vw" />}
+        <p><Nums text={s.text} /></p>
+      </li>
+    ))}
+  </ul>
+  <p class="st__close">{c.close}</p>
+</section>
+
+<section class="st" aria-labelledby="st-cause-title">
+  <h2 id="st-cause-title" class="st__title">{cause.title}</h2>
+  <div class="st__body">{cause.body.map((b) => <p>{b}</p>)}</div>
+</section>
+
+<section class="st" aria-labelledby="st-solve-title">
+  <h2 id="st-solve-title" class="st__title">{solve.title}</h2>
+  <p class="st__body">{solve.body}</p>
+  <div class="cmp">
+    <p class="cmp__side">{solve.left}</p>
+    <p class="cmp__side cmp__side--on"><Nums text={solve.right} /></p>
+  </div>
+  <p class="solve__fixed"><Nums text={solve.fixed} /></p>
+  <p class="st-fn">{solve.small}</p>
+</section>
+
+<style>
+  .chk { display: grid; gap: var(--s-4); padding: var(--s-5); background: var(--c-veil); border: 1px solid var(--c-line); }
+  .chk__btns { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+  .chk__btn {
+    min-height: 44px; padding: 0 var(--s-4); border: 1px solid var(--c-line-strong); background: var(--c-paper); cursor: pointer;
+    font-size: var(--fs-small); font-weight: 500; transition: background-color var(--dur-ui) var(--ease-cream), color var(--dur-ui) var(--ease-cream);
+  }
+  .chk__btn:hover { border-color: var(--c-burgundy); }
+  .chk__btn[aria-pressed='true'] { background: var(--c-burgundy); border-color: var(--c-burgundy); color: var(--c-paper); }
+  .chk__result { font-size: var(--fs-lead); font-weight: 600; min-height: 1.6em; }
+  .scenes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-4); }
+  .scene { display: grid; gap: var(--s-3); align-content: start; }
+  .scene p { font-size: var(--fs-small); }
+  .scene--text { align-content: center; padding: var(--s-5); border: 1px solid var(--c-line-strong); background: var(--c-paper); }
+  .scene--text p { font-size: var(--fs-lead); }
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+  .cmp__side { padding: var(--s-5); border: 1px solid var(--c-line); color: var(--c-ink-soft); }
+  .cmp__side--on { border-color: var(--c-gold-line); background: var(--c-veil); color: var(--c-ink); font-weight: 600; font-size: var(--fs-lead); }
+  .solve__fixed { font-size: var(--fs-lead); }
+  @media (max-width: 720px) {
+    .chk { padding: var(--s-4); }
+    .scenes { grid-template-columns: 1fr; }
+    .cmp { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  // 셀프 체크: 고른 제품 시간 합계(초) → '약 N분 N초'. 저장 없음
+  const box = document.querySelector<HTMLElement>('[data-selfcheck]');
+  if (box) {
+    const out = box.querySelector<HTMLElement>('[data-chk-result]')!;
+    const btns = [...box.querySelectorAll<HTMLButtonElement>('[data-sec]')];
+    const fmt = (s: number) => {
+      const m = Math.floor(s / 60), r = s % 60;
+      return [m && `${m}분`, r && `${r}초`].filter(Boolean).join(' ');
+    };
+    const render = () => {
+      const total = btns.filter((b) => b.getAttribute('aria-pressed') === 'true').reduce((a, b) => a + Number(b.dataset.sec), 0);
+      if (!total) { out.textContent = box.dataset.none!; return; }
+      const [pre, post] = box.dataset.result!.split('{t}');
+      const t = fmt(total);
+      const n = document.createElement('b');
+      n.className = 'st-n';
+      n.textContent = t;
+      // '예요' 앞 글자에 받침이 있으면 '이에요' (4분이에요 / 50초예요)
+      const last = t.charCodeAt(t.length - 1) - 0xac00;
+      out.replaceChildren(pre, n, last >= 0 && last % 28 ? post.replace(/^예요/, '이에요') : post);
+    };
+    btns.forEach((b) => b.addEventListener('click', () => {
+      b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+      render();
+    }));
+  }
+</script>

@@ -1,0 +1,24 @@
+---
+/*
+  개편용 사진 자리: public/images/{name}-{400|800|1254}.webp 규칙(기존 제품 사진과 같은 규칙)
+  - 빌드할 때 파일이 있으면 <img>, 없으면 같은 비율의 Glass Pearl 빈 박스(깨진 이미지·불필요한 요청 없음)
+  - 사진을 public/images 에 넣고 다시 빌드하면 자동으로 사진이 나옴
+*/
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { withBase } from '../../i18n/locales';
+interface Props { name: string; alt: string; ratio: string; sizes?: string; eager?: boolean; class?: string; [attr: string]: unknown }
+const { name, alt, ratio, sizes = '(max-width: 720px) 100vw, 50vw', eager = false, class: cls = '', ...rest } = Astro.props;
+const file = (w: number) => `/images/${name}-${w}.webp`;
+const have = [400, 800, 1254].filter((w) => existsSync(join(process.cwd(), 'public', file(w))));
+const [rw, rh] = ratio.split('/').map((n) => Number(n.trim()));
+const main = have.includes(800) ? 800 : have.at(-1);
+---
+{main ? (
+  <img class={`st-img ${cls}`} src={withBase(file(main))} srcset={have.map((w) => `${withBase(file(w))} ${w}w`).join(', ')} sizes={sizes}
+       width={rw * 100} height={rh * 100} style={`aspect-ratio: ${ratio}`} alt={alt}
+       loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : undefined} decoding="async" {...rest} />
+) : (
+  <div class={`st-img st-ph ${cls}`} style={`aspect-ratio: ${ratio}`} data-missing-image={`images/${name}-800.webp`}
+       {...(alt ? { role: 'img', 'aria-label': alt } : { 'aria-hidden': 'true' })} {...rest}></div>
+)}

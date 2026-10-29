@@ -12,6 +12,7 @@ import ReviewSummary from './ReviewSummary.astro';
 import ProductTabs from './ProductTabs.astro';
 import ReviewLightbox from './ReviewLightbox.astro';
 import MobileBuyBar from './MobileBuyBar.astro';
+import StoryMoist from '../story/StoryMoist.astro';
 import { VIEW_KEYS, viewImg } from '../../data/product';
 import { PRODUCT } from '../../data/commerce';
 import { defaultReviews, type Review } from '../../data/reviews';
@@ -36,10 +37,11 @@ const jsonld = {
   <div class="wrap pdp">
     <div class="pdp__grid">
       <div class="pdp__media"><PdpGallery locale={locale} /></div>
-      <div class="pdp__buy"><PdpPanel reviews={reviews} locale={locale} /></div>
+      <div class:list={['pdp__buy', { 'pdp__buy--hero': locale === 'ko' }]}><PdpPanel reviews={reviews} locale={locale} /></div>
     </div>
   </div>
   <ReviewSummary reviews={reviews} locale={locale} />
+  {locale === 'ko' && <StoryMoist />}
   <ProductTabs reviews={reviews} locale={locale} />
   <Fragment slot="after">
     <ReviewLightbox reviews={reviews} locale={locale} />
@@ -59,5 +61,7 @@ const jsonld = {
   @media (max-width: 900px) {
     .pdp__grid { grid-template-columns: 1fr; }
     .pdp__buy { position: static; margin-top: 0; }
+    /* 한국어: 첫 화면 문구 블록이 갤러리 위로 올라오도록 패널 묶음을 풀어 줌 */
+    .pdp__buy--hero { display: contents; }
   }
 </style>

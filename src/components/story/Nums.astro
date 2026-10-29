@@ -1,0 +1,6 @@
+---
+/* 문장 속 숫자만 Pretendard SemiBold 로 (예: 2~5%, 5.0%, 4:00, −19.2%) */
+interface Props { text: string }
+const parts = Astro.props.text.split(/([+−]?\d+(?:[.:]\d+)*(?:[~–]\d+(?:\.\d+)?)?%?)/);
+---
+{parts.map((s, i) => (i % 2 ? <b class="st-n">{s}</b> : s))}

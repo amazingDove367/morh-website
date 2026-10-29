@@ -1,0 +1,36 @@
+---
+/*
+  상세 설명(한국어) ⑧ FAQ — 기존 제품 정보 아코디언 위의 새 아코디언 그룹
+  기존 제품 정보 아코디언 묶음 밖에 두어 기존 아코디언 측정(faq_open)에 섞이지 않음(새 측정 없음)
+*/
+import { koStory } from '../../i18n/ko-story';
+import Nums from './Nums.astro';
+const { faq } = koStory;
+---
+<section class="fq" aria-labelledby="fq-title">
+  <h2 id="fq-title" class="fq__label" lang="en">{faq.label}</h2>
+  <div class="fq__list">
+    {faq.items.map((it) => (
+      <details class="fq__item">
+        <summary><span class="fq__q"><Nums text={it.q} /></span><span class="fq__pm" aria-hidden="true"></span></summary>
+        <p class="fq__a"><Nums text={it.a} /></p>
+      </details>
+    ))}
+  </div>
+</section>
+
+<style>
+  .fq { display: grid; gap: var(--s-3); margin-block: var(--s-8) var(--s-7); }
+  .fq__label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-ink-soft); }
+  .fq__list { border-top: 1px solid var(--c-line-strong); }
+  .fq__item { border-bottom: 1px solid var(--c-line-strong); }
+  .fq__item summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: var(--s-4); align-items: center; padding: 18px 0; min-height: 56px; }
+  .fq__item summary::-webkit-details-marker { display: none; }
+  .fq__q { font-weight: 650; font-size: 0.9375rem; }
+  .fq__item summary:hover .fq__q { color: var(--c-burgundy); }
+  .fq__pm { position: relative; width: 12px; height: 12px; }
+  .fq__pm::before, .fq__pm::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: currentColor; }
+  .fq__pm::after { transform: rotate(90deg); transition: transform var(--dur-ui) var(--ease-cream); }
+  .fq__item[open] .fq__pm::after { transform: rotate(0); }
+  .fq__a { padding: 0 0 20px; font-size: 0.875rem; line-height: 1.75; max-width: 72ch; }
+</style>

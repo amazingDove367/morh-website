@@ -194,6 +194,61 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   ok('[상세 모바일] 하단 구매 바(본문 버튼이 지나간 뒤 표시)', await page.evaluate(() => document.querySelector('[data-buybar]').classList.contains('is-visible')));
   await ctx.close();
 }
+// 상품 페이지 개편(한국어): 첫 화면 · 갤러리 · 상세 설명 순서 · 셀프 체크 · 금지 표현 · 다른 언어 영향 없음
+{
+  for (const [w, h] of [[360, 640], [390, 664], [430, 932]]) {
+    const { ctx, page } = await open('/product/', { viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    const f = await page.evaluate(() => {
+      const b = (s) => document.querySelector(s).getBoundingClientRect();
+      return { key: b('.pp__key').top, title: b('#product-title').top, sub: b('.pp__sub').top, chip: b('.pp__chip').bottom, vh: innerHeight, ox: document.documentElement.scrollWidth - innerWidth };
+    });
+    ok(`[상품 ${w}×${h}] 첫 화면: 키 카피 → 제품명 → 서브 카피 → 증거 칩이 스크롤 없이 보임`, f.key < f.title && f.title < f.sub && f.chip <= f.vh - 84 && f.ox <= 0, f);
+    await ctx.close();
+  }
+  const { ctx, page, errors } = await open('/product/');
+  const g = await page.evaluate(() => ({
+    views: [...document.querySelectorAll('[data-pg-img]')].map((e) => e.dataset.view), first: !document.querySelector('[data-pg-img="0"]').hidden,
+    count: document.querySelector('[data-pg-count]').textContent.trim(), sub: document.querySelector('.pp__sub').textContent, tagline: document.querySelectorAll('.pp__tagline [lang="en"]').length,
+  }));
+  ok('[상품] 갤러리 1번째 화장대 장면, 정면 사진은 2번째(01 / 06), 영문 한 줄 → 서브 카피', g.views.join() === 'vanity,front,right,back,left,top' && g.first && g.count === '01 / 06' && g.sub === '미백 고시 함량 2~5%. MORH는 5.0%. · 미백 기능성 크림 50mL' && g.tagline === 0, g);
+  await page.click('.pg__nav--next');
+  const st = await page.locator('[data-pg-stage]').boundingBox();
+  await page.mouse.move(st.x + st.width / 2, st.y + st.height / 2); await page.mouse.down(); await page.mouse.move(st.x + st.width / 2 - 70, st.y + st.height / 2, { steps: 4 }); await page.mouse.up();
+  ok('[상품] 360 각도: 정면에서 끌면 우측면(장면 사진은 각도에 포함 안 됨)', await page.evaluate(() => !document.querySelector('[data-view="right"]').hidden));
+  const order = await page.evaluate(() => {
+    const y = (s) => document.querySelector(s).getBoundingClientRect().top + scrollY;
+    return [y('[data-review-summary]'), y('.moist'), y('[data-tabs]'), y('#self-check'), y('#st-cause-title'), y('#st-solve-title'), y('.detail--story'), y('#record'), y('#st-skin-title'), y('#st-use-title'), y('.fq'), y('[data-product-info]')];
+  });
+  ok('[상품] 순서: 후기 요약 → ⑦ 촉촉함 → 탭 → ①②③ → 기존 Detail 문단 → ④⑤⑥ → ⑧ FAQ → 제품 정보', order.every((v, i) => i === 0 || v > order[i - 1]), order);
+  const chk = [];
+  chk.push(await page.textContent('[data-chk-result]'));
+  for (const s of ['50', '100', '60', '30']) { await page.click(`[data-sec="${s}"]`); chk.push(await page.textContent('[data-chk-result]')); }
+  await page.click('[data-sec="60"]'); chk.push(await page.textContent('[data-chk-result]'));
+  ok('[상품] 셀프 체크: 0개 문구 → 합계(약 50초 · 2분 30초 · 3분 30초 · 4분) · 저장 없음', chk[0] === '오늘은 이미 가벼운 아침이네요.' && chk[1].includes('약 50초예요') && chk[2].includes('약 2분 30초예요') && chk[3].includes('약 3분 30초예요') && chk[4].includes('약 4분이에요') && chk[5].includes('약 3분이에요') && (await page.evaluate(() => JSON.stringify({ ...localStorage }) === '{}')), chk);
+  await page.click('#tab-reviews');
+  await page.click('.pp__chip');
+  await page.waitForTimeout(300);
+  const rec = await page.evaluate(() => ({ sel: document.querySelector('#tab-detail').getAttribute('aria-selected'), top: Math.round(document.querySelector('#record').getBoundingClientRect().top) }));
+  ok('[상품] 증거 칩 → 상세 설명 탭을 열고 #record 로 이동(고정 헤더·탭 바로 아래)', rec.sel === 'true' && rec.top >= 100 && rec.top < 260, rec);
+  const benefit = await page.evaluate(() => document.querySelector('#info-benefit .pi__body').textContent);
+  ok('[상품] 제품 특징: 톤업 문장 교체(시험 결과 없음 문장 삭제)', benefit.includes('바르자마자 색을 바꾸는 톤업 크림이 아니에요. 매일 바르는 미백 기능성 크림이에요.') && !benefit.includes('시험 결과'));
+  ok('[상품] 새 사진 자리: 파일이 없으면 Glass Pearl 빈 박스(깨진 이미지 없음)', await page.evaluate(() => [...document.querySelectorAll('[data-missing-image]')].every((e) => getComputedStyle(e).backgroundColor === 'rgb(231, 222, 210)' && e.tagName === 'DIV' && e.getBoundingClientRect().height > 0)));
+  ok('[상품] 콘솔 오류 없음(개편 후)', errors.length === 0, errors);
+  await ctx.close();
+  const { ctx: c2, page: p2 } = await open('/en/product/');
+  const en = await p2.evaluate(() => ({ story: document.querySelectorAll('#self-check, #record, .moist, .fq, .pp__key, .pp-hero').length, tagline: document.querySelector('.pp__tagline [lang="en"]')?.textContent, count: document.querySelector('[data-pg-count]').textContent.trim() }));
+  ok('[상품 en] 다른 언어는 기존 그대로(새 섹션 없음, 영문 한 줄 유지, 사진 5장)', en.story === 0 && en.tagline === 'A moment for your daily ritual.' && en.count === '01 / 05', en);
+  await c2.close();
+}
+// 금지 표현(한국어 홈·상품 본문)
+for (const path of ['/', '/product/']) {
+  const { ctx, page } = await open(path);
+  const txt = await page.evaluate(() => document.querySelector('main').innerText);
+  const bad = txt.match(/요거트|우유|생크림|푸딩|젤리|최대 함량|최고|최상|역대급|즉시|\d+일 만에|재생|진피|세포|잡티 제거|흉터|워터프루프|가상 수치/g);
+  ok(`[문구] ${path} 금지 표현 없음`, !bad, bad);
+  await ctx.close();
+}
+
 // 후기 없음
 {
   const { ctx, page } = await open('/qa/reviews-empty/');

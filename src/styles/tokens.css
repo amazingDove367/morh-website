@@ -23,6 +23,11 @@
   --c-focus: #630225;
   --c-test-bg: #fff3c4;      /* 테스트용·미확정 정보 표시 */
   --c-test-ink: #5a4300;
+  /* 2026-10 한국어 상품·홈 개편 팔레트(지정값). 쓰임을 넓히지 않음 */
+  --c-veil: #fff6e8;         /* Veil Ivory: 강조 카드 바탕 */
+  --c-pearl: #e7ded2;        /* Glass Pearl: 사진 자리(빈 박스)·막대 바탕 */
+  --c-plum: #4b0d50;         /* Imperial Plum: 줄어든 숫자에만 */
+  --c-gold-line: #c9821b;    /* Antique Gold: 가는 강조선·점에만(글자색으로 쓰지 않음) */
 
   /* ── Typography ────────────────────────── */
   --f-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
