@@ -6,22 +6,30 @@
     · 기본(JS 없음 / 움직임 줄이기): 일반 흐름의 정적 장면 (닫힌 제품 → DAY 14 모래시계 + 카피 + 버튼)
     · .js-motion: 고정(sticky) 무대 위에서 src/scripts/ritual.ts 가 스크롤 진행도로 모든 객체를 배치
   - 핵심 문구와 제품 링크는 모두 실제 HTML 텍스트
+  - 한국어: 제목 아래 한 줄 · DAY 아래 고정 문장 · 구간 자막 3개 · 점 14개 · 새 마지막 문구, 긴 타임라인(src/data/ritual-timeline.ts)
+    움직임 줄이기에서는 고정 문장·자막·마지막 문구를 정적인 목록으로
 */
 import { localePath, withBase, type Locale } from '../../i18n/locales';
 import { DICTS } from '../../i18n';
+import { koStory } from '../../i18n/ko-story';
+import { LONG_LEN } from '../../data/ritual-timeline';
+import '../../styles/story.css';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const t = DICTS[locale];
 const PRODUCT = localePath(locale, '/product/');
 const img = withBase;
+const story = locale === 'ko' ? koStory.home : null;
 ---
-<section class="ritual" id="ritual" aria-labelledby="ritual-title" data-ritual>
+<section class:list={['ritual', { 'ritual--story': story }]} id="ritual" aria-labelledby="ritual-title" data-ritual
+  data-timeline={story ? 'long' : undefined} style={story ? `--ritual-len: ${LONG_LEN}svh` : undefined}>
   <div class="ritual__pin">
     <div class="ritual__stage" data-stage>
       <h1 id="ritual-title" class="ritual__title">
         <span class="ritual__days" data-days>{t.home.days}</span>
         <span class="ritual__sub" data-sub>{t.home.sub}</span>
       </h1>
+      {story && <p class="ritual__lead" data-lead>{story.lead}</p>}
 
       <canvas class="ritual__canvas" data-canvas aria-hidden="true"></canvas>
 
@@ -47,10 +55,34 @@ const img = withBase;
         <span class="ritual__counter-of">/ 14</span>
       </p>
 
+      {story && (
+        <div class="ritual__note">
+          <p class="ritual__fixed" data-fixed>{story.fixed}</p>
+          <ol role="list" class="ritual__caps" data-caps>
+            {story.captions.map((c) => (
+              <li class="ritual__cap" data-cap={c.to}><strong>{c.big}</strong><span>{c.small}</span></li>
+            ))}
+          </ol>
+          <ol role="list" class="ritual__dots" data-dots aria-hidden="true">
+            {Array.from({ length: 14 }, () => <li></li>)}
+          </ol>
+        </div>
+      )}
+
       <div class="ritual__final" data-final>
-        <h2 class="ritual__headline">{t.home.headline}</h2>
-        <p class="ritual__copy">{t.home.copy}</p>
-        <a class="btn ritual__cta" href={PRODUCT} data-ga="cta_click" data-ga-cta-location="ritual_final">{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
+        {story ? (
+          <>
+            <p class="ritual__en" lang="en">{story.finalEn}</p>
+            <h2 class="ritual__headline">{story.finalBig}</h2>
+            <p class="ritual__copy">{story.finalSmall}</p>
+          </>
+        ) : (
+          <>
+            <h2 class="ritual__headline">{t.home.headline}</h2>
+            <p class="ritual__copy">{t.home.copy}</p>
+          </>
+        )}
+        <a class="btn ritual__cta" href={story ? `${PRODUCT}#record` : PRODUCT} data-ga="cta_click" data-ga-cta-location="ritual_final">{story ? story.cta : t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
       </div>
     </div>
   </div>
@@ -77,6 +109,14 @@ const img = withBase;
   .ritual__headline { font-size: clamp(1.9rem, 3.6vw, 3.4rem); color: var(--c-burgundy); letter-spacing: -0.03em; line-height: 1.2; }
   .ritual__copy { font-size: var(--fs-lead); color: var(--c-ink-soft); margin-top: var(--s-3); }
   .ritual__cta { margin-top: var(--s-6); }
+  /* 한국어 추가 문구 */
+  .ritual__lead { font-size: clamp(0.9375rem, 1.3vw, 1.125rem); font-weight: 500; color: var(--c-ink); text-align: center; }
+  .ritual__en { font-size: clamp(0.875rem, 1.1vw, 1rem); font-weight: 300; letter-spacing: 0.14em; color: var(--c-ink-soft); margin-bottom: var(--s-3); }
+  .ritual__fixed { font-size: 0.8125rem; color: var(--c-ink-soft); letter-spacing: 0.02em; }
+  .ritual__cap { display: grid; gap: 4px; }
+  .ritual__cap strong { font-size: clamp(1.125rem, 1.7vw, 1.625rem); font-weight: 600; line-height: 1.35; color: var(--c-ink); letter-spacing: -0.01em; }
+  .ritual__cap span { font-size: clamp(0.8125rem, 1vw, 0.9375rem); color: var(--c-ink-soft); }
+  .ritual__dots { display: none; }
 
   /* ───────── 정적 배치: JS 없음 · 움직임 줄이기 ───────── */
   .ritual__stage {
@@ -90,13 +130,34 @@ const img = withBase;
   .ritual__sub { grid-area: sub; }
   .ritual__glass { grid-area: glass; width: min(300px, 58vw); margin-top: var(--s-7); }
   .ritual__final { grid-area: final; text-align: center; }
+  /* 한국어 정적 배치: 제목 아래 한 줄 → 모래시계 → 고정 문장·구간 자막 목록 → 마지막 문구 */
+  .ritual--story .ritual__stage { grid-template-areas: 'days' 'jar' 'sub' 'lead' 'glass' 'note' 'final'; }
+  .ritual__lead { grid-area: lead; }
+  .ritual__note { grid-area: note; display: grid; gap: var(--s-4); text-align: center; max-width: 34em; }
+  .ritual__caps { display: grid; gap: var(--s-4); }
   @media (min-width: 900px) {
     :global(html:not(.js-motion)) .ritual__stage { grid-template-columns: 1fr 1fr; grid-template-areas: 'days days' 'jar jar' 'sub sub' 'glass final'; }
     :global(html:not(.js-motion)) .ritual__final { text-align: start; justify-self: start; align-self: center; }
+    :global(html:not(.js-motion)) .ritual--story .ritual__stage { grid-template-areas: 'days days' 'jar jar' 'sub sub' 'lead lead' 'glass note' 'glass final'; }
+    :global(html:not(.js-motion)) .ritual__note { text-align: start; justify-self: start; align-self: end; }
   }
 
   /* ───────── 스크롤 연동 배치 ───────── */
-  :global(.js-motion) .ritual { height: calc(100svh - var(--header-h) + 520svh); }
+  :global(.js-motion) .ritual { height: calc(100svh - var(--header-h) + var(--ritual-len, 520svh)); }
+  /* 한국어 추가 요소: ritual.ts 가 위치·투명도를 계산. 자막 전환은 짧은 크로스페이드(0.25초) */
+  :global(.js-motion) .ritual__note { display: contents; }
+  :global(.js-motion) .ritual__lead,
+  :global(.js-motion) .ritual__fixed,
+  :global(.js-motion) .ritual__caps,
+  :global(.js-motion) .ritual__dots { position: absolute; left: 0; top: 0; margin: 0; z-index: 6; }
+  :global(.js-motion) .ritual__lead { z-index: 1; white-space: nowrap; }
+  :global(.js-motion) .ritual__fixed { white-space: nowrap; }
+  :global(.js-motion) .ritual__caps { display: grid; gap: 0; opacity: 0; text-align: start; }
+  :global(.js-motion) .ritual__cap { grid-area: 1 / 1; opacity: 0; transition: opacity 250ms var(--ease-cream); }
+  :global(.js-motion) .ritual__cap.is-on { opacity: 1; }
+  :global(.js-motion) .ritual__dots { display: flex; gap: 6px; opacity: 0; }
+  .ritual__dots li { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--c-gold-line); transition: background-color 250ms var(--ease-cream); }
+  .ritual__dots li.is-on { background: var(--c-gold-line); }
   :global(.js-motion) .ritual__pin { position: sticky; top: var(--header-h); height: calc(100svh - var(--header-h)); overflow: hidden; contain: layout paint; }
   :global(.js-motion) .ritual__stage { display: block; position: relative; width: 100%; height: 100%; padding: 0; max-width: none; }
   :global(.js-motion) .ritual__days,
@@ -128,6 +189,9 @@ const img = withBase;
     :global(.js-motion) .ritual__counter { flex-direction: row; align-items: baseline; gap: 0.3em; }
     :global(.js-motion) .ritual__final { inset-inline: var(--gutter); width: auto; top: auto; bottom: 7%; translate: 0 0; text-align: center; }
     :global(.js-motion) .ritual__cta { width: 100%; }
+    :global(.js-motion) .ritual__caps { text-align: center; }
+    :global(.js-motion) .ritual__cap strong { font-size: min(1.125rem, 4.9vw); white-space: nowrap; }
+    :global(.js-motion) .ritual__cap span { font-size: min(0.8125rem, 3.6vw); white-space: nowrap; }
   }
   :global(.js-motion) [data-lid], :global(.js-motion) [data-body] { will-change: transform; }
 </style>

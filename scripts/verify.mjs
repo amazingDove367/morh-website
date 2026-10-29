@@ -31,7 +31,8 @@ async function scrollToP(page, p) {
     const sec = document.querySelector('[data-ritual]');
     const top0 = document.querySelector('.morh-header').offsetHeight;
     const H = document.querySelector('[data-stage]').clientHeight;
-    scrollTo(0, Math.round(sec.getBoundingClientRect().top + scrollY - top0 + p * (sec.offsetHeight - H)));
+    const u = window.__ritualToRaw ? window.__ritualToRaw(p) : p; // 한국어 긴 타임라인: 장면 진행도 → 스크롤 비율
+    scrollTo(0, Math.round(sec.getBoundingClientRect().top + scrollY - top0 + u * (sec.offsetHeight - H)));
   }, p);
   await page.waitForTimeout(450); // 보간이 목표에 도착할 때까지
   return page.evaluate(() => window.__ritual());
@@ -73,10 +74,26 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await page.waitForTimeout(300);
   ok(`[홈 ${label}] 장면 뒤 브랜드 소개·푸터로 이어짐`, (await page.isVisible('#about-title')) && (await page.locator('.morh-footer').count()) === 1);
   ok(`[홈 ${label}] 콘솔 오류 없음`, errors.length === 0, errors);
+  // 한국어 자막: DAY 01–06 / 07–13 / 14 에 맞는 자막 하나만, 고정 문장·점은 모래시계를 가리지 않음, 마지막 화면과 겹치지 않음
+  const capAt = async (p) => { const st = await scrollToP(page, p); await page.waitForTimeout(300); return page.evaluate((st) => {
+    const b = (q) => document.querySelector(q).getBoundingClientRect();
+    const stageTop = b('[data-stage]').top;
+    return { day: st.day, on: [...document.querySelectorAll('[data-cap].is-on')].map((c) => c.dataset.cap), caps: Number(getComputedStyle(document.querySelector('[data-caps]')).opacity),
+      dots: document.querySelectorAll('[data-dots] li.is-on').length, fin: Number(getComputedStyle(document.querySelector('[data-final]')).opacity),
+      fixedB: b('[data-fixed]').bottom - stageTop, capsT: b('[data-caps]').top - stageTop, capsB: b('[data-caps]').bottom - stageTop, capsR: b('[data-caps]').right, dotsT: b('[data-dots]').top - stageTop,
+      gTop: st.glass.top, gBottom: st.glass.bottom, gLeft: st.glass.left, H: st.H, mobile: st.W < 720 };
+  }, st); };
+  const c1 = await capAt(0.62), c2 = await capAt(0.75), c3 = await capAt(0.86), cf = await capAt(0.99);
+  ok(`[홈 ${label}] 자막: DAY 01–06 → 1번 · 07–13 → 2번 · 14 → 3번, 점 개수 = DAY`, c1.on.join() === '6' && c2.on.join() === '13' && c3.on.join() === '14' && c1.caps === 1 && c2.dots === c2.day && c3.dots === 14, { c1, c2, c3 });
+  ok(`[홈 ${label}] 자막·고정 문장·점이 모래시계를 가리지 않음`, [c1, c2, c3].every((c) => c.mobile ? c.fixedB <= c.gTop && c.dotsT >= c.gBottom && c.capsT >= c.dotsT + 7 && c.capsB <= c.H : c.capsR <= c.gLeft + 4 && c.dotsT >= c.gBottom), c2);
+  ok(`[홈 ${label}] 마지막 화면은 DAY 14 자막이 사라진 뒤 표시(겹치지 않음)`, c3.fin === 0 && cf.caps === 0 && cf.fin > 0.99, { c3: c3.fin, cfCaps: cf.caps });
+  ok(`[홈 ${label}] 마지막 문구: care, not cover · 내 피부가 마음에 드는 아침. · MORH를 바른 14일에서 시작해요.`, (await page.evaluate(() => document.querySelector('.ritual__final').innerText)).replace(/\s+/g, ' ').includes('care, not cover 내 피부가 마음에 드는 아침. MORH를 바른 14일에서 시작해요. 어떻게 쟀는지 보러 가기'));
   if (label === '데스크톱') {
     await scrollToP(page, 0.99);
-    await Promise.all([page.waitForURL(/\/product\/$/), cta.click()]);
-    ok('[홈] 마지막 버튼 → 제품 상세페이지', page.url().endsWith('/product/'));
+    const attrs = await cta.evaluate((a) => [a.dataset.ga, a.dataset.gaCtaLocation]);
+    await Promise.all([page.waitForURL(/\/product\/#record$/), cta.click()]);
+    await page.waitForTimeout(400);
+    ok('[홈] 마지막 버튼 "어떻게 쟀는지 보러 가기" → 상품 #record (추적 속성 유지)', page.url().endsWith('/product/#record') && attrs.join() === 'cta_click,ritual_final' && (await page.evaluate(() => { const t = document.querySelector('#record').getBoundingClientRect().top; return t >= 0 && t < innerHeight; })), attrs);
   }
   await ctx.close();
 }
@@ -90,10 +107,13 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     cls: document.documentElement.className,
     canvas: getComputedStyle(document.querySelector('[data-canvas]')).display,
     glass: document.querySelector('.ritual__glass img').getBoundingClientRect().height,
-    cta: !!document.querySelector('.ritual__cta[href$="/product/"]'),
+    cta: !!document.querySelector('.ritual__cta[href$="/product/#record"]'),
     h: document.querySelector('[data-ritual]').offsetHeight,
+    list: [...document.querySelectorAll('.ritual__note > p, .ritual__cap')].map((e) => [e.innerText.replace(/\s+/g, ' '), getComputedStyle(e).opacity, e.getBoundingClientRect().height > 0]),
+    fin: document.querySelector('.ritual__final').innerText.replace(/\s+/g, ' '),
   }));
   ok('[홈] 움직임 줄이기: 정적 장면(캔버스 없음, DAY 14 모래시계 사진, 카피·버튼, 고정 구간 없음)', st.cls.includes('reduce-motion') && st.canvas === 'none' && st.glass > 100 && st.cta && st.h < 3000, st);
+  ok('[홈] 움직임 줄이기: 고정 문장 + 구간 자막 3개 + 마지막 문구를 정적 목록으로', st.list.length === 4 && st.list.every((l) => l[1] === '1' && l[2]) && st.list[0][0] === '숫자는 MORH를 바른 날이에요.' && st.list[3][0].includes('14일째, 피부가 5.2% 밝아졌어요.') && st.fin.includes('내 피부가 마음에 드는 아침.'), st.list);
   await ctx.close();
   const { ctx: c2, page: p2 } = await open('/', DESKTOP);
   for (const vp of [{ width: 1024, height: 700 }, { width: 1920, height: 1080 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
@@ -101,6 +121,36 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     const s = await scrollToP(p2, 0.3);
     ok(`[홈] ${vp.width}×${vp.height}: 줄기와 모래시계 정렬 유지, 가로 넘침 없음`, s.pour && Math.abs(s.pour.x - s.glass.x) <= 2 && (await overflowX(p2)) <= 0, s.pour);
   }
+  await c2.close();
+}
+
+// 홈 개편(한국어): 첫 화면 한 줄 · 4주 패널 · About 슬로건 굵게 · 다른 언어 영향 없음
+for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) {
+  const { ctx, page } = await open('/', opts);
+  await page.waitForTimeout(500);
+  const h = await page.evaluate(() => {
+    const b = (q) => document.querySelector(q).getBoundingClientRect();
+    return { lead: document.querySelector('[data-lead]').textContent, leadT: b('[data-lead]').top, subB: b('[data-sub]').bottom, jarT: b('[data-lid]').top, leadB: b('[data-lead]').bottom };
+  });
+  ok(`[홈 ${label}] 첫 화면: 14 DAYS 제목 아래 한 줄(제품과 겹치지 않음)`, h.lead === '14일엔 피부를, 4주엔 화장대를 쟀어요.' && h.leadT > h.subB && h.leadB < h.jarT, h);
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('/');
+  const w = await page.evaluate(() => {
+    const y = (q) => document.querySelector(q).getBoundingClientRect().top + scrollY;
+    const s = document.querySelector('.week4');
+    return { after: y('.week4') > y('[data-ritual]') && y('.week4') < y('#about'), text: s.innerText.replace(/\s+/g, ' '), href: s.querySelector('a').getAttribute('href'), ga: s.querySelectorAll('[data-ga]').length,
+      down: [...s.querySelectorAll('.st-down')].map((e) => getComputedStyle(e).color),
+      strong: getComputedStyle(document.querySelector('.about__sub-strong')).fontWeight, strongTxt: document.querySelector('.about__sub-strong').textContent, sub: document.querySelector('.about__sub').textContent,
+      card: document.querySelector('.about__card').getAttribute('href') };
+  });
+  ok('[홈] 4주 패널: 모래시계 구간 다음, 숫자 2개(줄어든 숫자 Imperial Plum)·버튼 → /product/#record·각주', w.after && w.text.includes('4주째엔 화장대를 쟀어요.') && w.text.includes('5.2회 → 2.1회') && w.text.includes('4분 → 30초') && w.text.includes('쿠션은 그대로 써요.') && w.text.includes('20–45세 여성 32명') && w.href.endsWith('/product/#record') && w.ga === 0 && w.down.every((c) => c === 'rgb(75, 13, 80)'), w);
+  ok('[홈] About: "빛을 입은 아름다움"만 SemiBold, 문구 그대로 · 제품 카드 링크 /product/', w.strong === '600' && w.strongTxt === '빛을 입은 아름다움' && w.sub === '빛을 입은 아름다움 · 가린 게 아니라, 가꾼 거예요.' && w.card.endsWith('/product/'), w);
+  await ctx.close();
+  const { ctx: c2, page: p2 } = await open('/en/');
+  const en = await p2.evaluate(() => ({ extra: document.querySelectorAll('[data-lead], [data-caps], [data-dots], .week4, .about__sub-strong').length, cta: document.querySelector('.ritual__cta').getAttribute('href'), timeline: document.querySelector('[data-ritual]').dataset.timeline ?? null }));
+  ok('[홈 en] 다른 언어 홈은 기존 그대로(추가 문구·4주 패널 없음, 버튼 → /en/product/, 기존 타임라인)', en.extra === 0 && en.cta.endsWith('/en/product/') && en.timeline === null, en);
   await c2.close();
 }
 

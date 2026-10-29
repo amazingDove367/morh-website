@@ -5,21 +5,45 @@ import RitualScene from '../../components/home/RitualScene.astro';
 import { localePath, localeStaticPaths, withBase, type Locale } from '../../i18n/locales';
 import { DICTS } from '../../i18n';
 import { viewImg } from '../../data/product';
+import { koStory } from '../../i18n/ko-story';
+import Nums from '../../components/story/Nums.astro';
+import '../../styles/story.css';
 
 export const getStaticPaths = localeStaticPaths;
 const { locale } = Astro.props as { locale: Locale };
 const t = DICTS[locale];
 const PRODUCT = localePath(locale, '/product/');
+// 한국어만: 모래시계 구간 다음 4주 패널 · About 슬로건 굵게
+const ko = locale === 'ko';
+const w4 = koStory.home.week4;
 ---
 <Base pageType="home" locale={locale} path="/" title={t.meta.homeTitle} description={t.meta.homeDesc}>
   <div class="home">
     <RitualScene locale={locale} />
 
+    {ko && (
+      <section class="st wrap week4" aria-labelledby="week4-title">
+        <p class="st__lead">{w4.lead}</p>
+        <h2 id="week4-title" class="st__title">{w4.title}</h2>
+        <ul role="list" class="st-cards" style="--cols: 2">
+          {w4.cards.map((c) => (
+            <li class="st-card">
+              <span class="st-card__label">{c.label}</span>
+              <span class="st-card__nums"><span class="st-card__from"><Nums text={c.from} /></span><span class="st-card__arrow">→</span><span class="st-down"><Nums text={c.to} /></span></span>
+            </li>
+          ))}
+        </ul>
+        <p class="st__close">{w4.line}</p>
+        <a class="btn week4__cta" href={`${PRODUCT}#record`}>{w4.cta} <span class="arrow" aria-hidden="true">→</span></a>
+        <p class="st-fn"><Nums text={w4.footnote} /></p>
+      </section>
+    )}
+
     <section class="about wrap" id="about" aria-labelledby="about-title">
       <div class="about__text">
         <p class="about__label">{t.home.aboutLabel}</p>
         <h2 id="about-title" class="about__slogan"><span lang="en" dir="ltr">{t.home.slogan}</span></h2>
-        <p class="about__sub">{t.home.sloganKo} · {t.home.campaign}</p>
+        <p class="about__sub">{ko ? <><b class="about__sub-strong">{t.home.sloganKo}</b> · {t.home.campaign}</> : <>{t.home.sloganKo} · {t.home.campaign}</>}</p>
         <p class="about__body">{t.home.aboutBody}</p>
         <div class="about__links">
           <a class="btn" href={PRODUCT} data-ga="cta_click" data-ga-cta-location="about_product">{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
@@ -42,6 +66,10 @@ const PRODUCT = localePath(locale, '/product/');
   .about__label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-ink-soft); }
   .about__slogan { font-family: var(--f-serif); font-weight: 600; font-size: clamp(2.2rem, 4.4vw, 3.8rem); color: var(--c-burgundy); letter-spacing: -0.01em; line-height: 1.05; }
   .about__sub { font-size: var(--fs-lead); color: var(--c-ink); }
+  .about__sub-strong { font-weight: 600; }
+  .week4 { max-width: 960px; padding-block: var(--s-9) var(--s-7); border-top: 0; justify-items: start; }
+  .week4__cta { margin-top: var(--s-2); }
+  @media (max-width: 720px) { .week4__cta { width: 100%; } }
   .about__body { color: var(--c-ink-soft); max-width: 46ch; }
   .about__links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-5); margin-top: var(--s-3); }
   .about__card { display: grid; gap: var(--s-2); justify-items: center; text-decoration: none; border-block: 1px solid var(--c-line-strong); padding-block: var(--s-6); }

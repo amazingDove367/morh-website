@@ -114,6 +114,33 @@ export const koStory = {
     metricNote: '(피부에서 빠져나가는 수분이 줄었다는 뜻)',
     image: { name: 'texture-veil', alt: '' },
   },
+  /* ───────── B. 홈 ───────── */
+  home: {
+    lead: '14일엔 피부를, 4주엔 화장대를 쟀어요.',
+    fixed: '숫자는 MORH를 바른 날이에요.',
+    // 모래시계 DAY 구간 자막(큰 문장 / 작은 문장). to = 이 자막을 보여 주는 마지막 DAY
+    captions: [
+      { to: 6, big: '자기 전에 한 번, 출근 전에 한 번.', small: '스킨케어 마지막에 MORH를 발라요' },
+      { to: 13, big: '칙칙한 날엔 아직 컨실러로 가려요.', small: '그래도 MORH는 매일 발라요.' },
+      { to: 14, big: '14일째, 피부가 5.2% 밝아졌어요.', small: '측정 기기로 잰 피부 밝기 · 광택도도 +21.5%' },
+    ],
+    finalEn: 'care, not cover',
+    finalBig: '내 피부가 마음에 드는 아침.',
+    finalSmall: 'MORH를 바른 14일에서 시작해요.',
+    cta: '어떻게 쟀는지 보러 가기',
+    week4: {
+      lead: '피부가 먼저 달라지고, 화장대는 그다음이에요.',
+      title: '4주째엔 화장대를 쟀어요.',
+      cards: [
+        { label: '주간 컨실러', from: '5.2회', to: '2.1회' },
+        { label: '선크림 다음 베이스 화장', from: '4분', to: '30초' },
+      ],
+      line: '쿠션은 그대로 써요.',
+      cta: '어떻게 쟀는지 보러 가기',
+      footnote: FOOTNOTE,
+    },
+  },
+
   faq: {
     label: 'FAQ',
     items: [

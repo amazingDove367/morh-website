@@ -13,8 +13,13 @@
     0.38–0.55  ZOOM   모래시계 확대·중앙, 제품과 뚜껑은 위로 퇴장, 줄기 꼬리가 떨어지며 흐름 마무리
     0.56–0.88  DAYS   DAY 01 → 14, 위쪽 크림이 목을 지나 아래에 쌓임 (같은 진행도)
     0.88–1.00  FINAL  모래시계 축소·이동, 카피와 버튼
+
+  한국어(data-timeline="long"): 스크롤 거리 → p 대응표(src/data/ritual-timeline.ts)로 DAY 구간과 마지막 화면을 길게 쓰고,
+  제목 아래 한 줄(data-lead) · DAY 아래 고정 문장(data-fixed) · 구간 자막(data-caps) · 점 14개(data-dots)를 함께 배치.
+  휴대폰에서 자막이 모래시계를 가리면 DAY 구간 모래시계를 그 사이에 들어가는 만큼만 줄임
 */
 import geom from '../data/ritual-geometry.json';
+import { LONG_TIMELINE, LONG_LEN } from '../data/ritual-timeline';
 import { track } from './analytics';
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -84,6 +89,27 @@ export function initRitual() {
   const counter = q<HTMLElement>('[data-counter]');
   const dayEl = q<HTMLElement>('[data-day]');
   const fin = q<HTMLElement>('[data-final]');
+  // 한국어 추가 요소(없으면 null) · 긴 타임라인
+  const leadEl = root.querySelector<HTMLElement>('[data-lead]');
+  const fixedEl = root.querySelector<HTMLElement>('[data-fixed]');
+  const capsEl = root.querySelector<HTMLElement>('[data-caps]');
+  const caps = [...root.querySelectorAll<HTMLElement>('[data-cap]')];
+  const dotsEl = root.querySelector<HTMLElement>('[data-dots]');
+  const dots = dotsEl ? [...dotsEl.children] as HTMLElement[] : [];
+  const TL = sec.dataset.timeline === 'long' ? LONG_TIMELINE : null;
+  /** 스크롤 비율(0..1) → 장면 진행도 p. 기본 타임라인은 그대로 */
+  const toP = (u: number) => {
+    if (!TL) return u;
+    const s = u * LONG_LEN;
+    for (let i = 1; i < TL.length; i++) if (s <= TL[i][0]) return lerp(TL[i - 1][1], TL[i][1], seg(s, TL[i - 1][0], TL[i][0]));
+    return 1;
+  };
+  /** 장면 진행도 p → 스크롤 비율(검증 스크립트용) */
+  const toRaw = (p: number) => {
+    if (!TL) return p;
+    for (let i = 1; i < TL.length; i++) if (p <= TL[i][1]) return lerp(TL[i - 1][0], TL[i][0], seg(p, TL[i - 1][1], TL[i][1])) / LONG_LEN;
+    return 1;
+  };
 
   const base = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/images/ritual/`;
   const img = {
@@ -192,6 +218,33 @@ export function initRitual() {
     L.daysW = days.offsetWidth; L.daysH = days.offsetHeight;
     L.cW = counter.offsetWidth; L.cH = counter.offsetHeight;
 
+    if (leadEl) {
+      L.leadW = leadEl.offsetWidth; L.leadH = leadEl.offsetHeight;
+      L.leadY = L.subY + L.subH / 2 + (mobile ? 14 : H * 0.03) + L.leadH / 2;
+    }
+    if (fixedEl && capsEl && dotsEl) {
+      L.fxW = fixedEl.offsetWidth; L.fxH = fixedEl.offsetHeight;
+      L.dotsW = dotsEl.offsetWidth; L.dotsH = dotsEl.offsetHeight;
+      if (mobile) {
+        // 휴대폰: 날짜·고정 문장은 위, 자막은 아래, 점은 모래시계 바로 아래 → 남는 높이에 모래시계가 들어가게
+        capsEl.style.width = `${W - 32}px`;
+        L.capW = W - 32; L.capH = capsEl.offsetHeight;
+        const top = H * 0.035 + L.cH + 6 + L.fxH + 10;
+        const bottom = 12 + L.capH + 10 + L.dotsH + 8;
+        const avail = H - top - bottom;
+        if (HG_H * L.gZ > avail) L.gZ = avail / HG_H;
+        const half = (HG_H * L.gZ) / 2;
+        L.zY = clamp(L.zY, top + half, H - bottom - half);
+      } else {
+        // 데스크톱: 날짜 아래 왼쪽 단(모래시계 왼쪽 끝까지)
+        const gl = L.zX - (HG_W / 2) * L.gZ;
+        const cx = Math.max(24, Math.min(W * 0.14, gl - L.cW - W * 0.05));
+        L.capW = Math.max(240, gl - cx - 32);
+        capsEl.style.width = `${L.capW}px`;
+        L.capH = capsEl.offsetHeight;
+      }
+    }
+
     const gMax = Math.max(L.gP, L.gZ, L.gF) * dpr * 1.05;
     const kMax = Math.max(L.kHold, L.kP * 1.12) * dpr * 1.05;
     (Object.keys(img) as Key[]).forEach((k) => {
@@ -214,7 +267,7 @@ export function initRitual() {
   const hgToStage = (hx: number, hy: number, g: number, x: number, y: number) => ({ x: hx + (x - HG_CX) * g, y: hy + (y - HG_CY) * g });
 
   let state: Record<string, unknown> = {};
-  let dayShown = -1;
+  let dayShown = -1, capShown = -1, dotsShown = -1;
 
   function frame(p: number) {
     // 단계별 진행값
@@ -235,6 +288,10 @@ export function initRitual() {
     css(days, 'opacity', (1 - tOut).toFixed(3));
     css(sub, 'transform', `translate3d(${(W / 2 - L.subW / 2).toFixed(2)}px, ${(L.subY - L.subH / 2 + tOut * H * 0.03).toFixed(2)}px, 0)`);
     css(sub, 'opacity', (1 - seg(p, 0.03, 0.09)).toFixed(3));
+    if (leadEl) {
+      css(leadEl, 'transform', `translate3d(${(W / 2 - L.leadW / 2).toFixed(2)}px, ${(L.leadY - L.leadH / 2 + tOut * H * 0.03).toFixed(2)}px, 0)`);
+      css(leadEl, 'opacity', (1 - seg(p, 0.03, 0.09)).toFixed(3));
+    }
 
     // 몸체 중심·크기·기울기 (닫힌 사진과 열린 사진이 같은 값을 공유)
     const exitY = -exit * (H * 1.05);
@@ -380,6 +437,22 @@ export function initRitual() {
     if (dd !== dayShown) { dayShown = dd; dayEl.textContent = String(dd).padStart(2, '0'); }
     dayEl.classList.toggle('is-passing', ![1, 7, 14].includes(dd)); // 01·07·14 는 항상 또렷하게
 
+    // 한국어: 고정 문장 · 구간 자막 · 점 14개 (날짜와 같이 나타나고 사라짐)
+    if (fixedEl && capsEl && dotsEl) {
+      const vis = (cIn * (1 - cOut)).toFixed(3);
+      const fy = cyC + L.cH + (mobile ? 6 : 14);
+      css(fixedEl, 'transform', `translate3d(${(mobile ? W / 2 - L.fxW / 2 : cxC).toFixed(2)}px, ${fy.toFixed(2)}px, 0)`);
+      css(fixedEl, 'opacity', vis);
+      css(capsEl, 'transform', `translate3d(${(mobile ? W / 2 - L.capW / 2 : cxC).toFixed(2)}px, ${(mobile ? H - 12 - L.capH : fy + L.fxH + 24).toFixed(2)}px, 0)`);
+      css(capsEl, 'opacity', vis);
+      const ci = Math.max(0, caps.findIndex((c) => dd <= Number(c.dataset.cap)));
+      if (ci !== capShown) { capShown = ci; caps.forEach((c, i) => c.classList.toggle('is-on', i === ci)); }
+      const gb = hgToStage(hx, hy, g, HG_CX, HG.content[3]).y;
+      css(dotsEl, 'transform', `translate3d(${(hx - L.dotsW / 2).toFixed(2)}px, ${(gb + 10).toFixed(2)}px, 0)`);
+      css(dotsEl, 'opacity', vis);
+      if (dd !== dotsShown) { dotsShown = dd; dots.forEach((d, i) => d.classList.toggle('is-on', i < dd)); }
+    }
+
     // 마무리 카피
     const fIn = seg(p, 0.935, 0.985);
     css(fin, 'opacity', fIn.toFixed(3));
@@ -413,7 +486,7 @@ export function initRitual() {
   let top0 = 0, shown = -1, lastT = 0, drawn = -1;
   function progress() {
     const r = sec.getBoundingClientRect();
-    return clamp((top0 - r.top) / Math.max(1, r.height - H));
+    return toP(clamp((top0 - r.top) / Math.max(1, r.height - H)));
   }
   const update = (t: number) => {
     ticking = false;
@@ -450,5 +523,6 @@ export function initRitual() {
   addEventListener('resize', onScroll);
   document.fonts?.ready.then(relayout);
   (window as unknown as { __ritual: () => Record<string, unknown> }).__ritual = () => state;
+  (window as unknown as { __ritualToRaw: (p: number) => number }).__ritualToRaw = toRaw;
   root.classList.add('is-live');
 }
