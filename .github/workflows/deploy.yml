@@ -39,6 +39,8 @@ jobs:
           PUBLIC_GA4_ID: ${{ vars.PUBLIC_GA4_ID || 'G-D3ENJ9B8P7' }}
           # Google 태그 관리자 컨테이너 ID. GA4 와 같이 운영 배포에서만 넣음
           PUBLIC_GTM_ID: ${{ vars.PUBLIC_GTM_ID || 'GTM-5DQWMNL6' }}
+          # Meta 픽셀 ID. GA4·GTM 과 같이 운영 배포에서만 넣음
+          PUBLIC_META_PIXEL_ID: ${{ vars.PUBLIC_META_PIXEL_ID || '1405548278234602' }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

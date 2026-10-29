@@ -23,6 +23,7 @@ V2 는 Astro 로 만든 사이트라 소스 파일을 **빌드(변환)** 해야 
   - `PUBLIC_INDEXABLE` = `true` → 검색 노출 허용. 없거나 `false` 면 모든 페이지 noindex(현재 기본값, 샘플 후기·미확정 정보가 있는 동안 유지 권장)
   - `PUBLIC_GA4_ID` → 측정 ID를 바꿀 때만 사용. 기본값 `G-D3ENJ9B8P7` 이 워크플로에 들어가 있어 변수가 없어도 GA4로 전송되고, 개인정보 안내 문구도 자동으로 '사용 중'으로 바뀜
   - `PUBLIC_GTM_ID` → GTM 컨테이너 ID를 바꿀 때만 사용. 기본값 `GTM-5DQWMNL6`
+  - `PUBLIC_META_PIXEL_ID` → Meta 픽셀 ID를 바꿀 때만 사용. 기본값 `1405548278234602`
 
 ## 워크플로에서 고정한 값
 
