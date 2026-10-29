@@ -1,6 +1,6 @@
 ---
 /*
-  모든 페이지 공통 레이아웃: 언어·방향(lang/dir), 메타·검색 설정, 헤더·하단 띠·푸터, 분석 스크립트(GTM·GA4, 설정된 경우만)
+  모든 페이지 공통 레이아웃: 언어·방향(lang/dir), 메타·검색 설정, 헤더·하단 띠·푸터, 분석 스크립트(GTM·GA4·Meta 픽셀, 설정된 경우만)
   - 검색 노출: PUBLIC_INDEXABLE=true 인 운영 배포에서만 index. 미리보기·로컬은 항상 noindex
   - canonical·hreflang: PUBLIC_SITE_URL 이 있을 때만(임의 주소를 만들지 않음)
   - 움직임 줄이기: OS 설정 또는 ?motion=off → html.reduce-motion (정적 장면), 그 외 html.js-motion
@@ -38,6 +38,9 @@ const gaValid = /^G-[A-Z0-9]{4,}$/.test(ga);
 // Google 태그 관리자: <head> 맨 위(charset 바로 다음). GA4 코드와 별개로 둠
 const gtm = (env.PUBLIC_GTM_ID || '').trim();
 const gtmValid = /^GTM-[A-Z0-9]{4,}$/.test(gtm);
+// Meta 픽셀: </head> 바로 앞. GA4·GTM 과 같이 운영 배포에서만
+const pixel = (env.PUBLIC_META_PIXEL_ID || '').trim();
+const pixelValid = /^\d{10,20}$/.test(pixel);
 ---
 <!doctype html>
 <html lang={meta.html} dir={meta.dir} data-locale={locale}>
@@ -88,6 +91,27 @@ const gtmValid = /^GTM-[A-Z0-9]{4,}$/.test(gtm);
         // ?ga_debug=1 로 열면 GA4 DebugView 에 바로 표시
         window.gtag('config', ga, new URLSearchParams(location.search).get('ga_debug') === '1' ? { debug_mode: true } : {});
       </script>
+    </>
+  )}
+  {pixelValid && (
+    <>
+      <!-- Meta Pixel Code -->
+      <script is:inline define:vars={{ pixel }}>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', pixel);
+      fbq('track', 'PageView');
+      </script>
+      <noscript><img height="1" width="1" style="display:none"
+      src={`https://www.facebook.com/tr?id=${pixel}&ev=PageView&noscript=1`}
+      /></noscript>
+      <!-- End Meta Pixel Code -->
     </>
   )}
 </head>
