@@ -146,7 +146,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
       card: document.querySelector('.about__card').getAttribute('href') };
   });
   ok('[홈] 4주 패널: 모래시계 구간 다음, 숫자 2개(줄어든 숫자 Imperial Plum)·버튼 → /product/#record·각주', w.after && w.text.includes('4주 후, 달라진 아침 화장') && w.text.includes('기록 자세히 보기') && w.text.includes('5.2회 → 2.1회') && w.text.includes('4분 → 30초') && !w.text.includes('쿠션은 그대로 써요.') && w.text.includes('20–45세 여성 32명') && w.href.endsWith('/product/#record') && w.ga === 1 && w.down.every((c) => c === 'rgb(75, 13, 80)'), w);
-  ok('[홈] About: "빛을 입은 아름다움"만 SemiBold, 문구 그대로 · 제품 카드 링크 /product/', w.strong === '600' && w.strongTxt === '빛을 입은 아름다움' && w.sub === '빛을 입은 아름다움 · 가린 게 아니라, 가꾼 거예요.' && w.card.endsWith('/product/'), w);
+  ok('[홈] About: "빛을 입은 아름다움"만 SemiBold(캠페인 문장 삭제) · 제품 카드 링크 /product/', w.strong === '600' && w.strongTxt === '빛을 입은 아름다움' && w.sub === '빛을 입은 아름다움' && w.card.endsWith('/product/'), w);
   await ctx.close();
   const { ctx: c2, page: p2 } = await open('/en/');
   const en = await p2.evaluate(() => ({ extra: document.querySelectorAll('[data-lead], [data-caps], [data-dots], .week4, .about__sub-strong').length, cta: document.querySelector('.ritual__cta').getAttribute('href'), timeline: document.querySelector('[data-ritual]').dataset.timeline ?? null }));

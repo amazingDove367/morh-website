@@ -13,7 +13,7 @@ export const getStaticPaths = localeStaticPaths;
 const { locale } = Astro.props as { locale: Locale };
 const t = DICTS[locale];
 const PRODUCT = localePath(locale, '/product/');
-// 한국어만: 모래시계 구간 다음 4주 패널 · About 슬로건 굵게
+// 한국어만: 모래시계 구간 다음 4주 패널 · About 슬로건 굵게(캠페인 문장은 2026-11-04 삭제)
 const ko = locale === 'ko';
 const w4 = koStory.home.week4;
 ---
@@ -42,7 +42,7 @@ const w4 = koStory.home.week4;
       <div class="about__text">
         <p class="about__label">{t.home.aboutLabel}</p>
         <h2 id="about-title" class="about__slogan"><span lang="en" dir="ltr">{t.home.slogan}</span></h2>
-        <p class="about__sub">{ko ? <><b class="about__sub-strong">{t.home.sloganKo}</b> · {t.home.campaign}</> : <>{t.home.sloganKo} · {t.home.campaign}</>}</p>
+        <p class="about__sub">{ko ? <b class="about__sub-strong">{t.home.sloganKo}</b> : <>{t.home.sloganKo} · {t.home.campaign}</>}</p>
         <p class="about__body">{t.home.aboutBody}</p>
         <div class="about__links">
           <a class="btn" href={PRODUCT} data-ga="cta_click" data-ga-cta-location="about_product">{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
