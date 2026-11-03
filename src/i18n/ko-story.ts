@@ -151,13 +151,12 @@ export const koStory = {
   /* ───────── B. 홈 ───────── */
   home: {
     lead: '피부 밝기 +10.0%, 멜라닌 지수 −7.4%',
-    fixed: '숫자는 MORH를 바른 날이에요.',
-    // 모래시계 DAY 구간 자막(큰 문장 / 작은 문장). to = 이 자막을 보여 주는 마지막 DAY
+    // 모래시계 DAY 구간 자막. to = 이 자막을 보여 주는 마지막 DAY (2026-11-04: 2구간)
+    // count: DAY fromDay → to 동안 숫자가 from → value 로 올라감(정적 화면·JS 없음에서는 최종값). small: DAY 14 에 나타남
     captions: [
-      { to: 6, big: '자기 전에 한 번, 출근 전에 한 번.', small: '스킨케어 마지막에 MORH를 발라요' },
-      { to: 13, big: '피부가 밝아져서, 컨실러 사용이 줄었어요', small: 'MORH로 매일 관리하고 있어요' },
-      { to: 14, big: '14일째, 피부 밝기 +10.0%', small: '멜라닌 지수 −7.4% · 피부 광택도 +21.5%' },
-    ],
+      { to: 7, big: 'MORH로 매일 관리하고 있어요' },
+      { to: 14, big: '피부 밝기', count: { fromDay: 7, from: 0, value: 10, decimals: 1, prefix: '+', suffix: '%' }, small: '멜라닌 지수 −7.4% · 피부 광택도 +21.5%' },
+    ] as { to: number; big: string; count?: { fromDay: number; from: number; value: number; decimals: number; prefix: string; suffix: string }; small?: string }[],
     finalEn: 'care, not cover',
     // finalBig: \n 위치에서 줄바꿈
     finalBig: '더 이상 가리지 않아도\n마음에 드는 피부',

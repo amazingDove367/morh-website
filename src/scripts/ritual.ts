@@ -15,7 +15,8 @@
     0.88–1.00  FINAL  모래시계 축소·이동, 카피와 버튼
 
   한국어(data-timeline="long"): 스크롤 거리 → p 대응표(src/data/ritual-timeline.ts)로 DAY 구간과 마지막 화면을 길게 쓰고,
-  제목 아래 한 줄(data-lead) · DAY 아래 고정 문장(data-fixed) · 구간 자막(data-caps) · 점 14개(data-dots)를 함께 배치.
+  제목 아래 한 줄(data-lead) · 구간 자막(data-caps) · 점 14개(data-dots)를 함께 배치.
+  자막 안 숫자(data-count)는 DAY 에 맞춰 올라가고(예: DAY 7→14 동안 +0.0% → +10.0%), data-cap-small 은 그 자막의 마지막 DAY 에 나타남.
   휴대폰에서 자막이 모래시계를 가리면 DAY 구간 모래시계를 그 사이에 들어가는 만큼만 줄임
 */
 import geom from '../data/ritual-geometry.json';
@@ -93,9 +94,11 @@ export function initRitual() {
   const topCta = root.querySelector<HTMLElement>('[data-topcta]');
   // 한국어 추가 요소(없으면 null) · 긴 타임라인
   const leadEl = root.querySelector<HTMLElement>('[data-lead]');
-  const fixedEl = root.querySelector<HTMLElement>('[data-fixed]');
   const capsEl = root.querySelector<HTMLElement>('[data-caps]');
   const caps = [...root.querySelectorAll<HTMLElement>('[data-cap]')];
+  type Count = { fromDay: number; toDay: number; from: number; value: number; decimals: number; prefix: string; suffix: string };
+  const counts = [...root.querySelectorAll<HTMLElement>('[data-count]')].map((el) => ({ el, c: JSON.parse(el.dataset.count!) as Count, shown: '' }));
+  const smalls = [...root.querySelectorAll<HTMLElement>('[data-cap-small]')];
   const dotsEl = root.querySelector<HTMLElement>('[data-dots]');
   const dots = dotsEl ? [...dotsEl.children] as HTMLElement[] : [];
   const TL = sec.dataset.timeline === 'long' ? LONG_TIMELINE : null;
@@ -228,14 +231,13 @@ export function initRitual() {
       L.leadW = leadEl.offsetWidth; L.leadH = leadEl.offsetHeight;
       L.leadY = L.subY + L.subH / 2 + (mobile ? 14 : H * 0.03) + L.leadH / 2;
     }
-    if (fixedEl && capsEl && dotsEl) {
-      L.fxW = fixedEl.offsetWidth; L.fxH = fixedEl.offsetHeight;
+    if (capsEl && dotsEl) {
       L.dotsW = dotsEl.offsetWidth; L.dotsH = dotsEl.offsetHeight;
       if (mobile) {
         // 휴대폰: 날짜·고정 문장은 위, 자막은 아래, 점은 모래시계 바로 아래 → 남는 높이에 모래시계가 들어가게
         capsEl.style.width = `${W - 32}px`;
         L.capW = W - 32; L.capH = capsEl.offsetHeight;
-        const top = H * 0.035 + L.cH + 6 + L.fxH + 10;
+        const top = H * 0.035 + L.cH + 16;
         const bottom = 12 + L.capH + 10 + L.dotsH + 8;
         const avail = H - top - bottom;
         if (HG_H * L.gZ > avail) L.gZ = avail / HG_H;
@@ -449,16 +451,21 @@ export function initRitual() {
     if (dd !== dayShown) { dayShown = dd; dayEl.textContent = String(dd).padStart(2, '0'); }
     dayEl.classList.toggle('is-passing', ![1, 7, 14].includes(dd)); // 01·07·14 는 항상 또렷하게
 
-    // 한국어: 고정 문장 · 구간 자막 · 점 14개 (날짜와 같이 나타나고 사라짐)
-    if (fixedEl && capsEl && dotsEl) {
+    // 한국어: 구간 자막 · 점 14개 (날짜와 같이 나타나고 사라짐)
+    if (capsEl && dotsEl) {
       const vis = (cIn * (1 - cOut)).toFixed(3);
       const fy = cyC + L.cH + (mobile ? 6 : 14);
-      css(fixedEl, 'transform', `translate3d(${(mobile ? W / 2 - L.fxW / 2 : cxC).toFixed(2)}px, ${fy.toFixed(2)}px, 0)`);
-      css(fixedEl, 'opacity', vis);
-      css(capsEl, 'transform', `translate3d(${(mobile ? W / 2 - L.capW / 2 : cxC).toFixed(2)}px, ${(mobile ? H - 12 - L.capH : fy + L.fxH + 24).toFixed(2)}px, 0)`);
+      css(capsEl, 'transform', `translate3d(${(mobile ? W / 2 - L.capW / 2 : cxC).toFixed(2)}px, ${(mobile ? H - 12 - L.capH : fy + 24).toFixed(2)}px, 0)`);
       css(capsEl, 'opacity', vis);
       const ci = Math.max(0, caps.findIndex((c) => dd <= Number(c.dataset.cap)));
       if (ci !== capShown) { capShown = ci; caps.forEach((c, i) => c.classList.toggle('is-on', i === ci)); }
+      // 숫자는 소수 DAY 로 부드럽게 올라가고, 그 구간 마지막 DAY 에서 최종값
+      counts.forEach((n) => {
+        const v = dd >= n.c.toDay ? n.c.value : lerp(n.c.from, n.c.value, clamp((day - n.c.fromDay) / (n.c.toDay - n.c.fromDay), 0, 1));
+        const txt = `${n.c.prefix}${v.toFixed(n.c.decimals)}${n.c.suffix}`;
+        if (txt !== n.shown) { n.shown = txt; n.el.textContent = txt; }
+      });
+      smalls.forEach((el) => el.classList.toggle('is-on', dd >= Number(el.dataset.capSmall)));
       const gb = hgToStage(hx, hy, g, HG_CX, HG.content[3]).y;
       css(dotsEl, 'transform', `translate3d(${(hx - L.dotsW / 2).toFixed(2)}px, ${(gb + 10).toFixed(2)}px, 0)`);
       css(dotsEl, 'opacity', vis);

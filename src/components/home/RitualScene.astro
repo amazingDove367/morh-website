@@ -63,10 +63,12 @@ const story = locale === 'ko' ? koStory.home : null;
 
       {story && (
         <div class="ritual__note">
-          <p class="ritual__fixed" data-fixed>{story.fixed}</p>
           <ol role="list" class="ritual__caps" data-caps>
             {story.captions.map((c) => (
-              <li class="ritual__cap" data-cap={c.to}><strong>{c.big}</strong><span>{c.small}</span></li>
+              <li class="ritual__cap" data-cap={c.to}>
+                <strong>{c.big}{c.count && <> <b class="ritual__num" data-count={JSON.stringify({ ...c.count, toDay: c.to })}>{c.count.prefix}{c.count.value.toFixed(c.count.decimals)}{c.count.suffix}</b></>}</strong>
+                {c.small && <span class="ritual__cap-small" data-cap-small={c.to}>{c.small}</span>}
+              </li>
             ))}
           </ol>
           <ol role="list" class="ritual__dots" data-dots aria-hidden="true">
@@ -119,10 +121,11 @@ const story = locale === 'ko' ? koStory.home : null;
   /* 첫 화면 수치 한 줄: YOUR DAILY RITUAL 과 같은 버건디, 글자 크기는 그보다 2px 크게 */
   .ritual__lead { font-size: clamp(calc(0.8125rem + 2px), calc(1.25vw + 2px), calc(1.0625rem + 2px)); font-weight: 600; color: var(--c-burgundy); text-align: center; font-variant-numeric: tabular-nums; }
   .ritual__en { font-size: clamp(0.875rem, 1.1vw, 1rem); font-weight: 300; letter-spacing: 0.14em; color: var(--c-ink-soft); margin-bottom: var(--s-3); }
-  .ritual__fixed { font-size: 0.8125rem; color: var(--c-ink-soft); letter-spacing: 0.02em; }
   .ritual__cap { display: grid; gap: 4px; }
   .ritual__cap strong { font-size: clamp(1.125rem, 1.7vw, 1.625rem); font-weight: 600; line-height: 1.35; color: var(--c-ink); letter-spacing: -0.01em; }
   .ritual__cap span { font-size: clamp(0.8125rem, 1vw, 0.9375rem); color: var(--c-ink-soft); }
+  /* 올라가는 숫자: 자릿수가 바뀌어도 글자 폭이 흔들리지 않게 */
+  .ritual__num { font-weight: inherit; color: var(--c-burgundy); font-variant-numeric: tabular-nums; }
   .ritual__dots { display: none; }
   .ritual__topcta { grid-area: topcta; display: grid; justify-items: center; gap: 10px; }
   /* 바로 구매하기: 버튼 아래 작은 글자 링크(첫 화면에 버튼을 하나만 두어 디자인을 해치지 않음) */
@@ -158,16 +161,17 @@ const story = locale === 'ko' ? koStory.home : null;
   /* 한국어 추가 요소: ritual.ts 가 위치·투명도를 계산. 자막 전환은 짧은 크로스페이드(0.25초) */
   :global(.js-motion) .ritual__note { display: contents; }
   :global(.js-motion) .ritual__lead,
-  :global(.js-motion) .ritual__fixed,
   :global(.js-motion) .ritual__caps,
   :global(.js-motion) .ritual__dots { position: absolute; left: 0; top: 0; margin: 0; z-index: 6; }
   :global(.js-motion) .ritual__lead { z-index: 1; white-space: nowrap; }
   :global(.js-motion) .ritual__topcta { position: absolute; left: 0; top: 0; z-index: 8; white-space: nowrap; }
   :global(.js-motion) .ritual__topcta.is-off { visibility: hidden; pointer-events: none; }
-  :global(.js-motion) .ritual__fixed { white-space: nowrap; }
   :global(.js-motion) .ritual__caps { display: grid; gap: 0; opacity: 0; text-align: start; }
   :global(.js-motion) .ritual__cap { grid-area: 1 / 1; opacity: 0; transition: opacity 250ms var(--ease-cream); }
   :global(.js-motion) .ritual__cap.is-on { opacity: 1; }
+  /* DAY 14 에만 나타나는 작은 줄(멜라닌 · 광택도) */
+  :global(.js-motion) .ritual__cap-small { opacity: 0; transition: opacity 400ms var(--ease-cream); }
+  :global(.js-motion) .ritual__cap-small.is-on { opacity: 1; }
   :global(.js-motion) .ritual__dots { display: flex; gap: 6px; opacity: 0; }
   .ritual__dots li { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--c-gold-line); transition: background-color 250ms var(--ease-cream); }
   .ritual__dots li.is-on { background: var(--c-gold-line); }
