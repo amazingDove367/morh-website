@@ -5,7 +5,7 @@
   - 사진이 여러 장이면 이전·다음 버튼과 ←/→ 키(아랍어는 반대)로 이동
   - 모바일: 화면 높이 안에 사진과 닫기 버튼이 들어오도록 dvh 기준 크기
 */
-import { reviewImage, type Review } from '../../data/reviews';
+import { reviewImage, PHOTOS, type Review } from '../../data/reviews';
 import { withBase, type Locale } from '../../i18n/locales';
 import { DICTS, fill } from '../../i18n';
 interface Props { reviews: Review[]; locale: Locale }
@@ -18,7 +18,7 @@ const data = reviews.filter((rv) => rv.photos.length).map((rv) => ({
   body: rv.text[locale].body,
   meta: `${rv.author[locale]} · ${rv.skin[locale]}`,
   stars: rv.rating,
-  photos: rv.photos.map((p) => ({ src: withBase(reviewImage(p, 'full')), alt: fill(r.photoAlt, { a: r.imageKinds[p] }) })),
+  photos: rv.photos.map((p) => ({ src: withBase(reviewImage(p, 'full')), alt: fill(r.photoAlt, { a: PHOTOS[p][locale] }) })),
 }));
 const strings = { stars: r.stars, counter: r.photoCounter };
 ---
