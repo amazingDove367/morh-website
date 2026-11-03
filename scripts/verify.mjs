@@ -277,7 +277,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   ok('[상품] 가로 넘침 없음 · 콘솔 오류 없음', (await overflowX(page)) <= 0 && errors.length === 0, errors);
   await ctx.close();
   // 광고별 첫 화면: utm_content 에 elevator · roblox · wanted 가 들어 있으면 그 화면. 홈으로 들어와도 세션 동안 유지
-  for (const [q, key, txt] of [['MORH_rls_roblox_261102_v1', 'roblox', '4분에서 30초로'], ['MORH_rls_wanted_261102_v1', 'wanted', 'WANTED? 잠깐, 저 아닌데요.'], ['MORH_rls_elevator_261102_v1', 'elevator', '14일, 피부 밝기']]) {
+  for (const [q, key, txt] of [['MORH_rls_roblox_261102_v1', 'roblox', '4분에서 30초*로'], ['MORH_rls_wanted_261102_v1', 'wanted', 'WANTED? 잠깐, 저 아닌데요.'], ['MORH_rls_elevator_261102_v1', 'elevator', '14일, 피부 밝기']]) {
     const { ctx: c, page: pg } = await open(`/product/?utm_content=${q}`, MOBILE);
     const h = await pg.evaluate(() => { const v = [...document.querySelectorAll('[data-head]')].filter((e) => !e.hidden); return { keys: v.map((e) => e.dataset.head).join(), text: v[0]?.innerText.replace(/\s+/g, ' ') }; });
     ok(`[상품] utm_content=${q} → 첫 화면 ${key}`, h.keys === key && h.text.includes(txt), h);
