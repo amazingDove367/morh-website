@@ -79,7 +79,7 @@ const story = locale === 'ko' ? koStory.home : null;
         {story ? (
           <>
             <p class="ritual__en" lang="en">{story.finalEn}</p>
-            <h2 class="ritual__headline">{story.finalBig}</h2>
+            <h2 class="ritual__headline">{story.finalBig.split('\n').map((l, i) => <>{i > 0 && <br />}{l}</>)}</h2>
             <p class="ritual__copy">{story.finalSmall}</p>
           </>
         ) : (
