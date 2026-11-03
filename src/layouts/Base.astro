@@ -103,7 +103,9 @@ const gtmValid = /^GTM-[A-Z0-9]{4,}$/.test(gtm);
   <slot name="after" />
   <script>
     import { initClickTracking } from '../scripts/analytics';
+    import { rememberAd } from '../scripts/ad-source';
     initClickTracking();
+    rememberAd();
   </script>
 </body>
 </html>

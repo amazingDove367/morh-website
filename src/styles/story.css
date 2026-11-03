@@ -23,11 +23,3 @@
 .st-card__from { color: var(--c-ink-soft); font-size: 0.7em; }
 .st-card__arrow { color: var(--c-ink-soft); font-size: 0.7em; }
 @media (max-width: 720px) { .st-cards { grid-template-columns: 1fr; } }
-
-/* 증거 칩: 얇은 Antique Gold 테두리 */
-.st-chip {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px;
-  border: 1px solid var(--c-gold-line); color: var(--c-ink); text-decoration: none;
-  font-size: 0.75rem; line-height: 1.4; transition: background-color var(--dur-ui) var(--ease-cream);
-}
-.st-chip:hover { background: var(--c-veil); }

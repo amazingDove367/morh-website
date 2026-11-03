@@ -1,54 +1,162 @@
 ---
-/* 모바일 하단 구매 바: 본문 구매 버튼이 화면 밖에 있을 때만 표시 */
-import { PRICE } from '../../data/commerce';
+/*
+  하단 플로팅 '첫 구매 혜택 받기' 바 + 혜택 시트 (2026-11, 모든 화면 너비)
+  - 정보 패널의 구매하기(#cta-main)가 화면 위로 지나간 뒤에만 바가 떠오름. 모바일은 화면 너비, 데스크톱은 가운데 떠 있는 카드
+  - 바 버튼 → 아래에서 시트(<dialog>)가 올라옴: 구성 3개 · 수량 · 총액 · 구매하기 → 바로 주문/결제
+  - 구성·수량·총액·구매 링크는 정보 패널과 같은 상태(PdpPanel 스크립트가 data-set · data-qty · data-total · data-buy 를 함께 갱신)
+  - 측정(기존 이벤트에 새 값만): 시트 열기 cta_click · offer_bar / 구성 select_item · location offer_sheet /
+    수량 quantity_change · location offer_sheet / 구매하기 add_to_cart · button_location mobile_bar(기존 하단 바 값 유지)
+*/
+import { PRICE, SETS, setBase, setPct, setPerUnit } from '../../data/commerce';
 import { localePath, type Locale } from '../../i18n/locales';
-import { DICTS, money } from '../../i18n';
+import { DICTS, fill, money } from '../../i18n';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const t = DICTS[locale];
+const p = t.product;
+const maxPct = Math.max(...SETS.map(setPct));
 ---
 <div class="buybar" data-buybar aria-hidden="true" inert>
   <div class="buybar__inner">
-    <div>
-      <p class="buybar__name">{t.common.product}</p>
-      <p class="buybar__price"><strong data-total>{money(locale, PRICE.firstPurchase)}</strong> <span>{t.product.firstPrice}</span></p>
+    <div class="buybar__info">
+      <p class="buybar__teaser">{fill(p.offerTeaser, { n: maxPct })}</p>
+      <p class="buybar__price"><strong data-total>{money(locale, PRICE.firstPurchase)}</strong> <span>{p.firstPrice}</span></p>
     </div>
-    <a class="buybar__btn" id="cta-mobile" href={`${localePath(locale, '/checkout/')}?qty=1`} data-buy="mobile_bar">{t.product.mobileBar}</a>
+    <button type="button" class="buybar__btn" id="cta-mobile" aria-haspopup="dialog" aria-controls="offer-sheet" data-offer-open
+            data-ga="cta_click" data-ga-cta-location="offer_bar">{p.offerBar}</button>
   </div>
 </div>
 
+<dialog class="osheet" id="offer-sheet" data-offer-sheet aria-labelledby="osheet-title">
+  <div class="osheet__head">
+    <h2 id="osheet-title">{p.setLabel}</h2>
+    <button type="button" class="osheet__close" data-offer-close aria-label={p.sheetClose}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  </div>
+  <fieldset class="osheet__sets" data-set-location="offer_sheet">
+    <legend class="visually-hidden">{p.setLabel}</legend>
+    {SETS.map((s) => (
+      <label class:list={['osheet__set', { 'osheet__set--best': s.best }]}>
+        <input type="radio" name="set-sheet" value={s.id} checked={s.id === 'single'} data-set data-set-price={s.price} />
+        <span class="osheet__name">{p.sets[s.id]} <em class:list={['osheet__tag', { 'osheet__tag--best': s.best }]}>{p.setTags[s.id]}</em></span>
+        <span class="osheet__price">
+          <s>{money(locale, setBase(s))}</s>
+          <span aria-hidden="true">→</span>
+          <b>{fill(p.discount, { n: setPct(s) })}</b>
+          <strong>{money(locale, s.price)}</strong>
+        </span>
+        <span class="osheet__meta">{fill(p.setPerUnit, { a: money(locale, setPerUnit(s)) })}{s.units > 1 && ` · ${p.setFreeShip}`}</span>
+      </label>
+    ))}
+  </fieldset>
+  <div class="osheet__row" data-qty-location="offer_sheet">
+    <span id="osheet-qty">{p.qty}</span>
+    <div class="osheet__qty" role="group" aria-labelledby="osheet-qty">
+      <button type="button" data-qty="-1" aria-label={p.qtyDec}>−</button>
+      <output data-qty-value aria-live="polite">1</output>
+      <button type="button" data-qty="1" aria-label={p.qtyInc}>+</button>
+    </div>
+  </div>
+  <div class="osheet__row osheet__total"><span>{p.total}</span><strong data-total>{money(locale, PRICE.firstPurchase)}</strong></div>
+  <a class="osheet__buy" href={`${localePath(locale, '/checkout/')}?qty=1&set=single`} data-buy="mobile_bar">{t.common.buy} <span class="arrow" aria-hidden="true">→</span></a>
+</dialog>
+
 <style>
-  .buybar { display: none; }
-  @media (max-width: 900px) {
-    /* 콘텐츠가 가려지지 않도록 바 높이 + 안전 영역만큼 본문 하단 여백을 항상 확보 (레이아웃 이동 없음) */
-    :global(body) { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
-    .buybar {
-      display: block; position: fixed; inset-inline: 0; bottom: 0; z-index: var(--z-buybar);
-      background: var(--c-paper); border-top: 1px solid var(--c-line-strong);
-      padding: var(--s-3) var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom));
-      transform: translateY(110%); transition: transform var(--dur-panel) var(--ease-cream);
-    }
-    .buybar.is-visible { transform: none; }
+  /* 콘텐츠가 가려지지 않도록 바 높이 + 안전 영역만큼 본문 하단 여백을 항상 확보 (레이아웃 이동 없음) */
+  :global(body) { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .buybar {
+    position: fixed; inset-inline: 0; bottom: 0; z-index: var(--z-buybar);
+    padding: 0 var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom));
+    transform: translateY(120%); transition: transform var(--dur-panel) var(--ease-cream);
+    pointer-events: none;
   }
-  .buybar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); }
-  .buybar__name { font-size: 0.8125rem; color: var(--c-ink-soft); }
+  .buybar.is-visible { transform: none; }
+  .buybar__inner {
+    pointer-events: auto; max-width: 720px; margin-inline: auto; display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
+    padding: 10px 10px 10px 20px; background: #fff; border: 1px solid var(--c-gold-line);
+    box-shadow: 0 10px 30px -8px rgb(63 1 23 / 0.28), 0 2px 6px rgb(43 26 31 / 0.08);
+  }
+  .buybar__teaser { font-size: 0.75rem; font-weight: 700; color: var(--c-sale); }
   .buybar__price strong { font-size: 1.0625rem; font-variant-numeric: tabular-nums; }
   .buybar__price span { font-size: 0.75rem; color: var(--c-burgundy); margin-inline-start: 4px; }
   .buybar__btn {
-    min-width: 132px; min-height: 52px; display: inline-flex; align-items: center; justify-content: center;
-    background: var(--c-burgundy); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.875rem;
+    min-width: 152px; min-height: 52px; padding-inline: 18px; border: 0; cursor: pointer;
+    background: var(--c-burgundy); color: #fff; font: inherit; font-weight: 700; font-size: 0.875rem;
+    transition: background-color var(--dur-ui) var(--ease-cream);
   }
+  .buybar__btn:hover { background: var(--c-burgundy-deep); }
+  @media (max-width: 900px) {
+    .buybar { padding: 0; }
+    .buybar__inner { max-width: none; border: 0; border-top: 1px solid var(--c-line-strong); padding: var(--s-3) var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom)); box-shadow: 0 -8px 24px -12px rgb(43 26 31 / 0.25); }
+  }
+
+  /* 혜택 시트: 아래에서 올라오는 패널(데스크톱은 가운데 카드) */
+  .osheet {
+    width: min(100%, 560px); max-width: none; max-height: min(88svh, 720px); margin: auto auto 0; padding: 0; border: 0;
+    background: var(--c-paper); color: var(--c-ink); overflow: auto; box-shadow: 0 -12px 40px rgb(43 26 31 / 0.25);
+  }
+  .osheet[open] { animation: osheet-up var(--dur-panel) var(--ease-cream); }
+  .osheet::backdrop { background: rgb(43 26 31 / 0.45); }
+  @keyframes osheet-up { from { transform: translateY(40px); opacity: 0; } }
+  @media (min-width: 901px) { .osheet { margin-bottom: 24px; border: 1px solid var(--c-gold-line); } }
+  .osheet__head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 8px; position: sticky; top: 0; background: var(--c-paper); }
+  .osheet__head h2 { font-size: 0.9375rem; }
+  .osheet__close { width: 44px; height: 44px; margin-inline-end: -10px; display: grid; place-items: center; border: 0; background: none; cursor: pointer; color: var(--c-ink); }
+  .osheet__close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .osheet__sets { border: 0; margin: 0; padding: 4px 20px 0; display: grid; gap: 8px; min-width: 0; }
+  .osheet__set {
+    display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'radio name' 'radio price' 'radio meta';
+    gap: 3px 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--c-line-strong); cursor: pointer; background: #fff;
+  }
+  .osheet__set--best { border-color: var(--c-gold-line); }
+  .osheet__set:has(input:checked) { border-color: var(--c-burgundy); box-shadow: inset 0 0 0 1px var(--c-burgundy); background: var(--c-veil); }
+  .osheet__set input { grid-area: radio; width: 18px; height: 18px; margin: 0; accent-color: var(--c-burgundy); }
+  .osheet__name { grid-area: name; font-weight: 600; font-size: 0.875rem; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+  .osheet__tag { font-style: normal; font-size: 0.6875rem; font-weight: 600; line-height: 1.5; padding: 0 6px; border: 1px solid var(--c-line-strong); color: var(--c-ink-soft); }
+  .osheet__tag--best { background: var(--c-sale); border-color: var(--c-sale); color: #fff; }
+  .osheet__price { grid-area: price; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .osheet__price s, .osheet__price > span { color: var(--c-ink-soft); font-size: 0.8125rem; opacity: 0.8; }
+  .osheet__price b { color: var(--c-sale); font-size: 1rem; }
+  .osheet__price strong { font-size: 1rem; }
+  .osheet__meta { grid-area: meta; font-size: 0.75rem; color: var(--c-ink-soft); }
+  .osheet__row { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 0; font-size: 0.875rem; }
+  .osheet__qty { display: inline-flex; align-items: center; border: 1px solid var(--c-line-strong); background: #fff; }
+  .osheet__qty button { width: 40px; height: 40px; border: 0; background: none; cursor: pointer; font-size: 1.125rem; color: var(--c-ink); }
+  .osheet__qty button[disabled] { opacity: 0.35; cursor: not-allowed; }
+  .osheet__qty output { min-width: 2.2em; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .osheet__total strong { font-size: 1.125rem; font-variant-numeric: tabular-nums; }
+  .osheet__buy {
+    display: flex; justify-content: center; align-items: center; gap: 12px; min-height: 56px;
+    margin: 16px 20px calc(20px + env(safe-area-inset-bottom)); background: var(--c-burgundy); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.04em;
+  }
+  .osheet__buy:hover { background: var(--c-burgundy-deep); }
 </style>
 
 <script>
   const bar = document.querySelector<HTMLElement>('[data-buybar]');
   const main = document.getElementById('cta-main');
-  if (bar && main && 'IntersectionObserver' in window) {
-    new IntersectionObserver(([entry]) => {
-      const show = !entry.isIntersecting;
+  const sheet = document.querySelector<HTMLDialogElement>('[data-offer-sheet]');
+  if (bar && main) {
+    // 정보 패널의 구매하기가 화면 위로 지나간 뒤에만(첫 화면에서 아래에 가려진 경우는 표시 안 함). 스크롤마다 한 프레임에 한 번 확인
+    let raf = 0, shown: boolean | null = null;
+    const check = () => {
+      raf = 0;
+      const show = main.getBoundingClientRect().bottom < 0;
+      if (show === shown) return;
+      shown = show;
       bar.classList.toggle('is-visible', show);
       bar.toggleAttribute('inert', !show);
       bar.setAttribute('aria-hidden', String(!show));
-    }).observe(main);
+    };
+    addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(check); }, { passive: true });
+    addEventListener('resize', check);
+    check();
+  }
+  if (sheet) {
+    document.querySelector('[data-offer-open]')?.addEventListener('click', () => sheet.showModal());
+    sheet.querySelector('[data-offer-close]')?.addEventListener('click', () => sheet.close());
+    // 바깥(어두운 배경)을 누르면 닫힘
+    sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.close(); });
   }
 </script>
