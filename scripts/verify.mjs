@@ -87,13 +87,13 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   ok(`[홈 ${label}] 자막: DAY 01–06 → 1번 · 07–13 → 2번 · 14 → 3번, 점 개수 = DAY`, c1.on.join() === '6' && c2.on.join() === '13' && c3.on.join() === '14' && c1.caps === 1 && c2.dots === c2.day && c3.dots === 14, { c1, c2, c3 });
   ok(`[홈 ${label}] 자막·고정 문장·점이 모래시계를 가리지 않음`, [c1, c2, c3].every((c) => c.mobile ? c.fixedB <= c.gTop && c.dotsT >= c.gBottom && c.capsT >= c.dotsT + 7 && c.capsB <= c.H : c.capsR <= c.gLeft + 4 && c.dotsT >= c.gBottom), c2);
   ok(`[홈 ${label}] 마지막 화면은 DAY 14 자막이 사라진 뒤 표시(겹치지 않음)`, c3.fin === 0 && cf.caps === 0 && cf.fin > 0.99, { c3: c3.fin, cfCaps: cf.caps });
-  ok(`[홈 ${label}] 마지막 문구: care, not cover · 내 피부가 마음에 드는 아침. · MORH를 바른 14일에서 시작해요.`, (await page.evaluate(() => document.querySelector('.ritual__final').innerText)).replace(/\s+/g, ' ').includes('care, not cover 내 피부가 마음에 드는 아침. MORH를 바른 14일에서 시작해요. 어떻게 쟀는지 보러 가기'));
+  ok(`[홈 ${label}] 마지막 문구: care, not cover · 더 이상 가리지 않아도 / 마음에 드는 피부 · 14일간의 피부 변화에서 시작해요.`, (await page.evaluate(() => document.querySelector('.ritual__final').innerText)).replace(/\s+/g, ' ').includes('care, not cover 더 이상 가리지 않아도 마음에 드는 피부 14일간의 피부 변화에서 시작해요. 14일간의 피부 변화 보기'));
   if (label === '데스크톱') {
     await scrollToP(page, 0.99);
     const attrs = await cta.evaluate((a) => [a.dataset.ga, a.dataset.gaCtaLocation]);
-    await Promise.all([page.waitForURL(/\/product\/#record$/), cta.click()]);
+    await Promise.all([page.waitForURL(/\/product\/#skin$/), cta.click()]);
     await page.waitForTimeout(400);
-    ok('[홈] 마지막 버튼 "어떻게 쟀는지 보러 가기" → 상품 #record (추적 속성 유지)', page.url().endsWith('/product/#record') && attrs.join() === 'cta_click,ritual_final' && (await page.evaluate(() => { const t = document.querySelector('#record').getBoundingClientRect().top; return t >= 0 && t < innerHeight; })), attrs);
+    ok('[홈] 마지막 버튼 "14일간의 피부 변화 보기" → 상품 #skin (추적 속성 유지)', page.url().endsWith('/product/#skin') && attrs.join() === 'cta_click,ritual_final' && (await page.evaluate(() => { const t = document.querySelector('#skin').getBoundingClientRect().top; return t >= 0 && t < innerHeight; })), attrs);
   }
   await ctx.close();
 }
@@ -107,13 +107,13 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     cls: document.documentElement.className,
     canvas: getComputedStyle(document.querySelector('[data-canvas]')).display,
     glass: document.querySelector('.ritual__glass img').getBoundingClientRect().height,
-    cta: !!document.querySelector('.ritual__cta[href$="/product/#record"]'),
+    cta: !!document.querySelector('.ritual__cta[href$="/product/#skin"]'),
     h: document.querySelector('[data-ritual]').offsetHeight,
     list: [...document.querySelectorAll('.ritual__note > p, .ritual__cap')].map((e) => [e.innerText.replace(/\s+/g, ' '), getComputedStyle(e).opacity, e.getBoundingClientRect().height > 0]),
     fin: document.querySelector('.ritual__final').innerText.replace(/\s+/g, ' '),
   }));
   ok('[홈] 움직임 줄이기: 정적 장면(캔버스 없음, DAY 14 모래시계 사진, 카피·버튼, 고정 구간 없음)', st.cls.includes('reduce-motion') && st.canvas === 'none' && st.glass > 100 && st.cta && st.h < 3000, st);
-  ok('[홈] 움직임 줄이기: 고정 문장 + 구간 자막 3개 + 마지막 문구를 정적 목록으로', st.list.length === 4 && st.list.every((l) => l[1] === '1' && l[2]) && st.list[0][0] === '숫자는 MORH를 바른 날이에요.' && st.list[3][0].includes('14일째, 피부 밝기가 10.0% 올라갔어요.') && st.fin.includes('내 피부가 마음에 드는 아침.'), st.list);
+  ok('[홈] 움직임 줄이기: 고정 문장 + 구간 자막 3개 + 마지막 문구를 정적 목록으로', st.list.length === 4 && st.list.every((l) => l[1] === '1' && l[2]) && st.list[0][0] === '숫자는 MORH를 바른 날이에요.' && st.list[3][0].includes('14일째, 피부 밝기 +10.0%') && st.fin.includes('더 이상 가리지 않아도 마음에 드는 피부'), st.list);
   await ctx.close();
   const { ctx: c2, page: p2 } = await open('/', DESKTOP);
   for (const vp of [{ width: 1024, height: 700 }, { width: 1920, height: 1080 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
@@ -145,7 +145,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
       strong: getComputedStyle(document.querySelector('.about__sub-strong')).fontWeight, strongTxt: document.querySelector('.about__sub-strong').textContent, sub: document.querySelector('.about__sub').textContent,
       card: document.querySelector('.about__card').getAttribute('href') };
   });
-  ok('[홈] 4주 패널: 모래시계 구간 다음, 숫자 2개(줄어든 숫자 Imperial Plum)·버튼 → /product/#record·각주', w.after && w.text.includes('4주째엔 화장대를 쟀어요.') && w.text.includes('5.2회 → 2.1회') && w.text.includes('4분 → 30초') && w.text.includes('쿠션은 그대로 써요.') && w.text.includes('20–45세 여성 32명') && w.href.endsWith('/product/#record') && w.ga === 1 && w.down.every((c) => c === 'rgb(75, 13, 80)'), w);
+  ok('[홈] 4주 패널: 모래시계 구간 다음, 숫자 2개(줄어든 숫자 Imperial Plum)·버튼 → /product/#record·각주', w.after && w.text.includes('4주 후, 달라진 아침 화장') && w.text.includes('기록 자세히 보기') && w.text.includes('5.2회 → 2.1회') && w.text.includes('4분 → 30초') && !w.text.includes('쿠션은 그대로 써요.') && w.text.includes('20–45세 여성 32명') && w.href.endsWith('/product/#record') && w.ga === 1 && w.down.every((c) => c === 'rgb(75, 13, 80)'), w);
   ok('[홈] About: "빛을 입은 아름다움"만 SemiBold, 문구 그대로 · 제품 카드 링크 /product/', w.strong === '600' && w.strongTxt === '빛을 입은 아름다움' && w.sub === '빛을 입은 아름다움 · 가린 게 아니라, 가꾼 거예요.' && w.card.endsWith('/product/'), w);
   await ctx.close();
   const { ctx: c2, page: p2 } = await open('/en/');

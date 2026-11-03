@@ -13,7 +13,6 @@
 .st__title { font-size: var(--fs-h2); max-width: 20ch; }
 .st__body { display: grid; gap: var(--s-3); max-width: 62ch; color: var(--c-ink); }
 .st__lead { font-size: var(--fs-lead); color: var(--c-ink-soft); }
-.st__close { font-size: var(--fs-lead); font-weight: 600; }
 
 /* 숫자 카드: 이전 → 이후(줄어든 숫자는 Imperial Plum) */
 .st-cards { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: var(--s-3); }
