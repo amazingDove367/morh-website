@@ -91,27 +91,34 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
         <div class:list={['dt-vs__col', { 'dt-vs__col--us': i === 1 }]}><span>{v.head}</span><p><Nums text={v.text} /></p></div>
       ))}
     </div>
-    <StoryImage name={d.usp.image.name} alt={d.usp.image.alt} ratio="16 / 9" sizes="(max-width: 720px) 90vw, 640px" />
-    <p class="st-fn">{d.usp.small}</p>
+    <div class="dt-pair">
+      {[d.usp.before, d.usp.after].map((ph) => (
+        <figure><StoryImage name={ph.name} alt={ph.alt} ratio="4 / 5" sizes="(max-width: 720px) 45vw, 320px" /><figcaption>{ph.label}</figcaption></figure>
+      ))}
+    </div>
   </section>
 
-  <!-- POINT 02: 14일 기기 측정 -->
+  <!-- POINT 02: 기기 측정(14일 1) · 4주 2) — 각주 번호로 기간 구분) -->
   <section class="dt-sec dt-tint" aria-labelledby="dt-skin-title">
     <p class="dt-pill">{d.skin.point}</p>
     <h2 id="dt-skin-title" class="dt-title">{d.skin.title[0]}<br /><span class="dt-hl">{d.skin.title[1]}</span></h2>
     <ul role="list" class="dt-big">
-      {d.skin.big.map((b) => <li><span>{b.label}</span><b><Nums text={b.value} /></b></li>)}
+      {d.skin.big.map((b) => <li><span>{b.label}<sup>{b.fn}</sup></span><b><Nums text={b.value} /></b></li>)}
     </ul>
     <ul role="list" class="dt-bars">
       {d.skin.bars.map((b) => (
         <li>
-          <span class="dt-bars__label">{b.label}</span>
+          <span class="dt-bars__label">{b.label}<sup>{b.fn}</sup></span>
           <span class="dt-bars__track" aria-hidden="true"><span style={`width: ${((b.value / max) * 100).toFixed(1)}%`}></span></span>
           <b class="dt-bars__val"><Nums text={b.text} /></b>
         </li>
       ))}
     </ul>
-    <StoryImage name={d.skin.image.name} alt={d.skin.image.alt} ratio="16 / 9" sizes="(max-width: 720px) 90vw, 640px" />
+    <div class="dt-pair">
+      {[d.skin.before, d.skin.after].map((ph) => (
+        <figure><StoryImage name={ph.name} alt={ph.alt} ratio="4 / 5" sizes="(max-width: 720px) 45vw, 320px" /><figcaption>{ph.label}</figcaption></figure>
+      ))}
+    </div>
     <p class="st-fn">*{d.skin.footnote}</p>
   </section>
 
@@ -147,16 +154,16 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
     <p class="dt-body">{d.moist.body}</p>
     <div class="dt-metric"><span>{d.moist.metricLabel}</span><b><Nums text={d.moist.metric} /></b><small>{d.moist.metricNote}</small></div>
     <StoryImage name={d.moist.image.name} alt={d.moist.image.alt} ratio="4 / 5" sizes="(max-width: 720px) 90vw, 480px" class="dt-narrow" />
-    <p class="st-fn">*{d.skin.footnote}</p>
+    <p class="st-fn">*{d.moist.footnote}</p>
   </section>
 
   <!-- ⑤ 사용법 -->
   <section class="dt-sec" aria-labelledby="dt-use-title">
-    <h2 id="dt-use-title" class="dt-title dt-title--sm">{d.use.title[0]}<br />{d.use.title[1]}</h2>
+    <h2 id="dt-use-title" class="dt-title dt-title--sm">{d.use.title[0]}</h2>
+    <p class="dt-body">{d.use.title[1]}</p>
     <ol role="list" class="dt-steps">{d.use.morning.map((x, i) => <li><span><Nums text={String(i + 1)} /></span>{x}</li>)}</ol>
     <p class="dt-steps__label">{d.use.morningLabel}</p>
     <ol role="list" class="dt-timeline">{d.use.timeline.map((x) => <li><Nums text={x} /></li>)}</ol>
-    <p class="dt-body">{d.use.end}</p>
   </section>
 
   <!-- ⑥ 마무리 혜택 -->
@@ -171,7 +178,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
 <style>
   /* 가운데 정렬 좁은 단(레퍼런스와 같은 세로 흐름). 색은 MORH 팔레트: 버건디 띠·원형 배지, 할인율만 --c-sale */
   /* 상세 설명 영역을 페이지와 구분: 화면 끝까지 위에서 빛이 드는 Cream 바탕 + 가운데 흰 단
-     입체감 = 겹친 그림자 3단(가까운 그림자·떨어진 그림자·바닥 그림자) + 바깥 Antique Gold 가는 테두리 */
+     입체감 = 겹친 그림자 3단(가까운 그림자·떨어진 그림자·바닥 그림자) */
   .dt-bleed {
     border-image: radial-gradient(120% 70% at 50% 0%, var(--c-ivory) 0%, var(--c-cream) 55%, #e2d3c4 100%) fill 0 / / 0 100vmax;
     margin-top: calc(-1 * clamp(24px, 4vw, 56px)); padding-block: clamp(32px, 5vw, 72px); margin-bottom: var(--s-7);
@@ -179,9 +186,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt {
     position: relative; max-width: 720px; margin-inline: auto; text-align: center; background: #fff;
     box-shadow: 0 1px 2px rgb(43 26 31 / 0.06), 0 14px 28px -10px rgb(63 1 23 / 0.16), 0 48px 96px -32px rgb(63 1 23 / 0.30);
-    outline: 1px solid var(--c-gold-line); outline-offset: 12px;
   }
-  @media (max-width: 760px) { .dt { outline-offset: 6px; } }
   /* 스크롤하면 섹션 내용이 아래에서 살짝 떠오름(html.js-motion 일 때만 — 움직임 줄이기·JS 없음이면 처음부터 보임) */
   :global(html.js-motion) .dt-sec > * { transition: opacity 0.7s var(--ease-cream), transform 0.7s var(--ease-cream); }
   :global(html.js-motion) .dt-sec:not(.is-in) > * { opacity: 0; transform: translateY(18px); }
@@ -202,16 +207,21 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-body > p + p { margin-top: 4px; }
   .dt-pill { padding: 4px 16px; border-radius: 999px; background: var(--c-burgundy); color: #fff; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; }
 
-  /* ⓪ 첫 화면: 사진 위에 원형 배지 3개 */
+  /* ⓪ 첫 화면: 전/후 사진 아래 원형 배지 3개(사진을 가리지 않게 한 줄) */
   .dt-head { background: linear-gradient(var(--c-veil), #fff); }
   .dt-head__media { position: relative; width: min(100%, 520px); }
   .dt-head__media > :global(.st-img) { width: 100%; }
-  .dt-badges { position: absolute; inset-inline-end: -12px; bottom: 24px; display: grid; gap: 10px; }
+  .dt-badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; justify-items: center; }
   .dt-badges li {
-    width: clamp(92px, 16vw, 112px); aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; gap: 2px; padding: 8px;
+    width: 100%; max-width: 104px; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; gap: 2px; padding: 8px;
     background: var(--c-burgundy); color: #fff; box-shadow: 0 6px 18px rgb(63 1 23 / 0.22);
   }
-  .dt-badges span { font-size: 0.6875rem; line-height: 1.3; opacity: 0.9; }
+  .dt-badges span { font-size: 0.6875rem; font-weight: 600; line-height: 1.3; }
+  @media (min-width: 900px) {
+    .dt-badges li { max-width: 132px; }
+    .dt-badges span { font-size: 0.8125rem; }
+    .dt-badges b { font-size: 1.25rem; }
+  }
   .dt-badges b { font-size: clamp(0.9375rem, 1.8vw, 1.0625rem); line-height: 1.2; }
 
   /* ① 혜택 */
@@ -264,6 +274,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-big { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .dt-big li { display: grid; gap: 4px; padding: 20px 10px; background: #fff; border: 1px solid var(--c-line); }
   .dt-big span { font-size: 0.875rem; color: var(--c-ink-soft); }
+  .dt-big sup, .dt-bars__label sup { font-size: 0.7em; margin-inline-start: 1px; }
   .dt-big b { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.1; color: var(--c-burgundy); }
   .dt-bars { width: 100%; display: grid; gap: 14px; text-align: start; }
   .dt-bars li { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; font-size: 0.9375rem; }
@@ -282,7 +293,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-pair { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .dt-pair figure { margin: 0; display: grid; gap: 8px; font-size: 0.8125rem; font-weight: 600; }
   .dt-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-  .dt-table caption { font-size: 0.875rem; font-weight: 600; margin-bottom: 10px; }
+  .dt-table caption { font-size: clamp(1.125rem, 2.4vw, 1.3125rem); font-weight: 700; color: var(--c-burgundy); margin-bottom: 14px; }
   .dt-table th, .dt-table td { padding: 10px 8px; border-bottom: 1px solid var(--c-line); font-size: 0.9375rem; }
   .dt-table thead th { border-bottom: 1px solid var(--c-ink); font-size: 0.8125rem; color: var(--c-ink-soft); font-weight: 600; }
   .dt-table tbody th, .dt-table tfoot th { text-align: start; font-weight: 500; }
@@ -314,8 +325,6 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-cta--light:hover { background: var(--c-veil); color: var(--c-burgundy-deep); }
 
   @media (max-width: 560px) {
-    .dt-badges { position: static; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; }
-    .dt-badges li { width: 100%; max-width: 104px; justify-self: center; }
     .dt-tiers, .dt-cards { grid-template-columns: 1fr; }
     .dt-tier { grid-template-columns: auto 1fr auto; grid-template-areas: 'name pct price' 'tag base price'; text-align: start; justify-items: start; align-items: center; padding: 12px 14px; column-gap: 12px; }
     .dt-tier__name { grid-area: name; } .dt-tier__pct { grid-area: pct; font-size: 1.5rem; } .dt-tier s { grid-area: base; }
