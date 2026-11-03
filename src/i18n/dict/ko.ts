@@ -37,6 +37,7 @@ export const ko = {
     volume: '50 mL',
     toProduct: '제품 자세히 보기',
     buy: '구매하기',
+    buyNow: '바로 구매하기',
     toHome: '처음 화면으로',
     privacy: '개인정보 처리 안내',
     shippingInfo: '배송비 안내',

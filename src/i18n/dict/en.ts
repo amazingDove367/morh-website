@@ -33,6 +33,7 @@ export const en: Dict = {
     volume: '50 mL',
     toProduct: 'View the product',
     buy: 'Buy now',
+    buyNow: 'Buy now',
     toHome: 'Back to home',
     privacy: 'Privacy notice',
     shippingInfo: 'Shipping',

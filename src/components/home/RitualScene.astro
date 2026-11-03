@@ -18,6 +18,7 @@ interface Props { locale: Locale }
 const { locale } = Astro.props;
 const t = DICTS[locale];
 const PRODUCT = localePath(locale, '/product/');
+const CHECKOUT = localePath(locale, '/checkout/');
 const img = withBase;
 const story = locale === 'ko' ? koStory.home : null;
 ---
@@ -30,8 +31,11 @@ const story = locale === 'ko' ? koStory.home : null;
         <span class="ritual__sub" data-sub>{t.home.sub}</span>
       </h1>
       {story && <p class="ritual__lead" data-lead>{story.lead}</p>}
-      <!-- 첫 화면 버튼(2026-11 추가): 스크롤 전에 바로 상세로. 아래 마지막 버튼(ritual_final)과 위치값으로 구분 -->
-      <a class="btn ritual__topcta" data-topcta href={PRODUCT} data-ga="cta_click" data-ga-cta-location="ritual_top">{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
+      <!-- 첫 화면 버튼(2026-11 추가): 스크롤 전에 바로 상세로 · 바로 구매(주문/결제, 1개). 아래 마지막 버튼(ritual_final)과 위치값으로 구분 -->
+      <div class="ritual__topcta" data-topcta>
+        <a class="btn" href={PRODUCT} data-ga="cta_click" data-ga-cta-location="ritual_top">{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="ritual__topbuy" href={`${CHECKOUT}?qty=1&set=single`} data-ga="cta_click" data-ga-cta-location="ritual_top_buy">{t.common.buyNow}</a>
+      </div>
 
       <canvas class="ritual__canvas" data-canvas aria-hidden="true"></canvas>
 
@@ -119,7 +123,10 @@ const story = locale === 'ko' ? koStory.home : null;
   .ritual__cap strong { font-size: clamp(1.125rem, 1.7vw, 1.625rem); font-weight: 600; line-height: 1.35; color: var(--c-ink); letter-spacing: -0.01em; }
   .ritual__cap span { font-size: clamp(0.8125rem, 1vw, 0.9375rem); color: var(--c-ink-soft); }
   .ritual__dots { display: none; }
-  .ritual__topcta { grid-area: topcta; }
+  .ritual__topcta { grid-area: topcta; display: grid; justify-items: center; gap: 10px; }
+  /* 바로 구매하기: 버튼 아래 작은 글자 링크(첫 화면에 버튼을 하나만 두어 디자인을 해치지 않음) */
+  .ritual__topbuy { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; color: var(--c-burgundy); text-underline-offset: 4px; min-height: 32px; display: inline-flex; align-items: center; padding-inline: 8px; }
+  .ritual__topbuy:hover { color: var(--c-burgundy-deep); }
 
   /* ───────── 정적 배치: JS 없음 · 움직임 줄이기 ───────── */
   .ritual__stage {

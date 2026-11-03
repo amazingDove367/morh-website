@@ -34,6 +34,7 @@ export const zhCN: Dict = {
     volume: '50 mL',
     toProduct: '查看产品详情',
     buy: '立即购买',
+    buyNow: '立即购买',
     toHome: '返回首页',
     privacy: '个人信息处理说明',
     shippingInfo: '运费说明',

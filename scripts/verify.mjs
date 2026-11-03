@@ -295,14 +295,19 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
 for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) {
   const { ctx, page } = await open('/', opts);
   await page.waitForTimeout(500);
-  const t0 = await page.evaluate(() => { const a = document.querySelector('[data-topcta]'); const r = a.getBoundingClientRect(); return { txt: a.textContent.trim(), href: a.getAttribute('href'), ga: [a.dataset.ga, a.dataset.gaCtaLocation], bottom: r.bottom, vh: innerHeight, op: getComputedStyle(a).opacity }; });
-  ok(`[홈 ${label}] 첫 화면 버튼 "제품 자세히 보기 →" 가 스크롤 없이 보임(cta_click · ritual_top)`, t0.txt.startsWith('제품 자세히 보기') && t0.href.endsWith('/product/') && t0.ga.join() === 'cta_click,ritual_top' && t0.bottom <= t0.vh && t0.op === '1', t0);
+  const t0 = await page.evaluate(() => { const box = document.querySelector('[data-topcta]'); const a = box.querySelector('.btn'), b = box.querySelector('.ritual__topbuy'); const r = box.getBoundingClientRect(); return { txt: a.textContent.trim(), href: a.getAttribute('href'), ga: [a.dataset.ga, a.dataset.gaCtaLocation], buy: [b.textContent.trim(), b.getAttribute('href'), b.dataset.ga, b.dataset.gaCtaLocation], bottom: r.bottom, vh: innerHeight, op: getComputedStyle(box).opacity }; });
+  ok(`[홈 ${label}] 첫 화면 버튼 "제품 자세히 보기 →"(cta_click · ritual_top) + 아래 "바로 구매하기"(주문/결제 1개 · ritual_top_buy) 가 스크롤 없이 보임`, t0.txt.startsWith('제품 자세히 보기') && t0.href.endsWith('/product/') && t0.ga.join() === 'cta_click,ritual_top' && t0.buy[0] === '바로 구매하기' && t0.buy[1].endsWith('/checkout/?qty=1&set=single') && t0.buy.slice(2).join() === 'cta_click,ritual_top_buy' && t0.bottom <= t0.vh && t0.op === '1', t0);
   await scrollToP(page, 0.12);
   ok(`[홈 ${label}] 스크롤을 시작하면 첫 화면 버튼은 사라짐(누를 수 없음)`, await page.evaluate(() => { const a = document.querySelector('[data-topcta]'); return getComputedStyle(a).visibility === 'hidden' && Number(getComputedStyle(a).opacity) < 0.05; }));
   if (label === '데스크톱') {
     await scrollToP(page, 0);
-    await Promise.all([page.waitForURL(/\/product\/$/), page.click('[data-topcta]')]);
+    await Promise.all([page.waitForURL(/\/product\/$/), page.click('[data-topcta] .btn')]);
     ok('[홈] 첫 화면 버튼 → 상품 상세', page.url().endsWith('/product/'));
+    await page.goBack(); await page.waitForLoadState('networkidle'); await scrollToP(page, 0);
+    await Promise.all([page.waitForURL(/\/checkout\//), page.click('.ritual__topbuy')]);
+    await page.waitForLoadState('networkidle');
+    const bc = await page.evaluate(() => ({ set: document.querySelector('[data-co-set]').textContent, total: document.querySelector('[data-sum="total"]').textContent, ev: window.__events.find((e) => e[0] === 'begin_checkout')?.[1] }));
+    ok('[홈] 바로 구매하기 → 주문/결제(1개 · 41,300 + 3,000 = 44,300원, begin_checkout)', bc.set === '1개' && bc.total === '44,300원' && bc.ev?.value === 41300, bc);
   }
   await ctx.close();
 }

@@ -34,6 +34,7 @@ export const ar: Dict = {
     volume: '50 مل',
     toProduct: 'عرض تفاصيل المنتج',
     buy: 'اشترِ الآن',
+    buyNow: 'اشترِ الآن',
     toHome: 'العودة إلى الرئيسية',
     privacy: 'إشعار الخصوصية',
     shippingInfo: 'الشحن',

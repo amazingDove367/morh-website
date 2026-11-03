@@ -33,6 +33,7 @@ export const ja: Dict = {
     volume: '50 mL',
     toProduct: '製品の詳細を見る',
     buy: '購入する',
+    buyNow: '今すぐ購入',
     toHome: 'ホームへ戻る',
     privacy: '個人情報の取り扱い',
     shippingInfo: '送料について',
