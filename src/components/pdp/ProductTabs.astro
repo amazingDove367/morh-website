@@ -8,8 +8,7 @@
   - 구매후기: 한 페이지 5개, 페이지 번호와 이전·다음. JS 가 없으면 전체 목록을 그대로 보여 줌
 */
 import ProductInfo from './ProductInfo.astro';
-import StoryProblem from '../story/StoryProblem.astro';
-import StoryProof from '../story/StoryProof.astro';
+import StoryDetail from '../story/StoryDetail.astro';
 import StoryFaq from '../story/StoryFaq.astro';
 import { stars, reviewImage, PAGE_SIZE, type Review } from '../../data/reviews';
 import { withBase, type Locale } from '../../i18n/locales';
@@ -19,7 +18,8 @@ const { reviews, locale } = Astro.props;
 const t = DICTS[locale];
 const r = t.reviews;
 const pages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
-// 한국어 상세 설명 순서: ①②③ → 기존 Detail 문단 → ④⑤⑥ → ⑧ FAQ → 제품 정보
+// 한국어 상세 설명: 광고별 첫 화면 → 혜택 → 타깃 → 고민 → POINT 01~04 → 사용법 → 혜택(StoryDetail) → FAQ → 제품 정보
+// 다른 언어: 기존 Detail 문단 → 제품 정보
 const story = locale === 'ko';
 ---
 <section class="tabs wrap" aria-label={t.tabs.label} data-tabs data-page-size={PAGE_SIZE}>
@@ -29,19 +29,19 @@ const story = locale === 'ko';
   </div>
 
   <div class="tabs__panel" role="tabpanel" id="panel-detail" aria-labelledby="tab-detail" tabindex="0">
-    {story && <StoryProblem />}
-    <div class:list={['detail', { 'detail--story': story }]}>
-      <div class="detail__intro">
-        <p class="detail__label" lang="en">{t.detail.label}</p>
-        <h2>{t.detail.heading}</h2>
-        <p class="muted">{t.detail.body}</p>
+    {story ? <StoryDetail /> : (
+      <div class="detail">
+        <div class="detail__intro">
+          <p class="detail__label" lang="en">{t.detail.label}</p>
+          <h2>{t.detail.heading}</h2>
+          <p class="muted">{t.detail.body}</p>
+        </div>
+        <figure class="detail__tex">
+          <img src={withBase('/images/cream-texture-420.webp')} width="420" height="560" loading="lazy" decoding="async" alt={t.detail.texAlt} />
+          <figcaption class="muted">{t.detail.texCaption}</figcaption>
+        </figure>
       </div>
-      <figure class="detail__tex">
-        <img src={withBase('/images/cream-texture-420.webp')} width="420" height="560" loading="lazy" decoding="async" alt={t.detail.texAlt} />
-        <figcaption class="muted">{t.detail.texCaption}</figcaption>
-      </figure>
-    </div>
-    {story && <StoryProof />}
+    )}
     {story && <StoryFaq />}
     <ProductInfo locale={locale} />
   </div>
@@ -106,7 +106,6 @@ const story = locale === 'ko';
   .tabs__panel { padding: clamp(24px, 4vw, 56px) 0; }
   .tabs__panel:focus-visible { outline-offset: -3px; }
   .detail { display: grid; grid-template-columns: 1.4fr 0.6fr; gap: var(--s-7) var(--col-gap); margin-bottom: var(--s-8); align-items: start; }
-  .detail--story { margin-bottom: 0; padding-block: var(--s-8); border-top: 1px solid var(--c-line); }
   .detail__intro { display: grid; gap: var(--s-4); }
   .detail__label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-ink-soft); }
   .detail__intro h2 { font-size: var(--fs-h2); max-width: 18ch; }
@@ -216,7 +215,7 @@ const story = locale === 'ko';
       el.open = true;
       el.scrollIntoView({ behavior: 'auto', block: 'start' });
     };
-    // 상세 설명 안의 섹션(#record·#self-check 등) → 상세 설명 탭을 연 뒤 그 위치로
+    // 상세 설명 안의 섹션(#record 등) → 상세 설명 탭을 연 뒤 그 위치로
     const openSection = (id: string) => {
       const el = document.getElementById(id);
       if (!el || !el.closest('#panel-detail')) return;

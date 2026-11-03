@@ -6,29 +6,24 @@
   - 오른쪽 패널의 THE TEXTURE 를 열면(morh:texture 이벤트) 같은 자리에서 크림 제형 사진으로 바뀌고,
     360 자리에 작은 확대 슬라이더(− / +)만 나타남. 확대 중에는 끌어서·방향키로 다른 부분 탐색
   - 텍스처 사진은 원본 해상도(420×560) 그대로 사용 — 업스케일·생성 없음
-  - 한국어: 1번째에 화장대 장면 사진(hero-vanity)을 두고 360 각도는 2번째(정면)부터. data-lead 로 순서를 보정
+  - data-lead: 360 각도 앞에 장면 사진을 둘 때의 개수(현재 0 — 첫 화면에 바로 정면 제품 사진)
 
 */
 import { VIEW_KEYS, viewImg, viewSrcset } from '../../data/product';
 import { withBase, type Locale } from '../../i18n/locales';
 import { DICTS, fill } from '../../i18n';
-import { koStory } from '../../i18n/ko-story';
-import StoryImage from '../story/StoryImage.astro';
-import '../../styles/story.css';
 interface Props { locale: Locale }
 const t = DICTS[Astro.props.locale].product;
 const list = VIEW_KEYS.map((key) => ({ key, alt: t.alts[key], label: t.views[key] }));
 const ORBIT = 4; // 360 표시에 쓰는 사진 수 (정면·우측면·뒷면·좌측면)
-// 한국어만: 1번째 사진 = 화장대 장면(360 각도에 포함하지 않음), 기존 정면 사진은 2번째
-const vanity = Astro.props.locale === 'ko' ? koStory.hero.image : null;
-const LEAD = vanity ? 1 : 0;
+// 360 각도 앞 장면 사진 없음: 페이지를 열면 바로 정면 제품 사진(빈 사진 자리 없이)
+const LEAD = 0;
 // 스크립트에서 쓰는 문구
-const strings = { labels: vanity ? { vanity: vanity.label, ...t.views } : t.views, photoOf: t.photoOf, texLive: t.texLive, texStage: t.texStage };
+const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texStage: t.texStage };
 ---
 <section class="pg" aria-label={t.galleryLabel} data-pdp-gallery data-strings={JSON.stringify(strings)} data-lead={LEAD}>
   <p class="pg__count" aria-hidden="true" data-pg-count><span dir="ltr"><span data-pg-index>01</span> / {String(list.length + LEAD).padStart(2, '0')}</span></p>
   <div class="pg__stage" data-pg-stage tabindex="-1">
-    {vanity && <StoryImage class="pg__img pg__img--scene" name={vanity.name} alt={vanity.alt} ratio="4 / 3" sizes="(max-width: 900px) 100vw, 52vw" eager data-pg-img="0" data-view="vanity" />}
     {list.map((v, i) => (
       <img
         class="pg__img" data-pg-img={i + LEAD} data-view={v.key}
@@ -78,12 +73,6 @@ const strings = { labels: vanity ? { vanity: vanity.label, ...t.views } : t.view
     user-select: none; -webkit-user-drag: none; transition: opacity var(--dur-panel) var(--ease-cream);
   }
   .pg__img { padding: 2% 14%; }
-  /* 화장대 장면 사진(한국어 1번째): 무대를 꽉 채움. 사진이 없으면 같은 자리의 빈 박스 */
-  .pg__stage :global(.pg__img--scene) {
-    position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; object-fit: cover;
-    transition: opacity var(--dur-panel) var(--ease-cream);
-  }
-  .pg__stage :global(.pg__img--scene[hidden]) { display: block; opacity: 0; visibility: hidden; pointer-events: none; }
   .pg__img[hidden], .pg__tex[hidden] { display: block; opacity: 0; visibility: hidden; pointer-events: none; }
   .pg__tex { mix-blend-mode: multiply; transform-origin: 50% 50%; will-change: transform; }
   .pg.is-texture .pg__stage { touch-action: none; }
