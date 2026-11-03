@@ -33,6 +33,7 @@ export const en: Dict = {
     volume: '50 mL',
     toProduct: 'View the product',
     buy: 'Buy now',
+    buyNow: 'Buy now',
     toHome: 'Back to home',
     privacy: 'Privacy notice',
     shippingInfo: 'Shipping',
@@ -105,6 +106,11 @@ export const en: Dict = {
     specStepValue: 'Last step of your morning and evening skincare',
     steps: ['After cleansing, prep your skin with toner.', 'As the last skincare step, spread an adequate amount.', 'In the morning, finish with sunscreen.'],
     mobileBar: 'Buy now',
+    setLabel: 'First-order offer · Save more as you add',
+    sets: { single: '1 jar', set2: 'Set of 2', set3: 'Set of 3' },
+    setTags: { single: 'Starter', set2: 'Best value', set3: 'Lowest per jar' },
+    setPerUnit: '{a} per jar',
+    setFreeShip: 'Free shipping',
   },
   info: {
     heading: 'Product information',
@@ -220,6 +226,7 @@ export const en: Dict = {
     total: 'Total',
     pay: 'Pay now',
     back: 'Back to the product',
+    set: 'Set',
   },
   complete: {
     title: 'Thank you for going all the way to “Pay now”',

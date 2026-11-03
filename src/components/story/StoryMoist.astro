@@ -1,0 +1,30 @@
+---
+/* 상품 페이지(한국어) ⑦ 촉촉함 — 구매후기 요약 바로 다음 */
+import { koStory } from '../../i18n/ko-story';
+import StoryImage from './StoryImage.astro';
+import Nums from './Nums.astro';
+import '../../styles/story.css';
+const { moist: m } = koStory;
+---
+<section class="st wrap moist" aria-labelledby="st-moist-title">
+  <div class="moist__text">
+    <h2 id="st-moist-title" class="st__title">{m.title}</h2>
+    <p class="st__body">{m.body}</p>
+    <p class="moist__metric">
+      <span class="moist__label">{m.metricLabel}</span>
+      <b class="st-n st-down moist__num">{m.metric}</b>
+      <span class="moist__note">{m.metricNote}</span>
+    </p>
+  </div>
+  <StoryImage name={m.image.name} alt={m.image.alt} ratio="4 / 3" sizes="(max-width: 900px) 100vw, 40vw" />
+</section>
+
+<style>
+  .moist { margin-top: var(--s-7); grid-template-columns: 1.1fr 0.9fr; align-items: center; gap: var(--s-6); }
+  .moist__text { display: grid; gap: var(--s-4); }
+  .moist__metric { display: grid; gap: 2px; padding-inline-start: var(--s-4); border-inline-start: 1px solid var(--c-gold-line); }
+  .moist__label { font-size: var(--fs-small); color: var(--c-ink-soft); }
+  .moist__num { font-size: clamp(1.75rem, 3vw, 2.25rem); line-height: 1.2; }
+  .moist__note { font-size: 0.8125rem; color: var(--c-ink-soft); }
+  @media (max-width: 900px) { .moist { grid-template-columns: 1fr; } }
+</style>

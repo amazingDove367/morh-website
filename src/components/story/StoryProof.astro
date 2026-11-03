@@ -1,0 +1,126 @@
+---
+/*
+  상세 설명(한국어) ④ 증거① 화장대(#record) → ⑤ 증거② 피부 → ⑥ 사용법
+  - 피부 수치 막대는 CSS 로만(차트 라이브러리 없음). 막대 길이 = 수치 절댓값 ÷ 가장 큰 값
+  - 줄어든 숫자는 Imperial Plum
+*/
+import { koStory } from '../../i18n/ko-story';
+import StoryImage from './StoryImage.astro';
+import Nums from './Nums.astro';
+import '../../styles/story.css';
+const { record: r, skin, use } = koStory;
+const max = Math.max(...skin.bars.map((b) => b.value));
+---
+<p class="st__lead record__lead">{r.lead}</p>
+<section class="st record" id="record" aria-labelledby="st-record-title">
+  <h2 id="st-record-title" class="st__title">{r.title}</h2>
+  <div class="record__how">
+    <h3>{r.howTitle}</h3>
+    <ol>{r.how.map((x) => <li>{x}</li>)}</ol>
+  </div>
+  <div class="pair">
+    {r.photos.map((ph) => <StoryImage name={ph.name} alt={ph.alt} ratio="4 / 3" sizes="(max-width: 720px) 100vw, 45vw" />)}
+  </div>
+  <div class="pair pair--ba">
+    {[r.before, r.after].map((ph) => (
+      <figure>
+        <StoryImage name={ph.name} alt={ph.alt} ratio="4 / 5" sizes="(max-width: 720px) 100vw, 45vw" />
+        <figcaption>{ph.label}</figcaption>
+      </figure>
+    ))}
+  </div>
+  <table class="rtable">
+    <caption>{r.tableTitle}</caption>
+    <thead><tr>{r.tableHead.map((h) => <th scope="col">{h}</th>)}</tr></thead>
+    <tbody>
+      {r.tableRows.map(([k, a, b]) => (
+        <tr><th scope="row">{k}</th><td><Nums text={a} /></td><td><Nums text={b} /></td></tr>
+      ))}
+    </tbody>
+    <tfoot>
+      <tr><th scope="row">{r.tableTotal[0]}</th><td><Nums text={r.tableTotal[1]} /></td><td class="st-down"><Nums text={r.tableTotal[2]} /></td></tr>
+    </tfoot>
+  </table>
+  <ul role="list" class="st-cards">
+    {r.cards.map((c) => (
+      <li class="st-card">
+        <span class="st-card__label">{c.label}</span>
+        <span class="st-card__nums"><span class="st-card__from"><Nums text={c.from} /></span><span class="st-card__arrow">→</span><span class="st-down"><Nums text={c.to} /></span></span>
+      </li>
+    ))}
+  </ul>
+  <p class="st__close"><Nums text={r.note} /></p>
+  <div class="pair pair--small">
+    {r.pouch.map((ph) => <StoryImage name={ph.name} alt={ph.alt} ratio="1 / 1" sizes="(max-width: 720px) 45vw, 220px" />)}
+  </div>
+  <p class="st-fn"><Nums text={r.footnote} /></p>
+</section>
+
+<section class="st" aria-labelledby="st-skin-title">
+  <h2 id="st-skin-title" class="st__title">{skin.title}</h2>
+  <ul role="list" class="bars">
+    {skin.bars.map((b) => (
+      <li class="bar">
+        <span class="bar__label">{b.label}</span>
+        <span class:list={['bar__val st-n', { 'st-down': b.down }]}>{b.text}</span>
+        <span class="bar__track" aria-hidden="true"><span class:list={['bar__fill', { 'bar__fill--down': b.down }]} style={`width: ${((b.value / max) * 100).toFixed(1)}%`}></span></span>
+      </li>
+    ))}
+  </ul>
+  <StoryImage name={skin.image.name} alt={skin.image.alt} ratio="16 / 9" sizes="(max-width: 720px) 100vw, 60vw" class="skin__img" />
+  <p class="st__close">{skin.line}</p>
+  <p class="st-fn"><Nums text={skin.footnote} /></p>
+</section>
+
+<section class="st" aria-labelledby="st-use-title">
+  <h2 id="st-use-title" class="st__title">{use.title}</h2>
+  <ol role="list" class="tl">{use.timeline.map((x) => <li><Nums text={x} /></li>)}</ol>
+  <dl class="use">
+    <div><dt>{use.morningLabel}</dt><dd>{use.morning.map((x, i) => <>{i > 0 && <span class="use__arrow" aria-hidden="true"> → </span>}<span>{x}</span></>)}</dd></div>
+    <div><dt>{use.runLabel}</dt><dd>{use.run}</dd></div>
+  </dl>
+  <p class="st__close">{use.end}</p>
+</section>
+
+<style>
+  .record__lead { margin-top: var(--s-8); text-align: center; font-weight: 600; color: var(--c-ink); }
+  .record__lead + .record { border-top: 0; padding-top: var(--s-5); }
+  .record__how { display: grid; gap: var(--s-3); max-width: 62ch; }
+  .record__how h3 { font-size: var(--fs-h3); }
+  .record__how ol { display: grid; gap: var(--s-2); padding-inline-start: 1.4em; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); max-width: 960px; }
+  .pair--ba { max-width: 720px; }
+  .pair figure { margin: 0; display: grid; gap: var(--s-2); }
+  .pair figcaption { font-size: var(--fs-small); font-weight: 600; text-align: center; }
+  .pair--small { grid-template-columns: repeat(2, minmax(0, 220px)); }
+  .rtable { width: 100%; max-width: 560px; border-collapse: collapse; font-size: var(--fs-small); }
+  .rtable caption { text-align: start; font-weight: 650; padding-bottom: var(--s-2); }
+  .rtable th, .rtable td { padding: 10px 8px; border-bottom: 1px solid var(--c-line); text-align: start; }
+  .rtable thead th { color: var(--c-ink-soft); font-weight: 500; border-bottom-color: var(--c-line-strong); }
+  .rtable td { text-align: end; font-variant-numeric: tabular-nums; }
+  .rtable thead th:not(:first-child) { text-align: end; }
+  .rtable tfoot th, .rtable tfoot td { border-top: 1px solid var(--c-gold-line); border-bottom: 0; font-weight: 600; }
+  .bars { display: grid; gap: var(--s-4); max-width: 640px; }
+  .bar { display: grid; grid-template-columns: 1fr auto; gap: 6px var(--s-3); align-items: baseline; }
+  .bar__label { font-size: var(--fs-small); }
+  .bar__val { font-size: 1.25rem; }
+  .bar__track { grid-column: 1 / -1; height: 8px; background: var(--c-pearl); }
+  .bar__fill { display: block; height: 100%; background: var(--c-ink-soft); }
+  .bar__fill--down { background: var(--c-plum); }
+  :global(.skin__img) { max-width: 760px; }
+  .tl { display: grid; grid-template-columns: repeat(4, 1fr); counter-reset: tl; border-top: 1px solid var(--c-gold-line); }
+  .tl li { position: relative; padding: var(--s-4) var(--s-3) 0 0; font-size: var(--fs-small); font-weight: 600; }
+  .tl li::before { content: ''; position: absolute; top: -5px; inset-inline-start: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--c-gold-line); }
+  .use { display: grid; gap: var(--s-3); }
+  .use div { display: grid; grid-template-columns: 8em 1fr; gap: var(--s-3); }
+  .use dt { color: var(--c-ink-soft); font-size: var(--fs-small); }
+  .use dd { margin: 0; font-weight: 600; }
+  .use__arrow { color: var(--c-ink-soft); font-weight: 400; }
+  @media (max-width: 720px) {
+    .pair--ba { grid-template-columns: 1fr; }
+    .tl { grid-template-columns: 1fr; border-top: 0; border-inline-start: 1px solid var(--c-gold-line); padding-inline-start: var(--s-4); gap: var(--s-4); }
+    .tl li { padding: 0; }
+    .tl li::before { top: 0.55em; inset-inline-start: calc(var(--s-4) * -1 - 5px); }
+    .use div { grid-template-columns: 1fr; gap: 2px; }
+  }
+</style>

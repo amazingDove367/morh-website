@@ -1,9 +1,10 @@
 /*
-  주문/결제: 수량·배송 지역에 따라 금액 계산 → '결제하기'(핵심 전환) → 완료 화면
-  - 계산은 src/data/commerce.ts 의 orderSummary 와 같은 규칙(화면 data-* 값 사용)
-  - 개인정보는 받지 않음. 완료 화면에는 주문 내역(수량·배송 지역·금액)만 sessionStorage 로 전달
+  주문/결제: 구성(세트)·수량·배송 지역에 따라 금액 계산 → '결제하기'(핵심 전환) → 완료 화면
+  - 계산은 src/data/commerce.ts 의 orderSummary 와 같은 규칙(구성 가격·세트 무료배송)
+  - 개인정보는 받지 않음. 완료 화면에는 주문 내역(구성·수량·배송 지역·금액)만 sessionStorage 로 전달
 */
 import { track, ecommerce } from './analytics';
+import { orderSummary, setById, setBase, shippingFor, type Region } from '../data/commerce';
 import { money } from '../i18n/format';
 import type { Locale } from '../i18n/locales';
 
@@ -15,18 +16,24 @@ export function initCheckout() {
   if (!root || !pay) return;
   const d = root.dataset;
   const locale = d.locale as Locale;
-  const base = Number(d.base), first = Number(d.first), ship = Number(d.ship), remote = Number(d.remote), max = Number(d.max);
+  const max = Number(d.max);
+  const labels = Object.fromEntries((JSON.parse(d.sets || '[]') as { id: string; label: string }[]).map((x) => [x.id, x.label]));
 
-  const fromUrl = Number(new URLSearchParams(location.search).get('qty'));
+  const params = new URLSearchParams(location.search);
+  const fromUrl = Number(params.get('qty'));
   let qty = Number.isFinite(fromUrl) && fromUrl >= 1 ? Math.min(max, Math.round(fromUrl)) : 1;
+  const set = setById(params.get('set'));
   // 주소창의 qty 는 개인정보가 아니지만, 화면 진입 뒤에는 정리해 둠
   if (location.search) history.replaceState(null, '', location.pathname);
 
-  const region = () => (root.querySelector<HTMLInputElement>('[data-region]:checked')?.value === 'remote' ? 'remote' : 'standard');
-  const calc = () => {
-    const subtotal = base * qty, benefit = (base - first) * qty, shipping = region() === 'remote' ? remote : ship;
-    return { qty, region: region(), subtotal, benefit, shipping, total: subtotal - benefit + shipping };
-  };
+  // 고른 구성 표시: 이름 · 기준가 합계 · 구성 가격 · 지역별 배송비
+  root.querySelector('[data-co-set]')!.textContent = labels[set.id] ?? set.id;
+  root.querySelector('[data-co-base]')!.textContent = money(locale, setBase(set));
+  root.querySelector('[data-co-price]')!.textContent = money(locale, set.price);
+  root.querySelectorAll<HTMLElement>('[data-ship-label]').forEach((el) => { el.textContent = money(locale, shippingFor(set.units, el.dataset.shipLabel as Region)); });
+
+  const region = (): Region => (root.querySelector<HTMLInputElement>('[data-region]:checked')?.value === 'remote' ? 'remote' : 'standard');
+  const calc = () => orderSummary(qty, region(), set.id);
   const render = () => {
     const s = calc();
     root.querySelector('[data-co-qty-value]')!.textContent = String(qty);
@@ -51,12 +58,12 @@ export function initCheckout() {
   }));
 
   render();
-  track('begin_checkout', ecommerce(qty, { checkout_type: 'demo' }));
+  track('begin_checkout', ecommerce(qty, { checkout_type: 'demo' }, set.id));
 
   // 결제하기 = 1차 전환(주요 이벤트). 실제 결제가 없으므로 purchase 가 아닌 add_payment_info
   pay.addEventListener('click', () => {
     const s = calc();
-    track('add_payment_info', ecommerce(qty, { payment_type: 'pay_button', shipping_tier: s.region, shipping: s.shipping, checkout_type: 'demo' }));
+    track('add_payment_info', ecommerce(qty, { payment_type: 'pay_button', shipping_tier: s.region, shipping: s.shipping, checkout_type: 'demo' }, set.id));
     try { sessionStorage.setItem(SUMMARY_KEY, JSON.stringify(calc())); } catch { /* 저장소를 쓸 수 없어도 완료 화면은 표시 */ }
     location.assign(d.complete!);
   });

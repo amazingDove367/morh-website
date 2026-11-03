@@ -6,27 +6,36 @@
   - 오른쪽 패널의 THE TEXTURE 를 열면(morh:texture 이벤트) 같은 자리에서 크림 제형 사진으로 바뀌고,
     360 자리에 작은 확대 슬라이더(− / +)만 나타남. 확대 중에는 끌어서·방향키로 다른 부분 탐색
   - 텍스처 사진은 원본 해상도(420×560) 그대로 사용 — 업스케일·생성 없음
+  - 한국어: 1번째에 화장대 장면 사진(hero-vanity)을 두고 360 각도는 2번째(정면)부터. data-lead 로 순서를 보정
+
 */
 import { VIEW_KEYS, viewImg, viewSrcset } from '../../data/product';
 import { withBase, type Locale } from '../../i18n/locales';
 import { DICTS, fill } from '../../i18n';
+import { koStory } from '../../i18n/ko-story';
+import StoryImage from '../story/StoryImage.astro';
+import '../../styles/story.css';
 interface Props { locale: Locale }
 const t = DICTS[Astro.props.locale].product;
 const list = VIEW_KEYS.map((key) => ({ key, alt: t.alts[key], label: t.views[key] }));
 const ORBIT = 4; // 360 표시에 쓰는 사진 수 (정면·우측면·뒷면·좌측면)
+// 한국어만: 1번째 사진 = 화장대 장면(360 각도에 포함하지 않음), 기존 정면 사진은 2번째
+const vanity = Astro.props.locale === 'ko' ? koStory.hero.image : null;
+const LEAD = vanity ? 1 : 0;
 // 스크립트에서 쓰는 문구
-const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texStage: t.texStage };
+const strings = { labels: vanity ? { vanity: vanity.label, ...t.views } : t.views, photoOf: t.photoOf, texLive: t.texLive, texStage: t.texStage };
 ---
-<section class="pg" aria-label={t.galleryLabel} data-pdp-gallery data-strings={JSON.stringify(strings)}>
-  <p class="pg__count" aria-hidden="true" data-pg-count><span dir="ltr"><span data-pg-index>01</span> / {String(list.length).padStart(2, '0')}</span></p>
+<section class="pg" aria-label={t.galleryLabel} data-pdp-gallery data-strings={JSON.stringify(strings)} data-lead={LEAD}>
+  <p class="pg__count" aria-hidden="true" data-pg-count><span dir="ltr"><span data-pg-index>01</span> / {String(list.length + LEAD).padStart(2, '0')}</span></p>
   <div class="pg__stage" data-pg-stage tabindex="-1">
+    {vanity && <StoryImage class="pg__img pg__img--scene" name={vanity.name} alt={vanity.alt} ratio="4 / 3" sizes="(max-width: 900px) 100vw, 52vw" eager data-pg-img="0" data-view="vanity" />}
     {list.map((v, i) => (
       <img
-        class="pg__img" data-pg-img={i} data-view={v.key}
+        class="pg__img" data-pg-img={i + LEAD} data-view={v.key}
         src={withBase(viewImg(v.key, 800))} srcset={viewSrcset(v.key, withBase)}
         sizes="(max-width: 900px) 100vw, 52vw" width="800" height="800"
         alt={v.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async"
-        fetchpriority={i === 0 ? 'high' : undefined} hidden={i !== 0}
+        fetchpriority={i + LEAD === 0 ? 'high' : undefined} hidden={i + LEAD !== 0}
       />
     ))}
     <img class="pg__tex" data-pg-tex src={withBase('/images/cream-texture-420.webp')} width="420" height="560" loading="lazy" decoding="async"
@@ -69,6 +78,12 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
     user-select: none; -webkit-user-drag: none; transition: opacity var(--dur-panel) var(--ease-cream);
   }
   .pg__img { padding: 2% 14%; }
+  /* 화장대 장면 사진(한국어 1번째): 무대를 꽉 채움. 사진이 없으면 같은 자리의 빈 박스 */
+  .pg__stage :global(.pg__img--scene) {
+    position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; object-fit: cover;
+    transition: opacity var(--dur-panel) var(--ease-cream);
+  }
+  .pg__stage :global(.pg__img--scene[hidden]) { display: block; opacity: 0; visibility: hidden; pointer-events: none; }
   .pg__img[hidden], .pg__tex[hidden] { display: block; opacity: 0; visibility: hidden; pointer-events: none; }
   .pg__tex { mix-blend-mode: multiply; transform-origin: 50% 50%; will-change: transform; }
   .pg.is-texture .pg__stage { touch-action: none; }
@@ -124,6 +139,10 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
     const labels = str.labels;
     const photoOf = (n: string) => str.photoOf.replace('{a}', n);
     const ORBIT = 4;
+    // 360 각도 앞에 놓인 장면 사진 수(한국어 1). 각도 사진은 LEAD ~ LEAD+ORBIT-1 번째
+    const LEAD = Number(root.dataset.lead || 0);
+    const angle = (i: number) => Math.min(ORBIT - 1, Math.max(0, i - LEAD));
+    const atAngle = (a: number) => LEAD + (((a % ORBIT) + ORBIT) % ORBIT);
     let idx = 0, texture = false, s = 1, tx = 0, ty = 0, panned = false;
     const zoomLevel = () => Math.round(s * 2) / 2;
 
@@ -135,12 +154,12 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
       idxEl.textContent = String(idx + 1).padStart(2, '0');
       const name = labels[imgs[idx].dataset.view!];
       live.textContent = photoOf(name);
-      // 360 표시: 정면(아래)→우측(오른쪽)→뒷면(위)→좌측(왼쪽). 항공샷은 가운데
-      const a = (idx / ORBIT) * Math.PI * 2;
-      const top = idx >= ORBIT;
+      // 360 표시: 정면(아래)→우측(오른쪽)→뒷면(위)→좌측(왼쪽). 항공샷·장면 사진은 가운데
+      const a = ((idx - LEAD) / ORBIT) * Math.PI * 2;
+      const top = idx < LEAD || idx >= LEAD + ORBIT;
       dot.setAttribute('cx', String(top ? 60 : 60 + Math.sin(a) * 56));
       dot.setAttribute('cy', String(top ? 13 : 13 + Math.cos(a) * 9));
-      orbit.setAttribute('aria-valuenow', String(Math.min(idx, ORBIT - 1)));
+      orbit.setAttribute('aria-valuenow', String(angle(idx)));
       orbit.setAttribute('aria-valuetext', name);
     }
 
@@ -197,9 +216,9 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       if (texture) {
         if (s > 1.001) { tx = down.tx + dx; ty = down.ty + dy; applyZoom(); if (Math.abs(dx) + Math.abs(dy) > 12) markPan('drag'); }
-      } else if (down.i < ORBIT) {
+      } else if (down.i >= LEAD && down.i < LEAD + ORBIT) {
         const steps = Math.trunc(-dx / 60);
-        const next = (((down.i + steps) % ORBIT) + ORBIT) % ORBIT;
+        const next = atAngle(down.i - LEAD + steps);
         if (next !== idx) show(next, 'drag');
       }
     });
@@ -220,15 +239,15 @@ const strings = { labels: t.views, photoOf: t.photoOf, texLive: t.texLive, texSt
     // 키보드: 360 표시에서 ←/→, 텍스처 사진에서 방향키 이동 · +/- 확대
     orbit.addEventListener('keydown', (e) => {
       const map: Record<string, number> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
-      if (e.key in map) { e.preventDefault(); show((((Math.min(idx, ORBIT - 1) + map[e.key]) % ORBIT) + ORBIT) % ORBIT, 'keyboard'); }
-      if (e.key === 'Home') { e.preventDefault(); show(0, 'keyboard'); }
-      if (e.key === 'End') { e.preventDefault(); show(ORBIT - 1, 'keyboard'); }
+      if (e.key in map) { e.preventDefault(); show(atAngle(angle(idx) + map[e.key]), 'keyboard'); }
+      if (e.key === 'Home') { e.preventDefault(); show(LEAD, 'keyboard'); }
+      if (e.key === 'End') { e.preventDefault(); show(LEAD + ORBIT - 1, 'keyboard'); }
     });
     let odown: number | null = null, oi = 0;
-    orbit.addEventListener('pointerdown', (e) => { odown = e.clientX; oi = Math.min(idx, ORBIT - 1); orbit.setPointerCapture(e.pointerId); });
+    orbit.addEventListener('pointerdown', (e) => { odown = e.clientX; oi = angle(idx); orbit.setPointerCapture(e.pointerId); });
     orbit.addEventListener('pointermove', (e) => {
       if (odown === null) return;
-      const next = (((oi + Math.trunc((e.clientX - odown) / 24)) % ORBIT) + ORBIT) % ORBIT;
+      const next = atAngle(oi + Math.trunc((e.clientX - odown) / 24));
       if (next !== idx) show(next, 'orbit');
     });
     orbit.addEventListener('pointerup', () => { odown = null; });
