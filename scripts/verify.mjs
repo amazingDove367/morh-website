@@ -132,7 +132,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     const b = (q) => document.querySelector(q).getBoundingClientRect();
     return { lead: document.querySelector('[data-lead]').textContent, leadT: b('[data-lead]').top, subB: b('[data-sub]').bottom, jarT: b('[data-lid]').top, leadB: b('[data-lead]').bottom };
   });
-  ok(`[홈 ${label}] 첫 화면: 14 DAYS 제목 아래 한 줄(제품과 겹치지 않음)`, h.lead === '14일엔 피부를, 4주엔 화장대를 쟀어요.' && h.leadT > h.subB && h.leadB < h.jarT, h);
+  ok(`[홈 ${label}] 첫 화면: 14 DAYS 제목 아래 한 줄(제품과 겹치지 않음)`, h.lead === '피부 밝기 +10.0%, 멜라닌 지수 −7.4%' && h.leadT > h.subB && h.leadB < h.jarT, h);
   await ctx.close();
 }
 {
