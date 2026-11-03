@@ -116,8 +116,8 @@ const story = locale === 'ko' ? koStory.home : null;
   .ritual__copy { font-size: var(--fs-lead); color: var(--c-ink-soft); margin-top: var(--s-3); }
   .ritual__cta { margin-top: var(--s-6); }
   /* 한국어 추가 문구 */
-  /* 첫 화면 수치 한 줄: YOUR DAILY RITUAL 과 같은 버건디, 조금 더 크게 */
-  .ritual__lead { font-size: clamp(1.125rem, 1.8vw, 1.5rem); font-weight: 600; color: var(--c-burgundy); text-align: center; font-variant-numeric: tabular-nums; }
+  /* 첫 화면 수치 한 줄: YOUR DAILY RITUAL 과 같은 버건디, 글자 크기는 그보다 2px 크게 */
+  .ritual__lead { font-size: clamp(calc(0.8125rem + 2px), calc(1.25vw + 2px), calc(1.0625rem + 2px)); font-weight: 600; color: var(--c-burgundy); text-align: center; font-variant-numeric: tabular-nums; }
   .ritual__en { font-size: clamp(0.875rem, 1.1vw, 1rem); font-weight: 300; letter-spacing: 0.14em; color: var(--c-ink-soft); margin-bottom: var(--s-3); }
   .ritual__fixed { font-size: 0.8125rem; color: var(--c-ink-soft); letter-spacing: 0.02em; }
   .ritual__cap { display: grid; gap: 4px; }
