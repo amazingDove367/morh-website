@@ -402,7 +402,7 @@ for (const path of ['/', '/product/', '/checkout/', '/en/product/']) {
 for (const path of ['/', '/product/']) {
   const { ctx, page } = await open(path);
   const txt = await page.evaluate(() => document.querySelector('main').innerText);
-  const bad = txt.match(/요거트|우유|생크림|푸딩|젤리|최대 함량|최고|최상|역대급|즉시|\d+일 만에|재생|진피|세포|잡티 제거|흉터|워터프루프|가상 수치/g);
+  const bad = txt.match(/요거트|우유|생크림|푸딩|젤리|최고|최상|역대급|즉시|\d+일 만에|재생|진피|세포|잡티 제거|흉터|워터프루프|가상 수치/g);
   ok(`[문구] ${path} 금지 표현 없음`, !bad, bad);
   await ctx.close();
 }

@@ -71,7 +71,6 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
         <li><StoryImage name={ph.name} alt={ph.alt} ratio="1 / 1" sizes="(max-width: 720px) 30vw, 220px" /><span>{ph.label}</span></li>
       ))}
     </ul>
-    <div class="dt-body">{d.pain.body.map((b) => <p>{b}</p>)}</div>
     <p class="dt-down" aria-hidden="true">↓</p>
     <p class="dt-turn">{d.pain.turn}</p>
   </section>
@@ -250,7 +249,6 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   /* ③ 고민: 어두운 면 + 위쪽 V 홈 */
   .dt-dark { position: relative; background: var(--c-burgundy-deep); color: #fff; padding-top: calc(clamp(56px, 9vw, 88px) + 24px); }
   .dt-dark::before { content: ''; position: absolute; top: -1px; left: 50%; translate: -50% 0; width: 64px; height: 28px; background: #fff; clip-path: polygon(0 0, 100% 0, 50% 100%); }
-  .dt-dark .dt-body { color: rgb(255 255 255 / 0.86); }
   .dt-photos { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .dt-photos li { display: grid; gap: 8px; font-size: 0.8125rem; }
   .dt-photos :global(.st-ph) { background: rgb(255 255 255 / 0.14); }
@@ -320,7 +318,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
 
   /* ⑥ 마무리 */
   .dt-final { background: var(--c-burgundy); color: #fff; }
-  .dt-final__en { font-family: var(--f-serif); font-style: italic; font-size: 1.25rem; opacity: 0.85; }
+  .dt-final__en { font-family: var(--f-serif); font-style: italic; font-size: calc(1.25rem + 2px); opacity: 0.85; }
   .dt-cta--light { background: #fff; color: var(--c-burgundy); border-color: #fff; }
   .dt-cta--light:hover { background: var(--c-veil); color: var(--c-burgundy-deep); }
 
