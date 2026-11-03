@@ -3,6 +3,7 @@
   상세페이지 오른쪽 정보 패널 (레퍼런스 '텍스쳐.png'의 얇은 사각 테두리 패널)
   EXPLORE MORH → 제품명 → 가격(기준가 취소선 + 첫 구매 혜택가) → 구성(1개·2개 세트·3개 세트, 기준가 → 할인율·가격) → 수량·총액 → 구매하기 → THE PRODUCT / THE TEXTURE / THE RITUAL
   - 구성을 바꾸면 select_item 측정(2026-11 추가), 총액·구매 링크(?qty=N&set=id)가 고른 구성으로 바뀜
+  - 하단 혜택 시트(MobileBuyBar)의 구성·수량·총액·구매 링크도 같은 스크립트가 함께 갱신(data-set · data-qty · data-total · data-buy)
   - 구매 정보와 버튼을 아코디언 위에 두어, 아코디언(특히 THE TEXTURE)을 열고 닫아도 같은 위치에 유지
   - THE TEXTURE 가 텍스처 탐색의 유일한 진입점: 열면 morh:texture {open:true} 이벤트로 왼쪽 사진이 크림 제형으로 바뀜
   - 구매하기 → 주문/결제 화면(/checkout/?qty=N). 수량은 개인정보가 아니므로 주소에 담아 전달
@@ -221,17 +222,22 @@ const checkout = localePath(locale, '/checkout/');
       document.querySelectorAll<HTMLAnchorElement>('[data-buy]').forEach((a) => { a.href = `${checkout}?qty=${qty}&set=${set}`; });
     };
     // 구성 선택 = select_item (2026-11 추가). 총액·구매 링크도 고른 구성으로
-    panel.querySelectorAll<HTMLInputElement>('[data-set]').forEach((r) => r.addEventListener('change', () => {
+    // 정보 패널과 하단 혜택 시트(OfferBar)의 구성 선택은 같은 상태 — 한쪽에서 고르면 다른 쪽도 같이 체크
+    // location: 고른 곳(product_panel · offer_sheet)
+    const setRadios = [...document.querySelectorAll<HTMLInputElement>('[data-set]')];
+    setRadios.forEach((r) => r.addEventListener('change', () => {
       if (!r.checked) return;
       set = r.value; unit = Number(r.dataset.setPrice);
+      setRadios.forEach((o) => { if (o.value === set) o.checked = true; });
       render();
-      track('select_item', { item_list_id: 'set_options', item_list_name: 'set_options', set_option: set, location: 'product_panel', ...ecommerce(qty, {}, set) });
+      const location = r.closest<HTMLElement>('[data-set-location]')?.dataset.setLocation || 'product_panel';
+      track('select_item', { item_list_id: 'set_options', item_list_name: 'set_options', set_option: set, location, ...ecommerce(qty, {}, set) });
     }));
     document.querySelectorAll<HTMLButtonElement>('[data-qty]').forEach((b) => b.addEventListener('click', () => {
       const before = qty;
       qty = Math.min(max, Math.max(1, qty + Number(b.dataset.qty)));
       render();
-      if (qty !== before) track('quantity_change', { quantity: qty, direction: qty > before ? 'increase' : 'decrease', location: 'product_panel' });
+      if (qty !== before) track('quantity_change', { quantity: qty, direction: qty > before ? 'increase' : 'decrease', location: b.closest<HTMLElement>('[data-qty-location]')?.dataset.qtyLocation || 'product_panel' });
     }));
     // 구매하기(정보 패널·모바일 하단 바·헤더 BAG) = 구매 의향
     document.querySelectorAll<HTMLAnchorElement>('[data-buy]').forEach((a) => a.addEventListener('click', () => {

@@ -361,6 +361,37 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   ok('[측정 추가] 콘솔 오류 없음', errors.length === 0, errors);
   await ctx.close();
 }
+// 2026-11 하단 플로팅 '첫 구매 혜택 받기' 바 + 혜택 시트 (데스크톱·모바일)
+for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) {
+  const { ctx, page, errors } = await open('/product/', opts);
+  const hidden0 = await page.evaluate(() => !document.querySelector('[data-buybar]').classList.contains('is-visible'));
+  await page.evaluate(() => document.querySelector('#dt-usp-title').scrollIntoView());
+  await page.waitForTimeout(500);
+  const bar = await page.evaluate(() => { const b = document.querySelector('[data-buybar]'); const r = b.querySelector('.buybar__inner').getBoundingClientRect(); return { vis: b.classList.contains('is-visible'), text: b.innerText.replace(/\s+/g, ' '), bottom: Math.round(r.bottom), vh: innerHeight, inSec: document.querySelector('#dt-usp-title').closest('.dt-sec').classList.contains('is-in') }; });
+  ok(`[혜택 바 ${label}] 첫 화면엔 없고, 상세 설명으로 내려가면 '첫 구매 최대 50% 할인 · 첫 구매 혜택 받기' 바가 떠 있음`, hidden0 && bar.vis && bar.text.includes('첫 구매 최대 50% 할인') && bar.text.includes('첫 구매 혜택 받기') && bar.bottom <= bar.vh, bar);
+  ok(`[상세 ${label}] 화면에 들어온 섹션은 떠오름(is-in)`, bar.inSec);
+  await page.click('[data-offer-open]');
+  await page.waitForTimeout(400);
+  const open1 = await page.evaluate(() => ({ open: document.querySelector('[data-offer-sheet]').open, sets: [...document.querySelectorAll('.osheet__set')].map((e) => e.innerText.replace(/\s+/g, ' ')) }));
+  ok(`[혜택 시트 ${label}] 바 버튼 → 시트 열림: 구성 3개(30% · 40% · 50%)`, open1.open && open1.sets.length === 3 && open1.sets[0].includes('30%') && open1.sets[1].includes('40%') && open1.sets[2].includes('50%') && open1.sets[2].includes('개당 최저가'), open1);
+  await page.click('.osheet__set:nth-child(4)');
+  await page.click('.osheet__qty [data-qty="1"]');
+  const st = await page.evaluate(() => ({ panel: document.querySelector('[data-buy-panel] [data-set]:checked').value, total: document.querySelector('.osheet__total [data-total]').textContent, href: document.querySelector('.osheet__buy').getAttribute('href'),
+    ev: window.__events.filter((e) => ['cta_click', 'select_item', 'quantity_change'].includes(e[0])).map(([n, p]) => [n, p.cta_location || p.location, p.set_option || p.quantity]) }));
+  ok(`[혜택 시트 ${label}] 3개 세트 · 수량 2 → 총액 177,000원, 정보 패널도 3개 세트, 구매 링크 ?qty=2&set=set3`, st.panel === 'set3' && st.total === '177,000원' && st.href.endsWith('?qty=2&set=set3'), st);
+  ok(`[혜택 시트 ${label}] 측정: cta_click · offer_bar → select_item · offer_sheet(set3) → quantity_change · offer_sheet`, JSON.stringify(st.ev.filter((e) => e[1] === 'offer_bar' || e[1] === 'offer_sheet')) === JSON.stringify([['cta_click', 'offer_bar', undefined], ['select_item', 'offer_sheet', 'set3'], ['quantity_change', 'offer_sheet', 2]]), st.ev);
+  if (label === '모바일') {
+    await page.keyboard.press('Escape');
+    ok('[혜택 시트 모바일] Esc 로 닫힘', await page.evaluate(() => !document.querySelector('[data-offer-sheet]').open));
+  } else {
+    await Promise.all([page.waitForURL(/checkout/), page.click('.osheet__buy')]);
+    await page.waitForLoadState('networkidle');
+    const co = await page.evaluate(() => ({ set: document.querySelector('[data-co-set]').textContent, qty: document.querySelector('[data-co-qty-value]').textContent, total: document.querySelector('[data-sum="total"]').textContent }));
+    ok('[혜택 시트] 구매하기 → 주문/결제(3개 세트 · 2 · 88,500 × 2 = 177,000원, 무료배송)', co.set === '3개 세트' && co.qty === '2' && co.total === '177,000원', co);
+  }
+  ok(`[혜택 바 ${label}] 가로 넘침 없음 · 콘솔 오류 없음`, (await overflowX(page)) <= 0 && errors.length === 0, errors);
+  await ctx.close();
+}
 // Meta 픽셀 기본 코드는 GTM 태그로만 — 페이지 HTML 에 직접 들어 있지 않음(중복 PageView 방지)
 for (const path of ['/', '/product/', '/checkout/', '/en/product/']) {
   const html = await (await fetch(BASE + path)).text();
