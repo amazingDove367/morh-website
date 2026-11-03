@@ -177,7 +177,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     notices: document.querySelectorAll('[data-sample-notice]').length,
     panel: document.querySelector('.pp__rating').textContent,
   }));
-  ok('[상세] 평균 4.8 · 10건이 요약·탭·목록·패널에서 일치', nums.avg === '4.8' && nums.count === 10 && nums.tab === 10 && nums.items === 10 && nums.panel.includes('4.8') && nums.panel.includes('10'), nums);
+  ok('[상세] 평균 5.0 · 12건이 요약·탭·목록·패널에서 일치', nums.avg === '5.0' && nums.count === 12 && nums.tab === 12 && nums.items === 12 && nums.panel.includes('5.0') && nums.panel.includes('12'), nums);
   ok('[상세] 샘플 후기 안내 1회', nums.notices === 1);
   // 텍스처
   await page.click('#acc-texture-btn');
@@ -517,7 +517,7 @@ for (const path of ['/', '/product/', '/checkout/', '/privacy/', '/en/']) {
   await page.check('[data-set][value="set2"]'); await page.check('[data-set][value="single"]');
   await page.click('[data-qty="1"]');
   await page.locator('.rs__thumb').first().click(); await page.click('[data-lb-close]');
-  await page.locator('.rs__thumb').nth(1).click(); await page.click('[data-lb-step="1"]'); await page.keyboard.press('Escape');
+  await page.locator('.rs__thumb[data-review-open="s09"]').click(); await page.click('[data-lb-step="1"]'); await page.keyboard.press('Escape');
   await page.click('.rs__all'); await page.waitForTimeout(500);
   await page.click('[data-page-go="2"]'); await page.waitForTimeout(400);
   await page.click('#tab-detail');
