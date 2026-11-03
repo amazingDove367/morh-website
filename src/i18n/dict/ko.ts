@@ -63,7 +63,7 @@ export const ko = {
     slogan: 'Beauty, Dressed in Light.',
     sloganKo: '빛을 입은 아름다움',
     campaign: '가린 게 아니라, 가꾼 거예요.',
-    aboutBody: '톤업 선크림 뒤에 컨실러를 또 꺼내는 아침 대신, 스킨케어 마지막 단계에 매일 바르는 크림 한 가지로 나만의 루틴을 만드는 방법을 제안합니다.',
+    aboutBody: '가리는 단계를 더하기보다, 스킨케어 마지막에 MORH를 바르는 간결한 루틴을 제안합니다. 매일의 꾸준한 케어가, 내 피부가 마음에 드는 아침으로 이어지도록.',
     cardAlt: 'MORH 모르 브라이트닝 크림 정면',
   },
   product: {
