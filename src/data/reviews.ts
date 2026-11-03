@@ -5,6 +5,7 @@
  * - `SAMPLE_REVIEWS`: 실제 구매자가 아닌, 가상 사용 시나리오로 작성한 샘플 후기 12건(모두 5점, 2026-11-04).
  *   화면에 '샘플 후기' 안내를 한 번 표시하고, 구조화 데이터(Review·AggregateRating)와 성과 지표에는 쓰지 않습니다.
  * - 후기 사진은 실제 MORH 용기로 AI 생성한 샘플 이미지입니다(고객 사진 아님, 화면에 명시). 한 장씩 모두 다른 사진.
+ *   순서(2026-11-04 요청): 사진 줄 기준 1 s01 · 2 s10 · 3 s04 · 4 s05 · 5·6 가방(s11·s12) · 7 s07 · … · 맨 뒤 s02(뚜껑, AI 느낌이 강함).
  *   파일: public/images/reviews/r01~r12-{400|800}.webp, 설명(alt)은 아래 PHOTOS. before/after 사진은 쓰지 않습니다.
  * - 효능·피부 변화를 단정하는 문장은 쓰지 않고 사용 경험(루틴·사용감·용기)만 다룹니다.
  */
@@ -65,14 +66,14 @@ export const SAMPLE_REVIEWS: Review[] = [
     },
   },
   {
-    id: 's02', rating: 5, sample: true, photos: ['r03'], tags: ['package'],
-    author: who('박*라', 'R. Park', 'R. P.', '朴*拉', 'ر. ب.'), skin: SKIN.normal,
+    id: 's10', rating: 5, sample: true, photos: ['r12'], tags: ['routine', 'moisture'],
+    author: who('강*비', 'B. Kang', 'B. K.', '姜*碧', 'ب. ك.'), skin: SKIN.dry,
     text: {
-      ko: { title: '뚜껑이 손에 착 감겨요', body: '아침에 손에 물기 있을 때도 뚜껑이 미끄럽지 않게 잘 열려요. 용기가 묵직해서 싸 보이지 않고, 욕실 선반에 두면 예뻐서 자꾸 손이 가요.' },
-      en: { title: 'The lid is easy to grip', body: 'The rounded lid is easy to open even when I am rushing in the morning. The subtle gold line looks nice on my vanity.' },
-      ja: { title: 'ふたが手になじみます', body: '丸いふたなので、朝急いで開けるときも楽です。控えめなゴールドのラインがドレッサーに置いても素敵です。' },
-      'zh-cn': { title: '瓶盖很好拿', body: '圆圆的瓶盖，早上匆忙时也很好打开。低调的金色线条放在梳妆台上很好看。' },
-      ar: { title: 'الغطاء سهل الإمساك', body: 'الغطاء المستدير سهل الفتح حتى عندما أكون مستعجلة صباحًا. الخط الذهبي الهادئ يبدو جميلًا على طاولة الزينة.' },
+      ko: { title: '자기 전 마지막 루틴이에요', body: '침대 옆 협탁에 두고 불 끄기 전에 마지막으로 발라요. 다음 날 아침 세안할 때 당기는 느낌이 덜해서 저녁에 꼭 챙기게 됐어요.' },
+      en: { title: 'My evening routine feels calmer', body: 'Applying it last before bed feels like wrapping up the day. I like that it finishes with a moist feel.' },
+      ja: { title: '夜のルーティンが落ち着きました', body: '寝る前に最後に塗る時間が、一日を締めくくるように感じます。しっとり仕上がるところが好きです。' },
+      'zh-cn': { title: '晚间护肤变得从容了', body: '睡前最后涂上它，感觉像是在为一天收尾。喜欢它滋润的收尾感。' },
+      ar: { title: 'روتين المساء أصبح أهدأ', body: 'وضعه في النهاية قبل النوم يشبه اختتام اليوم. يعجبني أنه ينتهي بإحساس مرطب.' },
     },
   },
   {
@@ -109,14 +110,25 @@ export const SAMPLE_REVIEWS: Review[] = [
     },
   },
   {
-    id: 's06', rating: 5, sample: true, photos: ['r01'], tags: ['routine'],
-    author: who('한*진', 'J. Han', 'J. H.', '韩*珍', 'ج. ه.'), skin: SKIN.normal,
+    id: 's11', rating: 5, sample: true, photos: ['r10'], tags: ['package', 'routine'],
+    author: who('조*현', 'H. Cho', 'H. C.', '赵*贤', 'ه. ج.'), skin: SKIN.combo,
     text: {
-      ko: { title: '세면대 옆에 두고 매일 써요', body: '눈에 보여야 챙겨 바르는 편이라 세면대 옆에 뒀어요. 세안하고 바로 손 닿는 데 있으니까 2주째 하루도 안 빼먹었어요.' },
-      en: { title: 'Building a daily habit', body: 'I keep it next to the sink and use it morning and night. The idea of a 14-day ritual keeps me consistent.' },
-      ja: { title: '毎日塗る習慣をつくっています', body: '洗面台の横に置いて朝晩使っています。14日間のルーティンという言葉が続けるきっかけになっています。' },
-      'zh-cn': { title: '正在养成每天涂的习惯', body: '放在洗手台旁边，早晚都会用。“14天护肤仪式”这个说法让我坚持了下来。' },
-      ar: { title: 'أبني عادة يومية', body: 'أضعه بجانب المغسلة وأستخدمه صباحًا ومساءً. فكرة روتين الأربعة عشر يومًا تساعدني على الاستمرار.' },
+      ko: { title: '출장 갈 때도 챙겼어요', body: '3박 4일 출장에 파우치에 넣어 갔어요. 뚜껑이 단단히 닫혀서 가방 안에서 샐 걱정은 없었는데, 유리 용기라 무게는 조금 있어요.' },
+      en: { title: 'Took it on a business trip', body: 'I packed it in my pouch for a four-day trip. The lid closes tightly so I never worried about leaks, though the glass jar is a little heavy.' },
+      ja: { title: '出張にも持っていきました', body: '3泊4日の出張にポーチに入れて持っていきました。ふたがしっかり閉まるので漏れる心配はなかったですが、ガラス容器なので少し重さはあります。' },
+      'zh-cn': { title: '出差也带上了', body: '四天的出差我把它放进收纳袋带走了。瓶盖拧得很紧，不用担心在包里漏，不过玻璃瓶会稍微有点重量。' },
+      ar: { title: 'أخذته معي في رحلة عمل', body: 'وضعته في حقيبتي الصغيرة لرحلة عمل من أربعة أيام. الغطاء يُغلق بإحكام فلم أقلق من التسرّب، لكن البرطمان الزجاجي ثقيل قليلًا.' },
+    },
+  },
+  {
+    id: 's12', rating: 5, sample: true, photos: ['r11'], tags: ['routine', 'moisture'],
+    author: who('문*지', 'J. Moon', 'J. M.', '文*智', 'ج. م.'), skin: SKIN.normal,
+    text: {
+      ko: { title: '2개 세트로 사서 하나는 회사에', body: '집에 하나, 회사 가방에 하나 두고 써요. 사무실이 건조해서 오후에 조금씩 덧바르는데 손 닿는 데 있으니 편해요.' },
+      en: { title: 'Bought the 2-pack, one stays at work', body: 'I keep one at home and one in my work bag. The office is dry, so I add a little in the afternoon, and having it within reach makes it easy.' },
+      ja: { title: '2個セットで買って、ひとつは会社に', body: '家にひとつ、会社のバッグにひとつ置いて使っています。オフィスが乾燥しているので午後に少しずつ重ねていますが、手の届くところにあるので便利です。' },
+      'zh-cn': { title: '买了两件装，一瓶放公司', body: '家里放一瓶，上班包里放一瓶。办公室很干，下午会少量补涂，放在手边很方便。' },
+      ar: { title: 'اشتريت عبوتين وواحدة في العمل', body: 'أحتفظ بواحدة في البيت وأخرى في حقيبة العمل. المكتب جاف، فأضع القليل بعد الظهر، ووجوده في متناول يدي يجعل ذلك سهلًا.' },
     },
   },
   {
@@ -128,6 +140,17 @@ export const SAMPLE_REVIEWS: Review[] = [
       ja: { title: '容器が低くて場所を取りません', body: '低い円筒形なので狭い棚にも収まります。夜のルーティンの最後に取り出しやすいです。' },
       'zh-cn': { title: '瓶身矮，不占地方', body: '低矮的圆柱形，窄架子上也放得下。晚间护肤最后一步拿起来很方便。' },
       ar: { title: 'البرطمان منخفض ولا يأخذ مساحة', body: 'الشكل الأسطواني المنخفض يناسب الرف الضيق، وسهل الوصول إليه في آخر روتين المساء.' },
+    },
+  },
+  {
+    id: 's06', rating: 5, sample: true, photos: ['r01'], tags: ['routine'],
+    author: who('한*진', 'J. Han', 'J. H.', '韩*珍', 'ج. ه.'), skin: SKIN.normal,
+    text: {
+      ko: { title: '세면대 옆에 두고 매일 써요', body: '눈에 보여야 챙겨 바르는 편이라 세면대 옆에 뒀어요. 세안하고 바로 손 닿는 데 있으니까 2주째 하루도 안 빼먹었어요.' },
+      en: { title: 'Building a daily habit', body: 'I keep it next to the sink and use it morning and night. The idea of a 14-day ritual keeps me consistent.' },
+      ja: { title: '毎日塗る習慣をつくっています', body: '洗面台の横に置いて朝晩使っています。14日間のルーティンという言葉が続けるきっかけになっています。' },
+      'zh-cn': { title: '正在养成每天涂的习惯', body: '放在洗手台旁边，早晚都会用。“14天护肤仪式”这个说法让我坚持了下来。' },
+      ar: { title: 'أبني عادة يومية', body: 'أضعه بجانب المغسلة وأستخدمه صباحًا ومساءً. فكرة روتين الأربعة عشر يومًا تساعدني على الاستمرار.' },
     },
   },
   {
@@ -153,36 +176,14 @@ export const SAMPLE_REVIEWS: Review[] = [
     },
   },
   {
-    id: 's10', rating: 5, sample: true, photos: ['r12'], tags: ['routine', 'moisture'],
-    author: who('강*비', 'B. Kang', 'B. K.', '姜*碧', 'ب. ك.'), skin: SKIN.dry,
+    id: 's02', rating: 5, sample: true, photos: ['r03'], tags: ['package'],
+    author: who('박*라', 'R. Park', 'R. P.', '朴*拉', 'ر. ب.'), skin: SKIN.normal,
     text: {
-      ko: { title: '자기 전 마지막 루틴이에요', body: '침대 옆 협탁에 두고 불 끄기 전에 마지막으로 발라요. 다음 날 아침 세안할 때 당기는 느낌이 덜해서 저녁에 꼭 챙기게 됐어요.' },
-      en: { title: 'My evening routine feels calmer', body: 'Applying it last before bed feels like wrapping up the day. I like that it finishes with a moist feel.' },
-      ja: { title: '夜のルーティンが落ち着きました', body: '寝る前に最後に塗る時間が、一日を締めくくるように感じます。しっとり仕上がるところが好きです。' },
-      'zh-cn': { title: '晚间护肤变得从容了', body: '睡前最后涂上它，感觉像是在为一天收尾。喜欢它滋润的收尾感。' },
-      ar: { title: 'روتين المساء أصبح أهدأ', body: 'وضعه في النهاية قبل النوم يشبه اختتام اليوم. يعجبني أنه ينتهي بإحساس مرطب.' },
-    },
-  },
-  {
-    id: 's11', rating: 5, sample: true, photos: ['r10'], tags: ['package', 'routine'],
-    author: who('조*현', 'H. Cho', 'H. C.', '赵*贤', 'ه. ج.'), skin: SKIN.combo,
-    text: {
-      ko: { title: '출장 갈 때도 챙겼어요', body: '3박 4일 출장에 파우치에 넣어 갔어요. 뚜껑이 단단히 닫혀서 가방 안에서 샐 걱정은 없었는데, 유리 용기라 무게는 조금 있어요.' },
-      en: { title: 'Took it on a business trip', body: 'I packed it in my pouch for a four-day trip. The lid closes tightly so I never worried about leaks, though the glass jar is a little heavy.' },
-      ja: { title: '出張にも持っていきました', body: '3泊4日の出張にポーチに入れて持っていきました。ふたがしっかり閉まるので漏れる心配はなかったですが、ガラス容器なので少し重さはあります。' },
-      'zh-cn': { title: '出差也带上了', body: '四天的出差我把它放进收纳袋带走了。瓶盖拧得很紧，不用担心在包里漏，不过玻璃瓶会稍微有点重量。' },
-      ar: { title: 'أخذته معي في رحلة عمل', body: 'وضعته في حقيبتي الصغيرة لرحلة عمل من أربعة أيام. الغطاء يُغلق بإحكام فلم أقلق من التسرّب، لكن البرطمان الزجاجي ثقيل قليلًا.' },
-    },
-  },
-  {
-    id: 's12', rating: 5, sample: true, photos: ['r11'], tags: ['routine', 'moisture'],
-    author: who('문*지', 'J. Moon', 'J. M.', '文*智', 'ج. م.'), skin: SKIN.normal,
-    text: {
-      ko: { title: '2개 세트로 사서 하나는 회사에', body: '집에 하나, 회사 가방에 하나 두고 써요. 사무실이 건조해서 오후에 조금씩 덧바르는데 손 닿는 데 있으니 편해요.' },
-      en: { title: 'Bought the 2-pack, one stays at work', body: 'I keep one at home and one in my work bag. The office is dry, so I add a little in the afternoon, and having it within reach makes it easy.' },
-      ja: { title: '2個セットで買って、ひとつは会社に', body: '家にひとつ、会社のバッグにひとつ置いて使っています。オフィスが乾燥しているので午後に少しずつ重ねていますが、手の届くところにあるので便利です。' },
-      'zh-cn': { title: '买了两件装，一瓶放公司', body: '家里放一瓶，上班包里放一瓶。办公室很干，下午会少量补涂，放在手边很方便。' },
-      ar: { title: 'اشتريت عبوتين وواحدة في العمل', body: 'أحتفظ بواحدة في البيت وأخرى في حقيبة العمل. المكتب جاف، فأضع القليل بعد الظهر، ووجوده في متناول يدي يجعل ذلك سهلًا.' },
+      ko: { title: '뚜껑이 손에 착 감겨요', body: '아침에 손에 물기 있을 때도 뚜껑이 미끄럽지 않게 잘 열려요. 용기가 묵직해서 싸 보이지 않고, 욕실 선반에 두면 예뻐서 자꾸 손이 가요.' },
+      en: { title: 'The lid is easy to grip', body: 'The rounded lid is easy to open even when I am rushing in the morning. The subtle gold line looks nice on my vanity.' },
+      ja: { title: 'ふたが手になじみます', body: '丸いふたなので、朝急いで開けるときも楽です。控えめなゴールドのラインがドレッサーに置いても素敵です。' },
+      'zh-cn': { title: '瓶盖很好拿', body: '圆圆的瓶盖，早上匆忙时也很好打开。低调的金色线条放在梳妆台上很好看。' },
+      ar: { title: 'الغطاء سهل الإمساك', body: 'الغطاء المستدير سهل الفتح حتى عندما أكون مستعجلة صباحًا. الخط الذهبي الهادئ يبدو جميلًا على طاولة الزينة.' },
     },
   },
 ];
