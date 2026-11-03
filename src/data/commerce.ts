@@ -33,15 +33,17 @@ export const PRODUCT = {
 } as const;
 
 /**
- * 구성(세트): 많이 살수록 1개당 가격이 내려가는 3단 구성
- * - 1개 30% · 2개 세트 35% · 3개 세트 40% (기준가 × 개수 대비, 1개당 41,300 → 38,350 → 35,400원)
- * - 2개 이상 세트는 기본 배송비 무료(도서산간은 추가분 2,000원만) → 2개 세트를 '추천'으로 표시
+ * 구성(세트): 첫 구매 혜택 — 더할수록 커지는 할인폭
+ * - 1개 30% · 2개 세트 40% · 3개 세트 50% (기준가 × 개수 대비, 1개당 41,300 → 35,400 → 29,500원)
+ * - 2개 이상 세트는 기본 배송비 무료(도서산간은 추가분 2,000원만)
+ * - 태그 문구는 사전의 product.setTags[id]. best = 개당 가격이 가장 낮은 구성(태그를 채운 색으로 강조)
+ * - 배열 순서 = 화면의 위→아래 순서
  * - id 는 측정(item_variant · set_option)에 그대로 쓰이므로 바꾸지 않음. 가격·구성은 이 표만 고치면 화면 전체에 반영
  */
 export const SETS = [
-  { id: 'single', units: 1, price: 41300, recommended: false },
-  { id: 'set2', units: 2, price: 76700, recommended: true },
-  { id: 'set3', units: 3, price: 106200, recommended: false },
+  { id: 'single', units: 1, price: 41300, best: false },
+  { id: 'set2', units: 2, price: 70800, best: false },
+  { id: 'set3', units: 3, price: 88500, best: true },
 ] as const;
 export type SetId = (typeof SETS)[number]['id'];
 export type SetOption = (typeof SETS)[number];

@@ -145,7 +145,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
       strong: getComputedStyle(document.querySelector('.about__sub-strong')).fontWeight, strongTxt: document.querySelector('.about__sub-strong').textContent, sub: document.querySelector('.about__sub').textContent,
       card: document.querySelector('.about__card').getAttribute('href') };
   });
-  ok('[홈] 4주 패널: 모래시계 구간 다음, 숫자 2개(줄어든 숫자 Imperial Plum)·버튼 → /product/#record·각주', w.after && w.text.includes('4주째엔 화장대를 쟀어요.') && w.text.includes('5.2회 → 2.1회') && w.text.includes('4분 → 30초') && w.text.includes('쿠션은 그대로 써요.') && w.text.includes('20–45세 여성 32명') && w.href.endsWith('/product/#record') && w.ga === 0 && w.down.every((c) => c === 'rgb(75, 13, 80)'), w);
+  ok('[홈] 4주 패널: 모래시계 구간 다음, 숫자 2개(줄어든 숫자 Imperial Plum)·버튼 → /product/#record·각주', w.after && w.text.includes('4주째엔 화장대를 쟀어요.') && w.text.includes('5.2회 → 2.1회') && w.text.includes('4분 → 30초') && w.text.includes('쿠션은 그대로 써요.') && w.text.includes('20–45세 여성 32명') && w.href.endsWith('/product/#record') && w.ga === 1 && w.down.every((c) => c === 'rgb(75, 13, 80)'), w);
   ok('[홈] About: "빛을 입은 아름다움"만 SemiBold, 문구 그대로 · 제품 카드 링크 /product/', w.strong === '600' && w.strongTxt === '빛을 입은 아름다움' && w.sub === '빛을 입은 아름다움 · 가린 게 아니라, 가꾼 거예요.' && w.card.endsWith('/product/'), w);
   await ctx.close();
   const { ctx: c2, page: p2 } = await open('/en/');
@@ -309,24 +309,45 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
 {
   const { ctx, page, errors } = await open('/product/');
   const sets = await page.evaluate(() => [...document.querySelectorAll('.pp__set')].map((l) => l.innerText.replace(/\s+/g, ' ')));
-  ok('[상품] 구성 3개: 1개 41,300원 30% · 2개 세트 76,700원 35%(추천·무료배송) · 3개 세트 106,200원 40%', sets.length === 3 && sets[0].includes('41,300원') && sets[0].includes('30%') && sets[1].includes('추천') && sets[1].includes('118,000원') && sets[1].includes('76,700원') && sets[1].includes('35%') && sets[1].includes('1개당 38,350원') && sets[1].includes('무료배송') && sets[2].includes('106,200원') && sets[2].includes('40%'), sets);
+  ok('[상품] 구성 3개(첫 구매 혜택 · 더할수록 커지는 할인): 1개 30% 41,300원(가볍게 시작) · 2개 세트 40% 70,800원(실속·무료배송) · 3개 세트 50% 88,500원(개당 최저가·1개당 29,500원)', sets.length === 3 && sets[0].includes('59,000원') && sets[0].includes('→') && sets[0].includes('30%') && sets[0].includes('41,300원') && sets[0].includes('가볍게 시작') && sets[1].includes('실속') && sets[1].includes('118,000원') && sets[1].includes('40%') && sets[1].includes('70,800원') && sets[1].includes('1개당 35,400원') && sets[1].includes('무료배송') && sets[2].includes('개당 최저가') && sets[2].includes('177,000원') && sets[2].includes('50%') && sets[2].includes('88,500원') && sets[2].includes('1개당 29,500원'), sets);
+  const look = await page.evaluate(() => { const c = document.querySelectorAll('.pp__set')[2]; const st = (sel) => getComputedStyle(c.querySelector(sel)); return { label: document.querySelector('.pp__sets-label').textContent, strike: st('s').textDecorationLine, sGray: st('s').color, pct: st('.pp__set-pct').color, tag: st('.pp__set-tag').backgroundColor, best: c.classList.contains('pp__set--best'), w: document.documentElement.scrollWidth <= innerWidth }; });
+  ok('[상품] 구성 카드: 기준가는 회색 취소선 → 할인율은 붉은색, 개당 최저가 태그는 붉은 바탕', look.label === '첫 구매 혜택 · 더할수록 커지는 할인' && look.strike === 'line-through' && look.sGray === 'rgb(94, 74, 80)' && look.pct === 'rgb(176, 20, 47)' && look.tag === 'rgb(176, 20, 47)' && look.best && look.w, look);
   await page.check('[data-set][value="set2"]');
   const sel = await page.evaluate(() => ({ total: document.querySelector('.pp__total [data-total]').textContent, bar: document.querySelector('[data-buybar] [data-total]').textContent, href: document.getElementById('cta-main').getAttribute('href'), ev: window.__events.filter((e) => e[0] === 'select_item').map((e) => e[1]) }));
   const si = sel.ev[0];
-  ok('[상품] 2개 세트 선택 → 총액·하단 바 76,700원, 구매 링크 set=set2, select_item(set_option·item_variant·value)', sel.total === '76,700원' && sel.bar === '76,700원' && sel.href.endsWith('?qty=1&set=set2') && sel.ev.length === 1 && si.set_option === 'set2' && si.item_list_id === 'set_options' && si.value === 76700 && si.items[0].item_variant === 'set2' && si.items[0].price === 76700, sel);
+  ok('[상품] 2개 세트 선택 → 총액·하단 바 70,800원, 구매 링크 set=set2, select_item(set_option·item_variant·value)', sel.total === '70,800원' && sel.bar === '70,800원' && sel.href.endsWith('?qty=1&set=set2') && sel.ev.length === 1 && si.set_option === 'set2' && si.item_list_id === 'set_options' && si.value === 70800 && si.items[0].item_variant === 'set2' && si.items[0].price === 70800, sel);
   await Promise.all([page.waitForURL(/checkout/), page.click('#cta-main')]);
   await page.waitForLoadState('networkidle');
   const sum = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-sum]')].map((e) => [e.dataset.sum, e.textContent])));
   const co = await page.evaluate(() => ({ set: document.querySelector('[data-co-set]').textContent, price: document.querySelector('[data-co-price]').textContent, base: document.querySelector('[data-co-base]').textContent, ship: [...document.querySelectorAll('[data-ship-label]')].map((e) => e.textContent), atc: window.__events.find((e) => e[0] === 'begin_checkout')?.[1] }));
   let s = await sum();
-  ok('[주문] 2개 세트: 118,000 − 41,300 + 배송비 0원(세트 무료배송) = 76,700원, begin_checkout value 76,700 · set2', co.set === '2개 세트' && co.price === '76,700원' && co.base === '118,000원' && co.ship.join() === '0원,2,000원' && s.subtotal === '118,000원' && s.benefit === '−41,300원' && s.shipping === '0원' && s.total === '76,700원' && co.atc.value === 76700 && co.atc.items[0].item_variant === 'set2', { co, s });
+  ok('[주문] 2개 세트: 118,000 − 47,200 + 배송비 0원(세트 무료배송) = 70,800원, begin_checkout value 70,800 · set2', co.set === '2개 세트' && co.price === '70,800원' && co.base === '118,000원' && co.ship.join() === '0원,2,000원' && s.subtotal === '118,000원' && s.benefit === '−47,200원' && s.shipping === '0원' && s.total === '70,800원' && co.atc.value === 70800 && co.atc.items[0].item_variant === 'set2', { co, s });
   await page.check('[data-region][value="remote"]');
   s = await sum();
-  ok('[주문] 2개 세트 + 도서산간: 추가 배송비 2,000원 → 78,700원', s.shipping === '2,000원' && s.total === '78,700원', s);
+  ok('[주문] 2개 세트 + 도서산간: 추가 배송비 2,000원 → 72,800원', s.shipping === '2,000원' && s.total === '72,800원', s);
   await Promise.all([page.waitForURL(/complete/), page.click('#cta-pay')]);
   await page.waitForLoadState('networkidle');
   ok('[완료] 주문 내역에 구성(2개 세트) 표시', (await page.textContent('[data-summary-list]')).includes('구성2개 세트'));
   ok('[구성] 콘솔 오류 없음', errors.length === 0, errors);
+  await ctx.close();
+}
+// 2026-11 측정 추가: 기존 이벤트 이름에 새 값만 — 홈 4주 버튼 · 증거 칩 · 셀프 체크 · 새 FAQ
+{
+  const { ctx, page } = await open('/');
+  ok('[홈] 4주 패널 버튼 = cta_click · week4_record', await page.evaluate(() => { const a = document.querySelector('.week4__cta'); return a.dataset.ga === 'cta_click' && a.dataset.gaCtaLocation === 'week4_record'; }));
+  await ctx.close();
+}
+{
+  const { ctx, page, errors } = await open('/product/');
+  await page.click('.pp__chip');
+  await page.evaluate(() => { document.querySelector('[data-chk-id="concealer"]').click(); document.querySelector('[data-chk-id="concealer"]').click(); document.querySelector('[data-fq="toneup"]').open = true; });
+  await page.waitForTimeout(200);
+  const ev = await page.evaluate(() => window.__events.map(([n, p]) => [n, p.cta_location || p.content_type, p.content_id || p.faq_question]));
+  const has = (n, a, b) => ev.filter((e) => e[0] === n && e[1] === a && e[2] === b).length;
+  ok('[상품] 증거 칩 = cta_click · hero_chip', has('cta_click', 'hero_chip', undefined) === 1, ev);
+  ok('[상품] 셀프 체크: 고를 때만 select_content · self_check · concealer (해제는 보내지 않음)', has('select_content', 'self_check', 'concealer') === 1, ev);
+  ok('[상품] 새 FAQ 열기 = faq_open · story_toneup (기존 제품 정보 FAQ 와 구분)', ev.some((e) => e[0] === 'faq_open' && e[2] === 'story_toneup'), ev);
+  ok('[측정 추가] 콘솔 오류 없음', errors.length === 0, errors);
   await ctx.close();
 }
 // Meta 픽셀 기본 코드는 GTM 태그로만 — 페이지 HTML 에 직접 들어 있지 않음(중복 PageView 방지)

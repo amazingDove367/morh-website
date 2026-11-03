@@ -27,6 +27,7 @@
   --c-veil: #fff6e8;         /* Veil Ivory: 강조 카드 바탕 */
   --c-pearl: #e7ded2;        /* Glass Pearl: 사진 자리(빈 박스)·막대 바탕 */
   --c-plum: #4b0d50;         /* Imperial Plum: 줄어든 숫자에만 */
+  --c-sale: #b0142f;         /* 할인율·개당 최저가 태그에만 (버건디보다 밝은 붉은색, paper 대비 6.7:1) */
   --c-gold-line: #c9821b;    /* Antique Gold: 가는 강조선·점에만(글자색으로 쓰지 않음) */
 
   /* ── Typography ────────────────────────── */

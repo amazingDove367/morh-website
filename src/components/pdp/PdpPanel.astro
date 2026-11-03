@@ -1,7 +1,7 @@
 ---
 /*
   상세페이지 오른쪽 정보 패널 (레퍼런스 '텍스쳐.png'의 얇은 사각 테두리 패널)
-  EXPLORE MORH → 제품명 → 가격(기준가 취소선 + 첫 구매 혜택가) → 구성(1개·2개 세트·3개 세트) → 수량·총액 → 구매하기 → THE PRODUCT / THE TEXTURE / THE RITUAL
+  EXPLORE MORH → 제품명 → 가격(기준가 취소선 + 첫 구매 혜택가) → 구성(1개·2개 세트·3개 세트, 기준가 → 할인율·가격) → 수량·총액 → 구매하기 → THE PRODUCT / THE TEXTURE / THE RITUAL
   - 구성을 바꾸면 select_item 측정(2026-11 추가), 총액·구매 링크(?qty=N&set=id)가 고른 구성으로 바뀜
   - 구매 정보와 버튼을 아코디언 위에 두어, 아코디언(특히 THE TEXTURE)을 열고 닫아도 같은 위치에 유지
   - THE TEXTURE 가 텍스처 탐색의 유일한 진입점: 열면 morh:texture {open:true} 이벤트로 왼쪽 사진이 크림 제형으로 바뀜
@@ -31,7 +31,7 @@ const checkout = localePath(locale, '/checkout/');
     <p class="pp__eyebrow">MORH · {t.common.category} · {t.common.volume}</p>
     <h1 id="product-title" class="pp__title">{t.common.product}</h1>
     <p class="pp__tagline pp__sub"><Nums text={hero.sub} /></p>
-    <a class="st-chip pp__chip" href="#record"><Nums text={hero.chip} /></a>
+    <a class="st-chip pp__chip" href="#record" data-ga="cta_click" data-ga-cta-location="hero_chip"><Nums text={hero.chip} /></a>
   </div>
 )}
 <section class:list={['pp', { 'pp--hero': hero }]} aria-labelledby="product-title" data-buy-panel
@@ -68,12 +68,14 @@ const checkout = localePath(locale, '/checkout/');
   <fieldset class="pp__row pp__sets" data-sets>
     <legend class="pp__sets-label">{p.setLabel}</legend>
     {SETS.map((s) => (
-      <label class:list={['pp__set', { 'pp__set--rec': s.recommended }]}>
+      <label class:list={['pp__set', { 'pp__set--best': s.best }]}>
         <input type="radio" name="set" value={s.id} checked={s.id === 'single'} data-set data-set-price={s.price} />
-        <span class="pp__set-name">{p.sets[s.id]}{s.recommended && <em class="pp__set-rec">{p.setRecommended}</em>}</span>
+        <span class="pp__set-name">{p.sets[s.id]} <em class:list={['pp__set-tag', { 'pp__set-tag--best': s.best }]}>{p.setTags[s.id]}</em></span>
         <span class="pp__set-price">
-          {s.units > 1 && <s>{money(locale, setBase(s))}</s>}
-          <strong>{money(locale, s.price)}</strong> <b class="pp__pct">{fill(p.discount, { n: setPct(s) })}</b>
+          <s>{money(locale, setBase(s))}</s>
+          <span class="pp__set-arrow" aria-hidden="true">→</span>
+          <b class="pp__set-pct">{fill(p.discount, { n: setPct(s) })}</b>
+          <strong>{money(locale, s.price)}</strong>
         </span>
         <span class="pp__set-meta">{fill(p.setPerUnit, { a: money(locale, setPerUnit(s)) })}{s.units > 1 && ` · ${p.setFreeShip}`}</span>
       </label>
@@ -170,25 +172,27 @@ const checkout = localePath(locale, '/checkout/');
   .pp__pct { font-weight: 700; color: var(--c-burgundy); }
   .pp__note, .pp__ship { font-size: 0.75rem; color: var(--c-ink-soft); line-height: 1.6; }
   .pp__note { margin-top: 2px; }
-  /* 구성(세트) 선택: 라디오 카드 3개. 추천은 얇은 Antique Gold 테두리 */
+  /* 구성(세트) 선택: 라디오 카드 3개. 이름+태그 → 기준가(회색 취소선) → 할인율(붉은색)·구성 가격 → 1개당·배송
+     개당 최저가 구성은 얇은 Antique Gold 테두리 + 채운 태그 */
   .pp__sets { border-inline: 0; border-top: 0; margin: 0; display: grid; gap: 8px; min-width: 0; }
   .pp__sets-label { float: left; width: 100%; padding: 0 0 2px; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.04em; }
   .pp__set {
-    position: relative; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: 'radio name price' 'radio meta meta';
-    gap: 2px 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--c-line-strong); cursor: pointer;
+    position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'radio name' 'radio price' 'radio meta';
+    gap: 3px 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--c-line-strong); cursor: pointer;
     transition: border-color var(--dur-ui) var(--ease-cream), background-color var(--dur-ui) var(--ease-cream);
   }
   .pp__set:hover { border-color: var(--c-burgundy); }
-  .pp__set--rec { border-color: var(--c-gold-line); }
+  .pp__set--best { border-color: var(--c-gold-line); }
   .pp__set:has(input:checked) { border-color: var(--c-burgundy); box-shadow: inset 0 0 0 1px var(--c-burgundy); background: var(--c-veil); }
   .pp__set input { grid-area: radio; width: 18px; height: 18px; margin: 0; accent-color: var(--c-burgundy); }
-  .pp__set-name { grid-area: name; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; gap: 6px; }
-  .pp__set-rec { font-style: normal; font-size: 0.6875rem; font-weight: 600; padding: 1px 6px; border: 1px solid var(--c-gold-line); }
-  .pp__set-price { grid-area: price; display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .pp__set-price s { color: var(--c-ink-soft); font-size: 0.75rem; }
-  .pp__set-price strong { font-size: 0.9375rem; font-weight: 600; }
+  .pp__set-name { grid-area: name; font-weight: 600; font-size: 0.875rem; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .pp__set-tag { font-style: normal; font-size: 0.6875rem; font-weight: 600; line-height: 1.5; padding: 0 6px; border: 1px solid var(--c-line-strong); color: var(--c-ink-soft); }
+  .pp__set-tag--best { border-color: var(--c-sale); background: var(--c-sale); color: #fff; }
+  .pp__set-price { grid-area: price; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pp__set-price s, .pp__set-arrow { color: var(--c-ink-soft); font-size: 0.8125rem; opacity: 0.8; }
+  .pp__set-pct { color: var(--c-sale); font-size: 1rem; font-weight: 700; }
+  .pp__set-price strong { font-size: 1rem; font-weight: 700; color: var(--c-ink); }
   .pp__set-meta { grid-area: meta; font-size: 0.75rem; color: var(--c-ink-soft); }
-  @media (max-width: 380px) { .pp__set { grid-template-areas: 'radio name name' 'radio price price' 'radio meta meta'; } }
   .qty { display: inline-flex; align-items: center; border: 1px solid var(--c-line-strong); }
   .qty__btn { width: 40px; height: 40px; border: 0; background: none; cursor: pointer; font-size: 1.125rem; color: var(--c-ink); }
   .qty__btn:hover:not([disabled]) { color: var(--c-burgundy); }

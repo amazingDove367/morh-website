@@ -34,7 +34,7 @@ const w4 = koStory.home.week4;
           ))}
         </ul>
         <p class="st__close">{w4.line}</p>
-        <a class="btn week4__cta" href={`${PRODUCT}#record`}>{w4.cta} <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn week4__cta" href={`${PRODUCT}#record`} data-ga="cta_click" data-ga-cta-location="week4_record">{w4.cta} <span class="arrow" aria-hidden="true">→</span></a>
         <p class="st-fn"><Nums text={w4.footnote} /></p>
       </section>
     )}
