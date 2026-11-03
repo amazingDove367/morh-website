@@ -14,7 +14,7 @@ const { locale } = Astro.props as { locale: Locale };
 const t = DICTS[locale];
 const c = t.checkout;
 const l = t.lead;
-const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, shipping: c.shipping, total: c.total, region: c.region, standard: c.regionStandard, remote: c.regionRemote, errRequired: l.errRequired, errEmail: l.errEmail };
+const strings = { set: c.set, sets: t.product.sets, qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, shipping: c.shipping, total: c.total, region: c.region, standard: c.regionStandard, remote: c.regionRemote, errRequired: l.errRequired, errEmail: l.errEmail };
 ---
 <Base pageType="complete" locale={locale} path="/checkout/complete/" title={t.meta.completeTitle} description={t.meta.completeDesc} noindex>
   <div class="done wrap" data-complete data-locale={locale} data-strings={JSON.stringify(strings)}>
@@ -100,11 +100,12 @@ const strings = { qty: t.product.qty, subtotal: c.subtotal, benefit: c.benefit, 
   const root = document.querySelector<HTMLElement>('[data-complete]');
   if (root) {
     const locale = root.dataset.locale as Locale;
-    const s = JSON.parse(root.dataset.strings || '{}') as Record<string, string>;
-    let order: { qty: number; region: string; subtotal: number; benefit: number; shipping: number; total: number } | null = null;
+    const s = JSON.parse(root.dataset.strings || '{}') as Record<string, string> & { sets: Record<string, string> };
+    let order: { set?: string; qty: number; region: string; subtotal: number; benefit: number; shipping: number; total: number } | null = null;
     try { order = JSON.parse(sessionStorage.getItem('morh:demo-order') || 'null'); } catch { order = null; }
     if (order && Number.isFinite(order.total)) {
       const rows: [string, string][] = [
+        [s.set, s.sets[order.set ?? 'single'] ?? s.sets.single],
         [s.qty, String(order.qty)],
         [s.region, order.region === 'remote' ? s.remote : s.standard],
         [s.subtotal, money(locale, order.subtotal)],

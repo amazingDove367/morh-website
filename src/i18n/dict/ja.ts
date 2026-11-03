@@ -33,6 +33,7 @@ export const ja: Dict = {
     volume: '50 mL',
     toProduct: '製品の詳細を見る',
     buy: '購入する',
+    buyNow: '今すぐ購入',
     toHome: 'ホームへ戻る',
     privacy: '個人情報の取り扱い',
     shippingInfo: '送料について',
@@ -105,6 +106,11 @@ export const ja: Dict = {
     specStepValue: '朝・夜のスキンケアの最後',
     steps: ['洗顔後、化粧水で肌を整えます。', 'スキンケアの最後に適量をのばします。', '朝は日焼け止めで仕上げます。'],
     mobileBar: '購入する',
+    setLabel: '初回特典 · 増やすほど広がる割引',
+    sets: { single: '1個', set2: '2個セット', set3: '3個セット' },
+    setTags: { single: 'はじめての1個', set2: 'お得', set3: '1個あたり最安' },
+    setPerUnit: '1個あたり {a}',
+    setFreeShip: '送料無料',
   },
   info: {
     heading: '製品情報',
@@ -220,6 +226,7 @@ export const ja: Dict = {
     total: 'お支払い合計',
     pay: '支払う',
     back: '製品に戻る',
+    set: 'セット',
   },
   complete: {
     title: '「支払う」まで押していただき、ありがとうございました',

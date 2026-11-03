@@ -31,7 +31,8 @@ async function scrollToP(page, p) {
     const sec = document.querySelector('[data-ritual]');
     const top0 = document.querySelector('.morh-header').offsetHeight;
     const H = document.querySelector('[data-stage]').clientHeight;
-    scrollTo(0, Math.round(sec.getBoundingClientRect().top + scrollY - top0 + p * (sec.offsetHeight - H)));
+    const u = window.__ritualToRaw ? window.__ritualToRaw(p) : p; // 한국어 긴 타임라인: 장면 진행도 → 스크롤 비율
+    scrollTo(0, Math.round(sec.getBoundingClientRect().top + scrollY - top0 + u * (sec.offsetHeight - H)));
   }, p);
   await page.waitForTimeout(450); // 보간이 목표에 도착할 때까지
   return page.evaluate(() => window.__ritual());
@@ -73,10 +74,26 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await page.waitForTimeout(300);
   ok(`[홈 ${label}] 장면 뒤 브랜드 소개·푸터로 이어짐`, (await page.isVisible('#about-title')) && (await page.locator('.morh-footer').count()) === 1);
   ok(`[홈 ${label}] 콘솔 오류 없음`, errors.length === 0, errors);
+  // 한국어 자막: DAY 01–06 / 07–13 / 14 에 맞는 자막 하나만, 고정 문장·점은 모래시계를 가리지 않음, 마지막 화면과 겹치지 않음
+  const capAt = async (p) => { const st = await scrollToP(page, p); await page.waitForTimeout(300); return page.evaluate((st) => {
+    const b = (q) => document.querySelector(q).getBoundingClientRect();
+    const stageTop = b('[data-stage]').top;
+    return { day: st.day, on: [...document.querySelectorAll('[data-cap].is-on')].map((c) => c.dataset.cap), caps: Number(getComputedStyle(document.querySelector('[data-caps]')).opacity),
+      dots: document.querySelectorAll('[data-dots] li.is-on').length, fin: Number(getComputedStyle(document.querySelector('[data-final]')).opacity),
+      fixedB: b('[data-fixed]').bottom - stageTop, capsT: b('[data-caps]').top - stageTop, capsB: b('[data-caps]').bottom - stageTop, capsR: b('[data-caps]').right, dotsT: b('[data-dots]').top - stageTop,
+      gTop: st.glass.top, gBottom: st.glass.bottom, gLeft: st.glass.left, H: st.H, mobile: st.W < 720 };
+  }, st); };
+  const c1 = await capAt(0.62), c2 = await capAt(0.75), c3 = await capAt(0.86), cf = await capAt(0.99);
+  ok(`[홈 ${label}] 자막: DAY 01–06 → 1번 · 07–13 → 2번 · 14 → 3번, 점 개수 = DAY`, c1.on.join() === '6' && c2.on.join() === '13' && c3.on.join() === '14' && c1.caps === 1 && c2.dots === c2.day && c3.dots === 14, { c1, c2, c3 });
+  ok(`[홈 ${label}] 자막·고정 문장·점이 모래시계를 가리지 않음`, [c1, c2, c3].every((c) => c.mobile ? c.fixedB <= c.gTop && c.dotsT >= c.gBottom && c.capsT >= c.dotsT + 7 && c.capsB <= c.H : c.capsR <= c.gLeft + 4 && c.dotsT >= c.gBottom), c2);
+  ok(`[홈 ${label}] 마지막 화면은 DAY 14 자막이 사라진 뒤 표시(겹치지 않음)`, c3.fin === 0 && cf.caps === 0 && cf.fin > 0.99, { c3: c3.fin, cfCaps: cf.caps });
+  ok(`[홈 ${label}] 마지막 문구: care, not cover · 내 피부가 마음에 드는 아침. · MORH를 바른 14일에서 시작해요.`, (await page.evaluate(() => document.querySelector('.ritual__final').innerText)).replace(/\s+/g, ' ').includes('care, not cover 내 피부가 마음에 드는 아침. MORH를 바른 14일에서 시작해요. 어떻게 쟀는지 보러 가기'));
   if (label === '데스크톱') {
     await scrollToP(page, 0.99);
-    await Promise.all([page.waitForURL(/\/product\/$/), cta.click()]);
-    ok('[홈] 마지막 버튼 → 제품 상세페이지', page.url().endsWith('/product/'));
+    const attrs = await cta.evaluate((a) => [a.dataset.ga, a.dataset.gaCtaLocation]);
+    await Promise.all([page.waitForURL(/\/product\/#record$/), cta.click()]);
+    await page.waitForTimeout(400);
+    ok('[홈] 마지막 버튼 "어떻게 쟀는지 보러 가기" → 상품 #record (추적 속성 유지)', page.url().endsWith('/product/#record') && attrs.join() === 'cta_click,ritual_final' && (await page.evaluate(() => { const t = document.querySelector('#record').getBoundingClientRect().top; return t >= 0 && t < innerHeight; })), attrs);
   }
   await ctx.close();
 }
@@ -90,10 +107,13 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     cls: document.documentElement.className,
     canvas: getComputedStyle(document.querySelector('[data-canvas]')).display,
     glass: document.querySelector('.ritual__glass img').getBoundingClientRect().height,
-    cta: !!document.querySelector('.ritual__cta[href$="/product/"]'),
+    cta: !!document.querySelector('.ritual__cta[href$="/product/#record"]'),
     h: document.querySelector('[data-ritual]').offsetHeight,
+    list: [...document.querySelectorAll('.ritual__note > p, .ritual__cap')].map((e) => [e.innerText.replace(/\s+/g, ' '), getComputedStyle(e).opacity, e.getBoundingClientRect().height > 0]),
+    fin: document.querySelector('.ritual__final').innerText.replace(/\s+/g, ' '),
   }));
   ok('[홈] 움직임 줄이기: 정적 장면(캔버스 없음, DAY 14 모래시계 사진, 카피·버튼, 고정 구간 없음)', st.cls.includes('reduce-motion') && st.canvas === 'none' && st.glass > 100 && st.cta && st.h < 3000, st);
+  ok('[홈] 움직임 줄이기: 고정 문장 + 구간 자막 3개 + 마지막 문구를 정적 목록으로', st.list.length === 4 && st.list.every((l) => l[1] === '1' && l[2]) && st.list[0][0] === '숫자는 MORH를 바른 날이에요.' && st.list[3][0].includes('14일째, 피부 밝기가 10.0% 올라갔어요.') && st.fin.includes('내 피부가 마음에 드는 아침.'), st.list);
   await ctx.close();
   const { ctx: c2, page: p2 } = await open('/', DESKTOP);
   for (const vp of [{ width: 1024, height: 700 }, { width: 1920, height: 1080 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
@@ -104,15 +124,45 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await c2.close();
 }
 
+// 홈 개편(한국어): 첫 화면 한 줄 · 4주 패널 · About 슬로건 굵게 · 다른 언어 영향 없음
+for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) {
+  const { ctx, page } = await open('/', opts);
+  await page.waitForTimeout(500);
+  const h = await page.evaluate(() => {
+    const b = (q) => document.querySelector(q).getBoundingClientRect();
+    return { lead: document.querySelector('[data-lead]').textContent, leadT: b('[data-lead]').top, subB: b('[data-sub]').bottom, jarT: b('[data-lid]').top, leadB: b('[data-lead]').bottom };
+  });
+  ok(`[홈 ${label}] 첫 화면: 14 DAYS 제목 아래 한 줄(제품과 겹치지 않음)`, h.lead === '14일엔 피부를, 4주엔 화장대를 쟀어요.' && h.leadT > h.subB && h.leadB < h.jarT, h);
+  await ctx.close();
+}
+{
+  const { ctx, page } = await open('/');
+  const w = await page.evaluate(() => {
+    const y = (q) => document.querySelector(q).getBoundingClientRect().top + scrollY;
+    const s = document.querySelector('.week4');
+    return { after: y('.week4') > y('[data-ritual]') && y('.week4') < y('#about'), text: s.innerText.replace(/\s+/g, ' '), href: s.querySelector('a').getAttribute('href'), ga: s.querySelectorAll('[data-ga]').length,
+      down: [...s.querySelectorAll('.st-down')].map((e) => getComputedStyle(e).color),
+      strong: getComputedStyle(document.querySelector('.about__sub-strong')).fontWeight, strongTxt: document.querySelector('.about__sub-strong').textContent, sub: document.querySelector('.about__sub').textContent,
+      card: document.querySelector('.about__card').getAttribute('href') };
+  });
+  ok('[홈] 4주 패널: 모래시계 구간 다음, 숫자 2개(줄어든 숫자 Imperial Plum)·버튼 → /product/#record·각주', w.after && w.text.includes('4주째엔 화장대를 쟀어요.') && w.text.includes('5.2회 → 2.1회') && w.text.includes('4분 → 30초') && w.text.includes('쿠션은 그대로 써요.') && w.text.includes('20–45세 여성 32명') && w.href.endsWith('/product/#record') && w.ga === 1 && w.down.every((c) => c === 'rgb(75, 13, 80)'), w);
+  ok('[홈] About: "빛을 입은 아름다움"만 SemiBold, 문구 그대로 · 제품 카드 링크 /product/', w.strong === '600' && w.strongTxt === '빛을 입은 아름다움' && w.sub === '빛을 입은 아름다움 · 가린 게 아니라, 가꾼 거예요.' && w.card.endsWith('/product/'), w);
+  await ctx.close();
+  const { ctx: c2, page: p2 } = await open('/en/');
+  const en = await p2.evaluate(() => ({ extra: document.querySelectorAll('[data-lead], [data-caps], [data-dots], .week4, .about__sub-strong').length, cta: document.querySelector('.ritual__cta').getAttribute('href'), timeline: document.querySelector('[data-ritual]').dataset.timeline ?? null }));
+  ok('[홈 en] 다른 언어 홈은 기존 그대로(추가 문구·4주 패널 없음, 버튼 → /en/product/, 기존 타임라인)', en.extra === 0 && en.cta.endsWith('/en/product/') && en.timeline === null, en);
+  await c2.close();
+}
+
 /* ───────── 상세페이지 ───────── */
 {
   const { ctx, page, errors, requests } = await open('/product/');
   const txt = (s) => page.textContent(s);
-  ok('[상세] 기준가 42,000원 취소선 · 첫 구매 혜택가 35,000원 · 16%', (await txt('[data-base-price]')) === '42,000원' && (await page.evaluate(() => document.querySelector('[data-base-price]').tagName)) === 'S' && (await txt('[data-first-price]')) === '35,000원' && (await txt('.pp__pct')) === '16%');
+  ok('[상세] 기준가 59,000원 취소선 · 첫 구매 혜택가 41,300원 · 30%', (await txt('[data-base-price]')) === '59,000원' && (await page.evaluate(() => document.querySelector('[data-base-price]').tagName)) === 'S' && (await txt('[data-first-price]')) === '41,300원' && (await txt('.pp__price .pp__pct')) === '30%');
   ok('[상세] 첫 구매 조건 안내가 가격 바로 아래', (await page.locator('.pp__price .pp__note').count()) === 1);
   ok('[상세] 배송비 안내(3,000원 · 도서산간 총 5,000원)', (await txt('.pp__ship')).includes('3,000원') && (await txt('.pp__ship')).includes('5,000원'));
   await page.click('[data-qty="1"]');
-  ok('[상세] 수량 +1 → 총액 70,000원, 구매 링크 qty=2', (await txt('.pp__total [data-total]')) === '70,000원' && (await page.getAttribute('#cta-main', 'href')).endsWith('/checkout/?qty=2'));
+  ok('[상세] 수량 +1 → 총액 82,600원, 구매 링크 qty=2&set=single', (await txt('.pp__total [data-total]')) === '82,600원' && (await page.getAttribute('#cta-main', 'href')).endsWith('/checkout/?qty=2&set=single'));
   // 구매후기 요약 위치·수치
   const order = await page.evaluate(() => {
     const y = (s) => document.querySelector(s).getBoundingClientRect().top + scrollY;
@@ -135,6 +185,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   const tex = await page.evaluate(() => ({ texVisible: !document.querySelector('[data-pg-tex]').hidden, orbit: document.querySelector('[data-pg-orbit]').hidden, zoom: document.querySelector('[data-pg-zoom]').hidden, productHidden: [...document.querySelectorAll('[data-pg-img]')].every((i) => i.hidden) }));
   ok('[상세] THE TEXTURE: 크림 사진으로 전환, 360 대신 확대 슬라이더', tex.texVisible && tex.orbit && !tex.zoom && tex.productHidden, tex);
   await page.fill('[data-pg-range]', '3'); await page.dispatchEvent('[data-pg-range]', 'input');
+  await page.evaluate(() => document.querySelector('[data-pg-stage]').scrollIntoView({ block: 'center' }));
   const stage = await page.locator('[data-pg-stage]').boundingBox();
   await page.mouse.move(stage.x + stage.width / 2, stage.y + stage.height / 2);
   await page.mouse.down(); await page.mouse.move(stage.x + stage.width / 2 + 120, stage.y + stage.height / 2 + 60, { steps: 6 }); await page.mouse.up();
@@ -194,6 +245,137 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   ok('[상세 모바일] 하단 구매 바(본문 버튼이 지나간 뒤 표시)', await page.evaluate(() => document.querySelector('[data-buybar]').classList.contains('is-visible')));
   await ctx.close();
 }
+// 상품 페이지(한국어, 2026-11 상세 설명 개편): 첫 화면은 제품명 · 갤러리는 바로 정면 사진 · 광고별 상세 첫 화면 · 순서 · 다른 언어 영향 없음
+{
+  const { ctx, page, errors } = await open('/product/');
+  const top = await page.evaluate(() => ({
+    title: document.querySelector('#product-title').textContent.trim(), titleFs: getComputedStyle(document.querySelector('#product-title')).fontSize,
+    tagline: document.querySelector('.pp__tagline [lang="en"]')?.textContent, old: document.querySelectorAll('.pp__key, .pp-hero, .pp__chip, #self-check, .moist').length,
+    views: [...document.querySelectorAll('[data-pg-img]')].map((e) => e.dataset.view).join(), count: document.querySelector('[data-pg-count]').textContent.trim(),
+    first: (() => { const i = document.querySelector('[data-pg-img="0"]'); return !i.hidden && i.complete && i.naturalWidth > 0 && getComputedStyle(i).opacity === '1'; })(),
+  }));
+  ok('[상품] 첫 화면: 제품명(20px)·영문 한 줄, 키 카피·증거 칩·셀프 체크·촉촉함 섹션 없음', top.title === 'MORH 모르 브라이트닝 크림' && top.titleFs === '20px' && top.tagline === 'A moment for your daily ritual.' && top.old === 0, top);
+  ok('[상품] 갤러리: 페이지를 열면 바로 정면 제품 사진(01 / 05, 360 누르지 않아도 보임)', top.views === 'front,right,back,left,top' && top.count === '01 / 05' && top.first, top);
+  const order = await page.evaluate(() => {
+    const y = (s) => document.querySelector(s).getBoundingClientRect().top + scrollY;
+    return [y('[data-review-summary]'), y('[data-tabs]'), y('[data-head="elevator"]'), y('.dt-offer'), y('#dt-target-title'), y('#dt-pain-title'), y('#dt-usp-title'), y('#dt-skin-title'), y('#record'), y('#dt-moist-title'), y('#dt-use-title'), y('.dt-final'), y('.fq'), y('[data-product-info]')];
+  });
+  ok('[상품] 상세 설명 순서: 광고별 첫 화면 → 첫 구매 혜택 → 타깃 → 고민 → POINT 01~04 → 사용법 → 마무리 혜택 → FAQ → 제품 정보', order.every((v, i) => i === 0 || v > order[i - 1]), order);
+  const d = await page.evaluate(() => ({
+    heads: [...document.querySelectorAll('[data-head]')].filter((e) => !e.hidden).map((e) => e.dataset.head).join(),
+    text: document.querySelector('[data-detail]').innerText.replace(/\s+/g, ' '),
+    tiers: [...document.querySelectorAll('.dt-tier')].map((e) => e.innerText.replace(/\s+/g, ' ')),
+  }));
+  ok('[상품] 광고 값 없이 들어오면 기본 첫 화면(14일 밝기 +10.0%) 하나만', d.heads === 'elevator' && d.text.includes('14일, 피부 밝기 +10.0%'), d.heads);
+  ok('[상품] 수치: 밝기 +10.0% · 광택도 +21.5% · 멜라닌 −7.4% · 경피수분손실량 −19.2% · 4분 → 30초 · 컨실러 5.2회 → 2.1회 (5.2% 없음)', ['+10.0%', '+21.5%', '−7.4%', '−19.2%', '30초', '2.1회', '1.8단계'].every((x) => d.text.includes(x)) && !d.text.includes('5.2%'), d.text.slice(0, 200));
+  ok('[상품] 첫 구매 혜택: 1개 30% · 2개 세트 40% · 3개 세트 50%(개당 최저가)', d.tiers.length === 3 && d.tiers[0].includes('30%') && d.tiers[0].includes('41,300원') && d.tiers[1].includes('40%') && d.tiers[1].includes('70,800원') && d.tiers[2].includes('50%') && d.tiers[2].includes('88,500원') && d.tiers[2].includes('개당 최저가'), d.tiers);
+  await page.click('.dt-offer .dt-cta');
+  await page.waitForTimeout(400);
+  const off = await page.evaluate(() => ({ top: Math.round(document.querySelector('#buy-options').getBoundingClientRect().top), ev: window.__events.filter((e) => e[0] === 'cta_click').map((e) => e[1].cta_location) }));
+  ok('[상품] 혜택 버튼 → 구성 선택으로 이동, cta_click · detail_offer', off.top >= 0 && off.top < 200 && off.ev.includes('detail_offer'), off);
+  ok('[상품] 새 사진 자리: 파일이 없으면 빈 박스(깨진 이미지 없음)', await page.evaluate(() => [...document.querySelectorAll('[data-detail] [data-missing-image]')].filter((e) => !e.closest('[hidden]')).every((e) => e.tagName === 'DIV' && e.getBoundingClientRect().height > 0)));
+  ok('[상품] 가로 넘침 없음 · 콘솔 오류 없음', (await overflowX(page)) <= 0 && errors.length === 0, errors);
+  await ctx.close();
+  // 광고별 첫 화면: utm_content 에 elevator · roblox · wanted 가 들어 있으면 그 화면. 홈으로 들어와도 세션 동안 유지
+  for (const [q, key, txt] of [['MORH_rls_roblox_261102_v1', 'roblox', '4분에서 30초로'], ['MORH_rls_wanted_261102_v1', 'wanted', 'WANTED? 잠깐, 저 아닌데요.'], ['MORH_rls_elevator_261102_v1', 'elevator', '14일, 피부 밝기']]) {
+    const { ctx: c, page: pg } = await open(`/product/?utm_content=${q}`, MOBILE);
+    const h = await pg.evaluate(() => { const v = [...document.querySelectorAll('[data-head]')].filter((e) => !e.hidden); return { keys: v.map((e) => e.dataset.head).join(), text: v[0]?.innerText.replace(/\s+/g, ' ') }; });
+    ok(`[상품] utm_content=${q} → 첫 화면 ${key}`, h.keys === key && h.text.includes(txt), h);
+    await c.close();
+  }
+  {
+    const { ctx: c, page: pg } = await open('/?utm_content=MORH_rls_wanted_261102_v1');
+    await pg.goto(BASE + '/product/', { waitUntil: 'networkidle' });
+    ok('[상품] 홈에서 광고로 들어온 뒤 상품으로 이동해도 같은 첫 화면(wanted)', await pg.evaluate(() => [...document.querySelectorAll('[data-head]')].filter((e) => !e.hidden).map((e) => e.dataset.head).join() === 'wanted'));
+    await c.close();
+  }
+  for (const [w, h] of [[360, 640], [430, 932]]) {
+    const { ctx: c, page: pg } = await open('/product/', { viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    ok(`[상품 ${w}×${h}] 상세 설명 가로 넘침 없음`, (await overflowX(pg)) <= 0);
+    await c.close();
+  }
+  const { ctx: c2, page: p2 } = await open('/en/product/');
+  const en = await p2.evaluate(() => ({ story: document.querySelectorAll('[data-detail], .fq, .dt-sec').length, intro: document.querySelectorAll('.detail__intro').length, tagline: document.querySelector('.pp__tagline [lang="en"]')?.textContent, count: document.querySelector('[data-pg-count]').textContent.trim() }));
+  ok('[상품 en] 다른 언어는 기존 그대로(새 섹션 없음, 기존 Detail 문단, 사진 5장)', en.story === 0 && en.intro === 1 && en.tagline === 'A moment for your daily ritual.' && en.count === '01 / 05', en);
+  await c2.close();
+}
+// 2026-11: 홈 첫 화면 버튼 · 가격(59,000 → 41,300) · 구성(세트) · Meta 픽셀 기본 코드는 GTM 으로만
+for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) {
+  const { ctx, page } = await open('/', opts);
+  await page.waitForTimeout(500);
+  const t0 = await page.evaluate(() => { const box = document.querySelector('[data-topcta]'); const a = box.querySelector('.btn'), b = box.querySelector('.ritual__topbuy'); const r = box.getBoundingClientRect(); return { txt: a.textContent.trim(), href: a.getAttribute('href'), ga: [a.dataset.ga, a.dataset.gaCtaLocation], buy: [b.textContent.trim(), b.getAttribute('href'), b.dataset.ga, b.dataset.gaCtaLocation], bottom: r.bottom, vh: innerHeight, op: getComputedStyle(box).opacity }; });
+  ok(`[홈 ${label}] 첫 화면 버튼 "제품 자세히 보기 →"(cta_click · ritual_top) + 아래 "바로 구매하기"(주문/결제 1개 · ritual_top_buy) 가 스크롤 없이 보임`, t0.txt.startsWith('제품 자세히 보기') && t0.href.endsWith('/product/') && t0.ga.join() === 'cta_click,ritual_top' && t0.buy[0] === '바로 구매하기' && t0.buy[1].endsWith('/checkout/?qty=1&set=single') && t0.buy.slice(2).join() === 'cta_click,ritual_top_buy' && t0.bottom <= t0.vh && t0.op === '1', t0);
+  await scrollToP(page, 0.12);
+  ok(`[홈 ${label}] 스크롤을 시작하면 첫 화면 버튼은 사라짐(누를 수 없음)`, await page.evaluate(() => { const a = document.querySelector('[data-topcta]'); return getComputedStyle(a).visibility === 'hidden' && Number(getComputedStyle(a).opacity) < 0.05; }));
+  if (label === '데스크톱') {
+    await scrollToP(page, 0);
+    await Promise.all([page.waitForURL(/\/product\/$/), page.click('[data-topcta] .btn')]);
+    ok('[홈] 첫 화면 버튼 → 상품 상세', page.url().endsWith('/product/'));
+    await page.goBack(); await page.waitForLoadState('networkidle'); await scrollToP(page, 0);
+    await Promise.all([page.waitForURL(/\/checkout\//), page.click('.ritual__topbuy')]);
+    await page.waitForLoadState('networkidle');
+    const bc = await page.evaluate(() => ({ set: document.querySelector('[data-co-set]').textContent, total: document.querySelector('[data-sum="total"]').textContent, ev: window.__events.find((e) => e[0] === 'begin_checkout')?.[1] }));
+    ok('[홈] 바로 구매하기 → 주문/결제(1개 · 41,300 + 3,000 = 44,300원, begin_checkout)', bc.set === '1개' && bc.total === '44,300원' && bc.ev?.value === 41300, bc);
+  }
+  await ctx.close();
+}
+{
+  const { ctx, page, errors } = await open('/product/');
+  const sets = await page.evaluate(() => [...document.querySelectorAll('.pp__set')].map((l) => l.innerText.replace(/\s+/g, ' ')));
+  ok('[상품] 구성 3개(첫 구매 혜택 · 더할수록 커지는 할인): 1개 30% 41,300원(가볍게 시작) · 2개 세트 40% 70,800원(실속·무료배송) · 3개 세트 50% 88,500원(개당 최저가·1개당 29,500원)', sets.length === 3 && sets[0].includes('59,000원') && sets[0].includes('→') && sets[0].includes('30%') && sets[0].includes('41,300원') && sets[0].includes('가볍게 시작') && sets[1].includes('실속') && sets[1].includes('118,000원') && sets[1].includes('40%') && sets[1].includes('70,800원') && sets[1].includes('1개당 35,400원') && sets[1].includes('무료배송') && sets[2].includes('개당 최저가') && sets[2].includes('177,000원') && sets[2].includes('50%') && sets[2].includes('88,500원') && sets[2].includes('1개당 29,500원'), sets);
+  const look = await page.evaluate(() => { const c = document.querySelectorAll('.pp__set')[2]; const st = (sel) => getComputedStyle(c.querySelector(sel)); return { label: document.querySelector('.pp__sets-label').textContent, strike: st('s').textDecorationLine, sGray: st('s').color, pct: st('.pp__set-pct').color, tag: st('.pp__set-tag').backgroundColor, best: c.classList.contains('pp__set--best'), w: document.documentElement.scrollWidth <= innerWidth }; });
+  ok('[상품] 구성 카드: 기준가는 회색 취소선 → 할인율은 붉은색, 개당 최저가 태그는 붉은 바탕', look.label === '첫 구매 혜택 · 더할수록 커지는 할인' && look.strike === 'line-through' && look.sGray === 'rgb(94, 74, 80)' && look.pct === 'rgb(176, 20, 47)' && look.tag === 'rgb(176, 20, 47)' && look.best && look.w, look);
+  await page.check('[data-set][value="set2"]');
+  const sel = await page.evaluate(() => ({ total: document.querySelector('.pp__total [data-total]').textContent, bar: document.querySelector('[data-buybar] [data-total]').textContent, href: document.getElementById('cta-main').getAttribute('href'), ev: window.__events.filter((e) => e[0] === 'select_item').map((e) => e[1]) }));
+  const si = sel.ev[0];
+  ok('[상품] 2개 세트 선택 → 총액·하단 바 70,800원, 구매 링크 set=set2, select_item(set_option·item_variant·value)', sel.total === '70,800원' && sel.bar === '70,800원' && sel.href.endsWith('?qty=1&set=set2') && sel.ev.length === 1 && si.set_option === 'set2' && si.item_list_id === 'set_options' && si.value === 70800 && si.items[0].item_variant === 'set2' && si.items[0].price === 70800, sel);
+  await Promise.all([page.waitForURL(/checkout/), page.click('#cta-main')]);
+  await page.waitForLoadState('networkidle');
+  const sum = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-sum]')].map((e) => [e.dataset.sum, e.textContent])));
+  const co = await page.evaluate(() => ({ set: document.querySelector('[data-co-set]').textContent, price: document.querySelector('[data-co-price]').textContent, base: document.querySelector('[data-co-base]').textContent, ship: [...document.querySelectorAll('[data-ship-label]')].map((e) => e.textContent), atc: window.__events.find((e) => e[0] === 'begin_checkout')?.[1] }));
+  let s = await sum();
+  ok('[주문] 2개 세트: 118,000 − 47,200 + 배송비 0원(세트 무료배송) = 70,800원, begin_checkout value 70,800 · set2', co.set === '2개 세트' && co.price === '70,800원' && co.base === '118,000원' && co.ship.join() === '0원,2,000원' && s.subtotal === '118,000원' && s.benefit === '−47,200원' && s.shipping === '0원' && s.total === '70,800원' && co.atc.value === 70800 && co.atc.items[0].item_variant === 'set2', { co, s });
+  await page.check('[data-region][value="remote"]');
+  s = await sum();
+  ok('[주문] 2개 세트 + 도서산간: 추가 배송비 2,000원 → 72,800원', s.shipping === '2,000원' && s.total === '72,800원', s);
+  await Promise.all([page.waitForURL(/complete/), page.click('#cta-pay')]);
+  await page.waitForLoadState('networkidle');
+  ok('[완료] 주문 내역에 구성(2개 세트) 표시', (await page.textContent('[data-summary-list]')).includes('구성2개 세트'));
+  ok('[구성] 콘솔 오류 없음', errors.length === 0, errors);
+  await ctx.close();
+}
+// 2026-11 측정 추가: 기존 이벤트 이름에 새 값만 — 홈 4주 버튼 · 새 FAQ · 상세 마무리 혜택
+{
+  const { ctx, page } = await open('/');
+  ok('[홈] 4주 패널 버튼 = cta_click · week4_record', await page.evaluate(() => { const a = document.querySelector('.week4__cta'); return a.dataset.ga === 'cta_click' && a.dataset.gaCtaLocation === 'week4_record'; }));
+  await ctx.close();
+}
+{
+  const { ctx, page, errors } = await open('/product/');
+  await page.evaluate(() => { document.querySelector('[data-fq="toneup"]').open = true; });
+  await page.click('.dt-final .dt-cta');
+  await page.waitForTimeout(300);
+  const ev = await page.evaluate(() => window.__events.map(([n, p]) => [n, p.cta_location || p.content_type, p.content_id || p.faq_question]));
+  ok('[상품] 새 FAQ 열기 = faq_open · story_toneup (기존 제품 정보 FAQ 와 구분)', ev.some((e) => e[0] === 'faq_open' && e[2] === 'story_toneup'), ev);
+  ok('[상품] 마무리 혜택 버튼 = cta_click · detail_final', ev.some((e) => e[0] === 'cta_click' && e[1] === 'detail_final'), ev);
+  ok('[측정 추가] 콘솔 오류 없음', errors.length === 0, errors);
+  await ctx.close();
+}
+// Meta 픽셀 기본 코드는 GTM 태그로만 — 페이지 HTML 에 직접 들어 있지 않음(중복 PageView 방지)
+for (const path of ['/', '/product/', '/checkout/', '/en/product/']) {
+  const html = await (await fetch(BASE + path)).text();
+  ok(`[픽셀] ${path} HTML 에 Meta 픽셀 기본 코드 없음`, !/fbevents\.js|fbq\(['"]init|facebook\.com\/tr/.test(html));
+}
+
+// 금지 표현(한국어 홈·상품 본문)
+for (const path of ['/', '/product/']) {
+  const { ctx, page } = await open(path);
+  const txt = await page.evaluate(() => document.querySelector('main').innerText);
+  const bad = txt.match(/요거트|우유|생크림|푸딩|젤리|최대 함량|최고|최상|역대급|즉시|\d+일 만에|재생|진피|세포|잡티 제거|흉터|워터프루프|가상 수치/g);
+  ok(`[문구] ${path} 금지 표현 없음`, !bad, bad);
+  await ctx.close();
+}
+
 // 후기 없음
 {
   const { ctx, page } = await open('/qa/reviews-empty/');
@@ -210,16 +392,16 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await page.waitForLoadState('networkidle');
   const sum = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-sum]')].map((e) => [e.dataset.sum, e.textContent])));
   let s = await sum();
-  ok('[주문] 수량 2 전달 · 84,000 − 14,000 + 3,000 = 73,000원', s.subtotal === '84,000원' && s.benefit === '−14,000원' && s.shipping === '3,000원' && s.total === '73,000원', s);
+  ok('[주문] 수량 2 전달 · 118,000 − 35,400 + 3,000 = 85,600원', s.subtotal === '118,000원' && s.benefit === '−35,400원' && s.shipping === '3,000원' && s.total === '85,600원', s);
   ok('[주문] 주소창에서 수량 값 정리', !page.url().includes('?'));
   const before = await page.evaluate(() => {
-    const txt = document.body.innerText;
+    const txt = document.querySelector('main').innerText; // 푸터의 포트폴리오 안내(한국어)는 본문과 별도로 아래에서 확인
     return { txt, pay: document.getElementById('cta-pay').textContent.trim(), title: document.querySelector('h1').textContent };
   });
   ok('[주문] 결제 전 화면에 포트폴리오·체험 문구 없음, 버튼은 결제하기', !/포트폴리오|체험/.test(before.txt) && before.pay === '결제하기' && before.title === '주문/결제', before.title + ' / ' + before.pay);
   await page.check('[data-region][value="remote"]');
   s = await sum();
-  ok('[주문] 도서산간: 배송비 총 5,000원(추가 아님) → 75,000원', s.shipping === '5,000원' && s.total === '75,000원', s);
+  ok('[주문] 도서산간: 배송비 총 5,000원(추가 아님) → 87,600원', s.shipping === '5,000원' && s.total === '87,600원', s);
   const ev1 = await page.evaluate(() => window.__events.map((e) => e[0]));
   await Promise.all([page.waitForURL(/complete/), page.click('#cta-pay')]);
   await page.waitForLoadState('networkidle');
@@ -228,7 +410,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     return { title: document.querySelector('h1').textContent, text: document.querySelector('.done__hero').innerText, img: document.querySelector('.done__figure img').naturalWidth,
       sum: document.querySelector('[data-summary-list]').textContent, store: sessionStorage.getItem('morh:demo-order'), events: window.__events, leadTop: lead.top, leadBottom: lead.bottom, vh: innerHeight };
   });
-  ok('[주문] 결제하기 → 바로 완료 화면: 감사 인사 + 포트폴리오 공개 + 사진 + 주문 내역(75,000원)', done.title.includes('결제하기까지') && done.text.includes('포트폴리오') && done.text.includes('반짝이는') && done.img > 0 && done.sum.includes('75,000원'), done.title);
+  ok('[주문] 결제하기 → 바로 완료 화면: 감사 인사 + 포트폴리오 공개 + 사진 + 주문 내역(1개 · 87,600원)', done.title.includes('결제하기까지') && done.text.includes('포트폴리오') && done.text.includes('반짝이는') && done.img > 0 && done.sum.includes('87,600원') && done.sum.includes('구성1개'), done.title);
   ok('[주문] 출시 알림 받기가 첫 화면 아래쪽에 살짝 보임(스크롤하면 전체)', done.leadTop < done.vh - 40 && done.leadBottom > done.vh, { top: done.leadTop, bottom: done.leadBottom, vh: done.vh });
   await page.click('#cta-lead');
   ok('[알림] 빈 칸 신청 불가 + 오류', (await page.isVisible('#lead-name-err')) && (await page.isVisible('#lead-email-err')));
@@ -253,11 +435,18 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await ctx.close();
 }
 
-// 결제 전 화면(홈·상세·개인정보)에 포트폴리오·체험 문구 없음
+// 결제 전 화면(홈·상세·개인정보·주문) 본문에 포트폴리오·체험 문구 없음
 for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
   const { ctx, page } = await open(path);
-  const txt = await page.evaluate(() => document.body.innerText);
-  ok(`[문구] ${path} 에 포트폴리오·체험·데모 문구 없음`, !/포트폴리오|체험|데모/.test(txt), (txt.match(/.{0,20}(포트폴리오|체험|데모).{0,20}/) || [''])[0]);
+  const txt = await page.evaluate(() => document.querySelector('main').innerText);
+  ok(`[문구] ${path} 본문에 포트폴리오·체험·데모 문구 없음`, !/포트폴리오|체험|데모/.test(txt), (txt.match(/.{0,20}(포트폴리오|체험|데모).{0,20}/) || [''])[0]);
+  await ctx.close();
+}
+// 푸터 포트폴리오 안내 문장 삭제(2026-11) — 결제하기 이후 화면에서만 공개
+for (const path of ['/', '/product/', '/checkout/', '/privacy/', '/en/']) {
+  const { ctx, page } = await open(path);
+  const foot = await page.evaluate(() => document.querySelector('.morh-footer').innerText);
+  ok(`[푸터] ${path} 포트폴리오 안내 문장 없음`, !/포트폴리오|실제 판매/.test(foot), foot.slice(-80));
   await ctx.close();
 }
 
@@ -293,6 +482,8 @@ for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
   const st = await page.locator('[data-pg-stage]').boundingBox();
   await page.mouse.move(st.x + st.width / 2, st.y + st.height / 2); await page.mouse.down(); await page.mouse.move(st.x + st.width / 2 + 80, st.y + st.height / 2 + 40, { steps: 5 }); await page.mouse.up();
   await page.click('#acc-texture-btn');
+  // 구성 선택(select_item): 2개 세트를 봤다가 1개로 되돌림 → 이후 금액 검증은 1개 기준
+  await page.check('[data-set][value="set2"]'); await page.check('[data-set][value="single"]');
   await page.click('[data-qty="1"]');
   await page.locator('.rs__thumb').first().click(); await page.click('[data-lb-close]');
   await page.locator('.rs__thumb').nth(1).click(); await page.click('[data-lb-step="1"]'); await page.keyboard.press('Escape');
@@ -327,7 +518,7 @@ for (const path of ['/', '/product/', '/privacy/', '/checkout/']) {
   const missing = defined.filter((n) => !seen.has(n));
   ok(`[측정] 정의한 이벤트 ${defined.length}개가 모두 실제 행동으로 발생`, missing.length === 0, missing);
   const pay = log.find((e) => e[0] === 'add_payment_info')?.[1];
-  ok('[측정] 결제하기(add_payment_info): 상세 +1·주문서 +1 → 3개, KRW 105,000·items·배송 지역', pay && pay.currency === 'KRW' && pay.value === 105000 && pay.items?.[0]?.quantity === 3 && pay.shipping_tier === 'remote', pay);
+  ok('[측정] 결제하기(add_payment_info): 상세 +1·주문서 +1 → 3개, KRW 123,900·items(item_variant single)·배송 지역', pay && pay.currency === 'KRW' && pay.value === 123900 && pay.items?.[0]?.item_variant === 'single' && pay.items?.[0]?.quantity === 3 && pay.shipping_tier === 'remote', pay);
   ok('[측정] 모든 이벤트에 page_locale·page_type', log.every((e) => e[1].page_locale && e[1].page_type), log.filter((e) => !e[1].page_type).map((e) => e[0]));
   ok('[측정] 입력한 이름·이메일이 어떤 이벤트에도 없음(칸 이름만)', !/김테스트|tester@/.test(JSON.stringify(log)) && log.some((e) => e[0] === 'form_field_complete' && e[1].field_name === 'email'));
   ok('[측정] 핵심 퍼널 순서: view_item → add_to_cart → begin_checkout → add_payment_info → form_start → generate_lead', (() => {
@@ -367,7 +558,7 @@ for (const [pre, lang, dir] of LOCS) {
     const prevBtn = document.querySelector('.pg__nav--prev').getBoundingClientRect();
     return { panelLeftOfGallery: panel.right <= gal.left + 1, imgTransform: img, prevOnRight: prevBtn.left > gal.left + gal.width / 2, price: document.querySelector('[data-first-price]').textContent, logo: getComputedStyle(document.querySelector('.morh-header__logo')).direction };
   });
-  ok('[ar] RTL 배치: 정보 패널 왼쪽·갤러리 오른쪽, 이전 버튼 오른쪽, 사진·로고 반전 없음, 서양식 숫자 가격', rtl.panelLeftOfGallery && rtl.prevOnRight && rtl.imgTransform === 'none' && rtl.logo === 'ltr' && /35,000/.test(rtl.price), rtl);
+  ok('[ar] RTL 배치: 정보 패널 왼쪽·갤러리 오른쪽, 이전 버튼 오른쪽, 사진·로고 반전 없음, 서양식 숫자 가격', rtl.panelLeftOfGallery && rtl.prevOnRight && rtl.imgTransform === 'none' && rtl.logo === 'ltr' && /41,300/.test(rtl.price), rtl);
   await page.goto(BASE + '/ar/checkout/complete/', { waitUntil: 'networkidle' });
   const inp = await page.evaluate(() => getComputedStyle(document.querySelector('#lead-name')).direction);
   ok('[ar] 입력란 오른쪽→왼쪽', inp === 'rtl');
