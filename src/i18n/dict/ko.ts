@@ -109,6 +109,11 @@ export const ko = {
     specStepValue: '아침·저녁 스킨케어 마지막 단계',
     steps: ['세안 후 토너로 피부 결을 정돈합니다.', '스킨케어 마지막 단계에 적당량을 펴 바릅니다.', '아침에는 선크림으로 마무리합니다.'],
     mobileBar: '구매하기',
+    setLabel: '구성 선택',
+    sets: { single: '1개', set2: '2개 세트', set3: '3개 세트' },
+    setRecommended: '추천',
+    setPerUnit: '1개당 {a}',
+    setFreeShip: '무료배송',
   },
   info: {
     heading: '제품 정보',
@@ -228,6 +233,7 @@ export const ko = {
     total: '총 결제 금액',
     pay: '결제하기',
     back: '제품으로 돌아가기',
+    set: '구성',
   },
   complete: {
     title: '결제하기까지 눌러 주셔서 감사합니다',

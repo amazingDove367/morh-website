@@ -30,6 +30,8 @@ const story = locale === 'ko' ? koStory.home : null;
         <span class="ritual__sub" data-sub>{t.home.sub}</span>
       </h1>
       {story && <p class="ritual__lead" data-lead>{story.lead}</p>}
+      <!-- 첫 화면 버튼(2026-11 추가): 스크롤 전에 바로 상세로. 아래 마지막 버튼(ritual_final)과 위치값으로 구분 -->
+      <a class="btn ritual__topcta" data-topcta href={PRODUCT} data-ga="cta_click" data-ga-cta-location="ritual_top">{t.common.toProduct} <span class="arrow" aria-hidden="true">→</span></a>
 
       <canvas class="ritual__canvas" data-canvas aria-hidden="true"></canvas>
 
@@ -117,11 +119,12 @@ const story = locale === 'ko' ? koStory.home : null;
   .ritual__cap strong { font-size: clamp(1.125rem, 1.7vw, 1.625rem); font-weight: 600; line-height: 1.35; color: var(--c-ink); letter-spacing: -0.01em; }
   .ritual__cap span { font-size: clamp(0.8125rem, 1vw, 0.9375rem); color: var(--c-ink-soft); }
   .ritual__dots { display: none; }
+  .ritual__topcta { grid-area: topcta; }
 
   /* ───────── 정적 배치: JS 없음 · 움직임 줄이기 ───────── */
   .ritual__stage {
     display: grid; justify-items: center; gap: var(--s-5);
-    grid-template-columns: 1fr; grid-template-areas: 'days' 'jar' 'sub' 'glass' 'final';
+    grid-template-columns: 1fr; grid-template-areas: 'days' 'jar' 'sub' 'topcta' 'glass' 'final';
     padding: var(--s-7) var(--gutter) var(--s-9); max-width: var(--page-max); margin-inline: auto;
   }
   .ritual__days { grid-area: days; font-size: clamp(4.5rem, 15vw, 12rem); }
@@ -131,14 +134,14 @@ const story = locale === 'ko' ? koStory.home : null;
   .ritual__glass { grid-area: glass; width: min(300px, 58vw); margin-top: var(--s-7); }
   .ritual__final { grid-area: final; text-align: center; }
   /* 한국어 정적 배치: 제목 아래 한 줄 → 모래시계 → 고정 문장·구간 자막 목록 → 마지막 문구 */
-  .ritual--story .ritual__stage { grid-template-areas: 'days' 'jar' 'sub' 'lead' 'glass' 'note' 'final'; }
+  .ritual--story .ritual__stage { grid-template-areas: 'days' 'jar' 'sub' 'lead' 'topcta' 'glass' 'note' 'final'; }
   .ritual__lead { grid-area: lead; }
   .ritual__note { grid-area: note; display: grid; gap: var(--s-4); text-align: center; max-width: 34em; }
   .ritual__caps { display: grid; gap: var(--s-4); }
   @media (min-width: 900px) {
-    :global(html:not(.js-motion)) .ritual__stage { grid-template-columns: 1fr 1fr; grid-template-areas: 'days days' 'jar jar' 'sub sub' 'glass final'; }
+    :global(html:not(.js-motion)) .ritual__stage { grid-template-columns: 1fr 1fr; grid-template-areas: 'days days' 'jar jar' 'sub sub' 'topcta topcta' 'glass final'; }
     :global(html:not(.js-motion)) .ritual__final { text-align: start; justify-self: start; align-self: center; }
-    :global(html:not(.js-motion)) .ritual--story .ritual__stage { grid-template-areas: 'days days' 'jar jar' 'sub sub' 'lead lead' 'glass note' 'glass final'; }
+    :global(html:not(.js-motion)) .ritual--story .ritual__stage { grid-template-areas: 'days days' 'jar jar' 'sub sub' 'lead lead' 'topcta topcta' 'glass note' 'glass final'; }
     :global(html:not(.js-motion)) .ritual__note { text-align: start; justify-self: start; align-self: end; }
   }
 
@@ -151,6 +154,8 @@ const story = locale === 'ko' ? koStory.home : null;
   :global(.js-motion) .ritual__caps,
   :global(.js-motion) .ritual__dots { position: absolute; left: 0; top: 0; margin: 0; z-index: 6; }
   :global(.js-motion) .ritual__lead { z-index: 1; white-space: nowrap; }
+  :global(.js-motion) .ritual__topcta { position: absolute; left: 0; top: 0; z-index: 8; white-space: nowrap; }
+  :global(.js-motion) .ritual__topcta.is-off { visibility: hidden; pointer-events: none; }
   :global(.js-motion) .ritual__fixed { white-space: nowrap; }
   :global(.js-motion) .ritual__caps { display: grid; gap: 0; opacity: 0; text-align: start; }
   :global(.js-motion) .ritual__cap { grid-area: 1 / 1; opacity: 0; transition: opacity 250ms var(--ease-cream); }

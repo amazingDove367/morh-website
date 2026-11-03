@@ -106,6 +106,11 @@ export const zhCN: Dict = {
     specStepValue: '早晚护肤的最后一步',
     steps: ['洁面后，用爽肤水整理肌肤。', '在护肤最后一步取适量涂抹开。', '早上请用防晒霜完成护肤。'],
     mobileBar: '立即购买',
+    setLabel: '选择套装',
+    sets: { single: '1瓶', set2: '2瓶装', set3: '3瓶装' },
+    setRecommended: '推荐',
+    setPerUnit: '每瓶 {a}',
+    setFreeShip: '免运费',
   },
   info: {
     heading: '产品信息',
@@ -221,6 +226,7 @@ export const zhCN: Dict = {
     total: '合计支付',
     pay: '立即支付',
     back: '返回产品',
+    set: '套装',
   },
   complete: {
     title: '感谢您一路点到“立即支付”',

@@ -89,6 +89,8 @@ export function initRitual() {
   const counter = q<HTMLElement>('[data-counter]');
   const dayEl = q<HTMLElement>('[data-day]');
   const fin = q<HTMLElement>('[data-final]');
+  // 첫 화면 버튼(닫힌 제품 아래, 스크롤을 시작하면 사라짐)
+  const topCta = root.querySelector<HTMLElement>('[data-topcta]');
   // 한국어 추가 요소(없으면 null) · 긴 타임라인
   const leadEl = root.querySelector<HTMLElement>('[data-lead]');
   const fixedEl = root.querySelector<HTMLElement>('[data-fixed]');
@@ -218,6 +220,10 @@ export function initRitual() {
     L.daysW = days.offsetWidth; L.daysH = days.offsetHeight;
     L.cW = counter.offsetWidth; L.cH = counter.offsetHeight;
 
+    if (topCta) {
+      L.tcW = topCta.offsetWidth; L.tcH = topCta.offsetHeight;
+      L.tcY = L.by1 + bodyH / 2 + H * (mobile ? 0.05 : 0.04); // 닫힌 용기 바닥 아래
+    }
     if (leadEl) {
       L.leadW = leadEl.offsetWidth; L.leadH = leadEl.offsetHeight;
       L.leadY = L.subY + L.subH / 2 + (mobile ? 14 : H * 0.03) + L.leadH / 2;
@@ -288,6 +294,12 @@ export function initRitual() {
     css(days, 'opacity', (1 - tOut).toFixed(3));
     css(sub, 'transform', `translate3d(${(W / 2 - L.subW / 2).toFixed(2)}px, ${(L.subY - L.subH / 2 + tOut * H * 0.03).toFixed(2)}px, 0)`);
     css(sub, 'opacity', (1 - seg(p, 0.03, 0.09)).toFixed(3));
+    if (topCta) {
+      const tc = 1 - seg(p, 0.01, 0.05);
+      css(topCta, 'transform', `translate3d(${(W / 2 - L.tcW / 2).toFixed(2)}px, ${(L.tcY - tOut * H * 0.04).toFixed(2)}px, 0)`);
+      css(topCta, 'opacity', tc.toFixed(3));
+      topCta.classList.toggle('is-off', tc < 0.02);
+    }
     if (leadEl) {
       css(leadEl, 'transform', `translate3d(${(W / 2 - L.leadW / 2).toFixed(2)}px, ${(L.leadY - L.leadH / 2 + tOut * H * 0.03).toFixed(2)}px, 0)`);
       css(leadEl, 'opacity', (1 - seg(p, 0.03, 0.09)).toFixed(3));

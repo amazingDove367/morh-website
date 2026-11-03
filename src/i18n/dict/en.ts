@@ -105,6 +105,11 @@ export const en: Dict = {
     specStepValue: 'Last step of your morning and evening skincare',
     steps: ['After cleansing, prep your skin with toner.', 'As the last skincare step, spread an adequate amount.', 'In the morning, finish with sunscreen.'],
     mobileBar: 'Buy now',
+    setLabel: 'Choose your set',
+    sets: { single: '1 jar', set2: 'Set of 2', set3: 'Set of 3' },
+    setRecommended: 'Recommended',
+    setPerUnit: '{a} per jar',
+    setFreeShip: 'Free shipping',
   },
   info: {
     heading: 'Product information',
@@ -220,6 +225,7 @@ export const en: Dict = {
     total: 'Total',
     pay: 'Pay now',
     back: 'Back to the product',
+    set: 'Set',
   },
   complete: {
     title: 'Thank you for going all the way to “Pay now”',

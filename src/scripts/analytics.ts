@@ -5,11 +5,12 @@
  * - 버튼·링크: HTML 요소에 data-ga="이벤트" data-ga-파라미터="값" 을 붙이면 클릭 시 자동 전송(initClickTracking)
  * - 그 밖의 행동(입력 칸·스크롤·확대 등)은 각 컴포넌트 스크립트에서 track() 호출
  * - 같은 순간 Meta 픽셀에도 전송(META_EVENTS 매핑, 없는 이름은 trackCustom). 페이지 조회·스크롤은 제외
+ *   픽셀 기본 코드는 GTM 태그에서만 설치(사이트 코드에는 없음) — 준비 전 이벤트는 metaLater 가 모아서 보냄
  * - 모든 이벤트에 page_locale(언어)·page_type(화면 종류)을 붙임
  * - 이름·연락처·이메일·주소 등 입력값은 어떤 이벤트에도 넣지 않음(입력 칸은 칸 이름만 보냄)
  * - 주소 끝에 ?ga_debug=1 → GA4 DebugView 로 보내고(debug_mode) 화면 오른쪽 아래에 확인 패널 표시
  */
-import { PRICE, PRODUCT } from '../data/commerce';
+import { PRODUCT, setById, type SetOption } from '../data/commerce';
 
 type Params = Record<string, string | number | boolean | unknown[]>;
 declare global {
@@ -37,6 +38,24 @@ function metaTrack(name: string, params: Params) {
   if (!meta) window.fbq!('trackCustom', name);
   else if (meta === 'Purchase') window.fbq!('track', meta, { value: params.value, currency: 'KRW' });
   else window.fbq!('track', meta);
+}
+/**
+ * 픽셀은 GTM 태그로 비동기 설치되므로, 페이지가 열리자마자 나는 이벤트(view_item·begin_checkout 등)는
+ * 픽셀이 준비될 때까지(최대 10초) 순서대로 모았다가 보냄. 픽셀이 없는 환경(로컬·미리보기)에서는 버림
+ */
+const metaQueue: [string, Params][] = [];
+let metaWait = 0;
+function metaLater(name: string, params: Params) {
+  metaQueue.push([name, params]);
+  if (metaWait) return;
+  const started = Date.now();
+  metaWait = window.setInterval(() => {
+    const ready = !!window.fbq;
+    if (ready || Date.now() - started > 10000) {
+      clearInterval(metaWait); metaWait = 0;
+      metaQueue.splice(0).forEach(([n, p]) => ready && metaTrack(n, p));
+    }
+  }, 200);
 }
 
 /** 이벤트 목록: tier = 'core'(전환 퍼널) | 'aux'(관심·탐색 진단) / key = GA4 주요 이벤트 */
@@ -70,17 +89,22 @@ export const EVENTS = {
   form_field_focus: { tier: 'aux' },
   form_field_complete: { tier: 'aux' },
   form_error: { tier: 'aux' },
+  // 2026-11 추가 — 기존 27개는 그대로
+  select_item: { tier: 'aux' }, // 구성(1개·2개 세트·3개 세트) 선택
 } as const;
 export type EventName = keyof typeof EVENTS;
 
 const debug = typeof location !== 'undefined' && new URLSearchParams(location.search).get('ga_debug') === '1';
 
-/** GA4 전자상거래 items (언어와 관계없이 고정값) */
-export function items(quantity = 1) {
-  return [{ item_id: PRODUCT.id, item_name: 'MORH Brightening Cream', item_brand: 'MORH', item_category: 'Skincare', price: PRICE.firstPurchase, quantity }];
+/** GA4 전자상거래 items (언어와 관계없이 고정값). price = 고른 구성 1세트 가격, item_variant = 구성 id */
+export function items(quantity = 1, set: SetOption = setById('single')) {
+  return [{ item_id: PRODUCT.id, item_name: 'MORH Brightening Cream', item_brand: 'MORH', item_category: 'Skincare', item_variant: set.id, price: set.price, quantity }];
 }
-/** 금액·통화·상품을 함께 */
-export const ecommerce = (quantity = 1, extra: Params = {}): Params => ({ currency: 'KRW', value: PRICE.firstPurchase * quantity, items: items(quantity), ...extra });
+/** 금액·통화·상품을 함께 (setId 없으면 1개) */
+export const ecommerce = (quantity = 1, extra: Params = {}, setId = 'single'): Params => {
+  const set = setById(setId);
+  return { currency: 'KRW', value: set.price * quantity, items: items(quantity, set), ...extra };
+};
 
 export function track(name: EventName, params: Params = {}) {
   if (!(name in EVENTS)) return;
@@ -93,6 +117,7 @@ export function track(name: EventName, params: Params = {}) {
   // 결제하기처럼 곧바로 페이지를 떠나는 클릭도 전송되도록 beacon 사용
   if (typeof window.gtag === 'function') window.gtag('event', name, { ...payload, transport_type: 'beacon' });
   if (window.fbq) metaTrack(name, payload);
+  else metaLater(name, payload);
   window.__events?.push([name, payload]);
   if (debug) panel(name, payload);
 }
