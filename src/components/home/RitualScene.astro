@@ -66,7 +66,7 @@ const story = locale === 'ko' ? koStory.home : null;
           <ol role="list" class="ritual__caps" data-caps>
             {story.captions.map((c) => (
               <li class="ritual__cap" data-cap={c.to}>
-                <strong>{c.big}{c.count && <> <b class="ritual__num" data-count={JSON.stringify({ ...c.count, toDay: c.to })}>{c.count.prefix}{c.count.value.toFixed(c.count.decimals)}{c.count.suffix}</b></>}</strong>
+                <strong>{c.big}{c.count && <> <b class="ritual__num" data-count={JSON.stringify({ ...c.count, toDay: c.to })}>{c.count.prefix}{c.count.value.toFixed(c.count.decimals)}{c.count.suffix}</b></>}{c.after && <> {c.after}</>}</strong>
                 {c.small && <span class="ritual__cap-small" data-cap-small={c.to}>{c.small}</span>}
               </li>
             ))}
