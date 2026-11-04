@@ -32,7 +32,7 @@ export const koStory = {
       },
       wanted: {
         ask: 'WANTED? 잠깐, 저 아닌데요.',
-        title: ['칙칙해 보이던 얼굴,', '밝기 +10.0%'],
+        title: ['칙칙해 보이던 얼굴,', '피부 밝기 +10.0%*'],
         body: '수배범이 아니라 피부 관리 중이었어요.',
         image: { name: 'ad-wanted', alt: 'WANTED 광고 전후 장면: 칙칙한 얼굴로 한숨 쉬던 모습과, MORH 미백크림을 바른 뒤 환해진 얼굴', hint: 'WANTED 릴스 전/후 나란히: 가방을 꺼내기 전 한숨 쉬는 얼굴(2.6초) → 크림을 바른 뒤 환해진 얼굴(9.2초), 전체 4:5' },
         footnote: FN_DEVICE,
@@ -100,7 +100,7 @@ export const koStory = {
       ],
       before: { name: 'skin-before', alt: '사용 전, 광이 없는 볼 피부 클로즈업', label: '사용 전', hint: 'bright_before.jpg 눈 아래 볼 부분 (임시 — skinglow_before 가 after 와 같은 파일이라)' },
       after: { name: 'skin-after', alt: '사용 후, 윤기가 도는 볼 피부 클로즈업', label: '사용 후', hint: 'skinglow_after.png 눈 아래 볼 부분' },
-      footnote: '20–45세 여성 32명, 1일 2회 14일 1) · 4주 2) 사용 후 기기 측정 결과. 개인차가 있을 수 있습니다.',
+      footnote: '20–45세 여성 32명, 1일 2회 1) 14일, 2) 4주 사용 후 기기 측정 결과. 개인차가 있을 수 있습니다.',
     },
     record: {
       point: 'POINT 03',
@@ -127,7 +127,7 @@ export const koStory = {
     },
     moist: {
       point: 'POINT 04',
-      title: ['수분은 붙잡고,', '유분감은 남기지 않아요'],
+      title: ['수분은 붙잡고,', '유분은 남지 않아요'],
       hl: 0, // 띠 강조를 첫 줄(수분)에: 고민 '오후 되면 건조해요'와 아래 경피수분손실량 수치에 바로 이어짐
       body: '바로 선크림을 올려도 밀리지 않아요.',
       metricLabel: '경피수분손실량*',

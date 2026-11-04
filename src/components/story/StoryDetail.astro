@@ -142,7 +142,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
       <tbody>{d.record.tableRows.map(([k, a, b]) => <tr><th scope="row">{k}</th><td><Nums text={a} /></td><td><Nums text={b} /></td></tr>)}</tbody>
       <tfoot><tr><th scope="row">{d.record.tableTotal[0]}</th><td><Nums text={d.record.tableTotal[1]} /></td><td class="dt-table__after"><Nums text={d.record.tableTotal[2]} /></td></tr></tfoot>
     </table>
-    <p class="dt-body"><Nums text={d.record.note} /></p>
+    <p class="dt-body dt-note"><Nums text={d.record.note} /></p>
     <p class="st-fn">*{d.record.footnote}</p>
   </section>
 
@@ -299,6 +299,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-table tbody th, .dt-table tfoot th { text-align: start; font-weight: 500; }
   .dt-table tfoot th, .dt-table tfoot td { font-weight: 700; border-bottom: 0; border-top: 1px solid var(--c-ink); }
   .dt-table__after { color: var(--c-plum); }
+  .dt-note { font-size: clamp(1.0625rem, 2.2vw, 1.1875rem); font-weight: 700; color: var(--c-burgundy); }
 
   /* POINT 04 */
   .dt-metric { display: grid; gap: 4px; padding: 20px 28px; background: #fff; border: 1px solid var(--c-line); }
