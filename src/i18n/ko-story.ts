@@ -98,8 +98,8 @@ export const koStory = {
         { label: '멜라닌 지수', fn: '2)', value: 7.4, text: '−7.4%' },
         { label: '경피수분손실량', fn: '2)', value: 19.2, text: '−19.2%' },
       ],
-      before: { name: 'skin-before', alt: '사용 전, 광이 없는 볼 피부 클로즈업', label: '사용 전', hint: 'bright_before.jpg 볼 부분 (임시 — skinglow_before 가 after 와 같은 파일이라)' },
-      after: { name: 'skin-after', alt: '사용 후, 윤기가 도는 볼 피부 클로즈업', label: '사용 후', hint: 'skinglow_after.png 볼 부분' },
+      before: { name: 'skin-before', alt: '사용 전, 광이 없는 볼 피부 클로즈업', label: '사용 전', hint: 'bright_before.jpg 눈 아래 볼 부분 (임시 — skinglow_before 가 after 와 같은 파일이라)' },
+      after: { name: 'skin-after', alt: '사용 후, 윤기가 도는 볼 피부 클로즈업', label: '사용 후', hint: 'skinglow_after.png 눈 아래 볼 부분' },
       footnote: '20–45세 여성 32명, 1일 2회 14일 1) · 4주 2) 사용 후 기기 측정 결과. 개인차가 있을 수 있습니다.',
     },
     record: {
@@ -136,7 +136,7 @@ export const koStory = {
       footnote: FN_DEVICE_4W,
     },
     use: {
-      title: ['하루 두 번, 아침, 저녁으로', '4주째 아침, 가리지 않아도 마음에 드는 피부를 확인하세요.'],
+      title: ['하루 두 번, 아침・저녁으로', '4주째 아침, 가리지 않아도 마음에 드는 피부를 확인하세요.'],
       morningLabel: '아침 순서',
       morning: ['토너', 'MORH', '선크림', '(필요하면) 쿠션'],
       timeline: ['DAY 1 저녁부터', '매일 아침·저녁', 'DAY 14 피부 측정', '4주, 화장대 다시 보기'],
@@ -155,12 +155,12 @@ export const koStory = {
     // count: DAY fromDay → to 동안 숫자가 from → value 로 올라감(정적 화면·JS 없음에서는 최종값). small: DAY 14 에 나타남
     captions: [
       { to: 7, big: 'MORH로 매일 관리하고 있어요' },
-      { to: 14, big: '피부 밝기', count: { fromDay: 7, from: 0, value: 10, decimals: 1, prefix: '+', suffix: '%' }, small: '멜라닌 지수 −7.4% · 피부 광택도 +21.5%' },
-    ] as { to: number; big: string; count?: { fromDay: number; from: number; value: number; decimals: number; prefix: string; suffix: string }; small?: string }[],
+      { to: 14, big: '피부 밝기가', count: { fromDay: 7, from: 0, value: 10, decimals: 1, prefix: '', suffix: '%' }, after: '개선됐어요', small: '멜라닌 지수 −7.4% · 피부 광택도 +21.5%' },
+    ] as { to: number; big: string; after?: string; count?: { fromDay: number; from: number; value: number; decimals: number; prefix: string; suffix: string }; small?: string }[],
     finalEn: 'care, not cover',
     // finalBig: \n 위치에서 줄바꿈
-    finalBig: '더 이상 가리지 않아도\n마음에 드는 피부',
-    finalSmall: '14일간의 피부 변화에서 시작해요.',
+    finalBig: '칙칙함부터 가리던 아침에서,\n가리지 않아도 마음에 드는 아침으로.',
+    finalSmall: 'MORH, 피부 변화의 시작',
     cta: '14일간의 피부 변화 보기',
     week4: {
       lead: '피부 말고도, 화장대도 기록했어요',
