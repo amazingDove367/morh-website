@@ -35,7 +35,7 @@ export const ko = {
     productShort: '브라이트닝 크림',
     category: '브라이트닝 크림',
     volume: '50 mL',
-    toProduct: '제품 자세히 보기',
+    toProduct: 'MORH 미백크림 자세히 보기',
     buy: '구매하기',
     buyNow: '바로 구매하기',
     toHome: '처음 화면으로',
