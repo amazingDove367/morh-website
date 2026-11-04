@@ -177,7 +177,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     notices: document.querySelectorAll('[data-sample-notice]').length,
     panel: document.querySelector('.pp__rating').textContent,
   }));
-  ok('[상세] 평균 5.0 · 12건이 요약·탭·목록·패널에서 일치', nums.avg === '5.0' && nums.count === 12 && nums.tab === 12 && nums.items === 12 && nums.panel.includes('5.0') && nums.panel.includes('12'), nums);
+  ok('[상세] 평균 5.0 · 14건이 요약·탭·목록·패널에서 일치', nums.avg === '5.0' && nums.count === 14 && nums.tab === 14 && nums.items === 14 && nums.panel.includes('5.0') && nums.panel.includes('14'), nums);
   ok('[상세] 샘플 후기 안내 1회', nums.notices === 1);
   // 텍스처
   await page.click('#acc-texture-btn');
@@ -202,7 +202,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await page.click('[data-page-go="2"]');
   await page.waitForTimeout(700);
   const p2 = await page.evaluate(() => ({ first: [...document.querySelectorAll('[data-review-list] > li')].find((l) => !l.hidden).id, cur: document.querySelector('[aria-current="page"][data-page-go]').dataset.pageGo, top: document.querySelector('#reviews-list').getBoundingClientRect().top, focus: document.activeElement.id }));
-  ok('[상세] 2페이지 이동: 6~10번째 후기(s11부터), 목록 시작점(고정 헤더·탭 바로 아래)으로 이동·포커스', p2.first === 'review-s11' && p2.cur === '2' && p2.top >= 100 && p2.top <= 260 && p2.focus === 'reviews-list', p2);
+  ok('[상세] 2페이지 이동: 6~10번째 후기(s05부터), 목록 시작점(고정 헤더·탭 바로 아래)으로 이동·포커스', p2.first === 'review-s05' && p2.cur === '2' && p2.top >= 100 && p2.top <= 260 && p2.focus === 'reviews-list', p2);
   // 사진 확대 모달(사진 2장 후기 s09 는 3페이지)
   await page.click('[data-page-go="3"]'); await page.waitForTimeout(500);
   const thumb = page.locator('[data-review-list] > li:not([hidden]) [data-review-open="s09"]').first();
