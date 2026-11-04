@@ -212,7 +212,7 @@ export const zhCN: Dict = {
     prevPage: '上一页',
     nextPage: '下一页',
     photoCounter: '{a} / {b}',
-    photoAlt: '示例评价图片 — 并非顾客照片，而是{a}',
+    photoAlt: '评价图片 — {a}',
     tags: { bright: '肤色·亮度', moisture: '滋润', lasting: '下午也滋润', texture: '延展性', morning: '早晨妆容', routine: '坚持护理' },
   },
   checkout: {

@@ -212,7 +212,7 @@ export const ar: Dict = {
     prevPage: 'الصفحة السابقة',
     nextPage: 'الصفحة التالية',
     photoCounter: '{a} / {b}',
-    photoAlt: 'صورة تقييم نموذجي — {a}، وليست صورة عميل',
+    photoAlt: 'صورة تقييم — {a}',
     tags: { bright: 'لون أفتح', moisture: 'الترطيب', lasting: 'ترطيب حتى العصر', texture: 'سهولة التوزيع', morning: 'مكياج الصباح', routine: 'العناية اليومية' },
   },
   checkout: {
