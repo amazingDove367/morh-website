@@ -159,7 +159,7 @@ export const koStory = {
     ] as { to: number; big: string; after?: string; count?: { fromDay: number; from: number; value: number; decimals: number; prefix: string; suffix: string }; small?: string }[],
     finalEn: 'care, not cover',
     // finalBig: \n 위치에서 줄바꿈
-    finalBig: '칙칙함부터 가리던 아침에서,\n가리지 않아도 마음에 드는 아침으로.',
+    finalBig: '가리기 바쁘던 지난 날,\n14일 만에 찾은 화사함',
     finalSmall: 'MORH, 피부 변화의 시작',
     cta: '14일간의 피부 변화 보기',
     week4: {

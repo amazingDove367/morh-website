@@ -87,7 +87,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   ok(`[홈 ${label}] 자막: DAY 01–07 → 매일 관리 · 08–14 → 피부 밝기 숫자 0.0→10.0% 개선됐어요, DAY 14 에 멜라닌·광택도, 점 개수 = DAY`, c1.on.join() === '7' && c2.on.join() === '14' && c3.on.join() === '14' && c1.caps === 1 && c2.dots === c2.day && c3.dots === 14 && parseFloat(c2.num) > 0 && parseFloat(c2.num) < 10 && !c2.small && c3.num === '10.0%' && c3.small, { c1, c2, c3 });
   ok(`[홈 ${label}] 날짜·자막·점이 모래시계를 가리지 않음`, [c1, c2, c3].every((c) => c.mobile ? c.fixedB <= c.gTop && c.dotsT >= c.gBottom && c.capsT >= c.dotsT + 7 && c.capsB <= c.H : c.capsR <= c.gLeft + 4 && c.dotsT >= c.gBottom), c2);
   ok(`[홈 ${label}] 마지막 화면은 DAY 14 자막이 사라진 뒤 표시(겹치지 않음)`, c3.fin === 0 && cf.caps === 0 && cf.fin > 0.99, { c3: c3.fin, cfCaps: cf.caps });
-  ok(`[홈 ${label}] 마지막 문구: care, not cover · 칙칙함부터 가리던 아침에서, / 가리지 않아도 마음에 드는 아침으로. · MORH, 피부 변화의 시작`, (await page.evaluate(() => document.querySelector('.ritual__final').innerText)).replace(/\s+/g, ' ').includes('care, not cover 칙칙함부터 가리던 아침에서, 가리지 않아도 마음에 드는 아침으로. MORH, 피부 변화의 시작 14일간의 피부 변화 보기'));
+  ok(`[홈 ${label}] 마지막 문구: care, not cover · 가리기 바쁘던 지난 날, / 14일 만에 찾은 화사함 · MORH, 피부 변화의 시작`, (await page.evaluate(() => document.querySelector('.ritual__final').innerText)).replace(/\s+/g, ' ').includes('care, not cover 가리기 바쁘던 지난 날, 14일 만에 찾은 화사함 MORH, 피부 변화의 시작 14일간의 피부 변화 보기'));
   if (label === '데스크톱') {
     await scrollToP(page, 0.99);
     const attrs = await cta.evaluate((a) => [a.dataset.ga, a.dataset.gaCtaLocation]);
@@ -113,7 +113,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     fin: document.querySelector('.ritual__final').innerText.replace(/\s+/g, ' '),
   }));
   ok('[홈] 움직임 줄이기: 정적 장면(캔버스 없음, DAY 14 모래시계 사진, 카피·버튼, 고정 구간 없음)', st.cls.includes('reduce-motion') && st.canvas === 'none' && st.glass > 100 && st.cta && st.h < 3000, st);
-  ok('[홈] 움직임 줄이기: 구간 자막 2개(최종 숫자 10.0% 개선·멜라닌·광택도) + 마지막 문구를 정적 목록으로', st.list.length === 2 && st.list.every((l) => l[1] === '1' && l[2]) && st.list[0][0] === 'MORH로 매일 관리하고 있어요' && st.list[1][0].includes('피부 밝기가 10.0% 개선됐어요') && st.list[1][0].includes('멜라닌 지수 −7.4% · 피부 광택도 +21.5%') && st.fin.includes('칙칙함부터 가리던 아침에서, 가리지 않아도 마음에 드는 아침으로.'), st.list);
+  ok('[홈] 움직임 줄이기: 구간 자막 2개(최종 숫자 10.0% 개선·멜라닌·광택도) + 마지막 문구를 정적 목록으로', st.list.length === 2 && st.list.every((l) => l[1] === '1' && l[2]) && st.list[0][0] === 'MORH로 매일 관리하고 있어요' && st.list[1][0].includes('피부 밝기가 10.0% 개선됐어요') && st.list[1][0].includes('멜라닌 지수 −7.4% · 피부 광택도 +21.5%') && st.fin.includes('가리기 바쁘던 지난 날, 14일 만에 찾은 화사함'), st.list);
   await ctx.close();
   const { ctx: c2, page: p2 } = await open('/', DESKTOP);
   for (const vp of [{ width: 1024, height: 700 }, { width: 1920, height: 1080 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
