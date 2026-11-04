@@ -6,7 +6,7 @@
 .st-down { color: var(--c-plum); }
 .st-img { display: block; width: 100%; height: auto; object-fit: cover; }
 .st-ph { background: var(--c-pearl); }
-.st-fn { font-size: 0.75rem; color: var(--c-ink-soft); line-height: 1.6; }
+.st-fn { font-size: 0.75rem; color: var(--c-ink-soft); line-height: 1.6; white-space: pre-line; }
 
 /* 섹션 공통 */
 .st { padding-block: var(--s-8); border-top: 1px solid var(--c-line); display: grid; gap: var(--s-5); scroll-margin-top: calc(var(--header-h) + 64px); }
