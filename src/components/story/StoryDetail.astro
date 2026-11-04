@@ -206,18 +206,18 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-body > p + p { margin-top: 4px; }
   .dt-pill { padding: 4px 16px; border-radius: 999px; background: var(--c-burgundy); color: #fff; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; }
 
-  /* ⓪ 첫 화면: 전/후 사진 아래 원형 배지 3개(사진을 가리지 않게 한 줄) */
+  /* ⓪ 첫 화면: 전/후 사진 오른쪽에 원형 배지 3개를 세로로(휴대폰은 사진 아래 한 줄) */
   .dt-head { background: linear-gradient(var(--c-veil), #fff); }
   .dt-head__media { position: relative; width: min(100%, 520px); }
   .dt-head__media > :global(.st-img) { width: 100%; }
-  .dt-badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; justify-items: center; }
+  .dt-badges { position: absolute; inset-inline-end: -12px; bottom: 24px; display: grid; gap: 10px; }
   .dt-badges li {
-    width: 100%; max-width: 104px; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; gap: 2px; padding: 8px;
+    width: clamp(92px, 16vw, 112px); aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; gap: 2px; padding: 8px;
     background: var(--c-burgundy); color: #fff; box-shadow: 0 6px 18px rgb(63 1 23 / 0.22);
   }
   .dt-badges span { font-size: 0.6875rem; font-weight: 600; line-height: 1.3; }
   @media (min-width: 900px) {
-    .dt-badges li { max-width: 132px; }
+    .dt-badges li { width: 120px; }
     .dt-badges span { font-size: 0.8125rem; }
     .dt-badges b { font-size: 1.25rem; }
   }
@@ -323,6 +323,8 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-cta--light:hover { background: var(--c-veil); color: var(--c-burgundy-deep); }
 
   @media (max-width: 560px) {
+    .dt-badges { position: static; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 12px; }
+    .dt-badges li { width: 100%; max-width: 104px; justify-self: center; }
     .dt-tiers, .dt-cards { grid-template-columns: 1fr; }
     .dt-tier { grid-template-columns: auto 1fr auto; grid-template-areas: 'name pct price' 'tag base price'; text-align: start; justify-items: start; align-items: center; padding: 12px 14px; column-gap: 12px; }
     .dt-tier__name { grid-area: name; } .dt-tier__pct { grid-area: pct; font-size: 1.5rem; } .dt-tier s { grid-area: base; }
