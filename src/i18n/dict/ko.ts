@@ -219,7 +219,7 @@ export const ko = {
     prevPage: '이전 페이지',
     nextPage: '다음 페이지',
     photoCounter: '{a} / {b}',
-    photoAlt: '샘플 후기 이미지 — 고객 사진이 아닌 {a}',
+    photoAlt: '후기 사진 — {a}',
     tags: { bright: '피부 톤·밝기', moisture: '촉촉함', lasting: '오후까지 촉촉', texture: '발림성', morning: '아침 화장', routine: '꾸준한 관리' },
   },
   checkout: {

@@ -34,7 +34,6 @@ const [a, b] = sum.tags;
           <a href="#reviews" data-tab-link="reviews" class="rs__all" data-ga="review_more" data-ga-link-location="summary_all" data-ga-review-count={sum.count}>{r.all} <span class="arrow" aria-hidden="true">→</span></a>
         </p>
       </div>
-      {sum.sample && <p class="rs__note" data-sample-notice>{r.notice} {sum.photoReviews.length > 0 && r.photoNote}</p>}
 
       {sum.photoReviews.length > 0 && (
         <ul class="rs__photos" role="list" aria-label={r.photos}>
@@ -76,7 +75,6 @@ const [a, b] = sum.tags;
   .rs__count { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .rs__all { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; color: var(--c-ink); }
   .rs__all:hover { color: var(--c-burgundy); text-decoration: underline; }
-  .rs__note { margin-top: var(--s-3); font-size: 0.75rem; color: var(--c-ink-soft); }
   .rs__photos {
     display: grid; grid-auto-flow: column; grid-auto-columns: 132px; gap: 10px; margin-top: var(--s-5);
     overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 6px; scrollbar-width: thin;

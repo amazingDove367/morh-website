@@ -211,7 +211,7 @@ export const ja: Dict = {
     prevPage: '前のページ',
     nextPage: '次のページ',
     photoCounter: '{a} / {b}',
-    photoAlt: 'サンプルレビュー画像 — お客様の写真ではない{a}',
+    photoAlt: 'レビュー写真 — {a}',
     tags: { bright: '肌トーン・明るさ', moisture: 'うるおい', lasting: '午後までしっとり', texture: 'のびの良さ', morning: '朝のメイク', routine: '毎日のケア' },
   },
   checkout: {
