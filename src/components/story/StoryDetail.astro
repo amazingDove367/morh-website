@@ -160,8 +160,10 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   <section class="dt-sec" aria-labelledby="dt-use-title">
     <h2 id="dt-use-title" class="dt-title dt-title--sm">{d.use.title[0].split(/\[(.+?)\]/).map((s, i) => (i % 2 ? <em class="dt-red">{s}</em> : s))}</h2>
     <p class="dt-body">{d.use.title[1]}</p>
-    <ol role="list" class="dt-steps">{d.use.morning.map((x, i) => <li><span><Nums text={String(i + 1)} /></span>{x}</li>)}</ol>
-    <p class="dt-steps__label">{d.use.morningLabel}</p>
+    <div class="dt-routine">
+      <p class="dt-steps__label">{d.use.morningLabel}</p>
+      <ol role="list" class="dt-steps">{d.use.morning.map((x, i) => <li><span><Nums text={String(i + 1)} /></span>{x}</li>)}</ol>
+    </div>
     <ol role="list" class="dt-timeline">{d.use.timeline.map((x) => <li><Nums text={x} /></li>)}</ol>
   </section>
 
@@ -295,9 +297,15 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
   .dt-table caption { font-size: clamp(1.125rem, 2.4vw, 1.3125rem); font-weight: 700; color: var(--c-burgundy); margin-bottom: 14px; }
   .dt-table th, .dt-table td { padding: 10px 8px; border-bottom: 1px solid var(--c-line); font-size: 0.9375rem; }
-  .dt-table thead th { border-bottom: 1px solid var(--c-ink); font-size: 0.8125rem; color: var(--c-ink-soft); font-weight: 600; }
+  .dt-table { border: 1px solid var(--c-burgundy); }
+  .dt-table thead th { background: var(--c-burgundy); color: #fff; border-bottom: 0; font-size: 0.8125rem; font-weight: 700; }
+  .dt-table tbody tr:nth-child(odd) { background: #fff; }
+  .dt-table tbody tr:nth-child(even) { background: var(--c-veil); }
+  .dt-table td:last-child { color: var(--c-plum); font-weight: 600; }
+  .dt-table tfoot tr { background: color-mix(in srgb, var(--c-burgundy) 10%, #fff); }
   .dt-table tbody th, .dt-table tfoot th { text-align: start; font-weight: 500; }
-  .dt-table tfoot th, .dt-table tfoot td { font-weight: 700; border-bottom: 0; border-top: 1px solid var(--c-ink); }
+  .dt-table tfoot th, .dt-table tfoot td { font-weight: 700; border-bottom: 0; border-top: 1px solid var(--c-burgundy); }
+  .dt-table tbody th, .dt-table tfoot th { padding-inline-start: 14px; }
   .dt-table__after { color: var(--c-plum); }
   .dt-note { font-size: clamp(1.0625rem, 2.2vw, 1.1875rem); font-weight: 700; color: var(--c-burgundy); }
 
@@ -314,7 +322,11 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-steps li:nth-child(2) { border-color: var(--c-burgundy); color: var(--c-burgundy); font-weight: 700; }
   .dt-steps li > span { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--c-ink); color: #fff; font-size: 0.75rem; }
   .dt-steps li:nth-child(2) > span { background: var(--c-burgundy); }
-  .dt-steps__label { font-size: 0.875rem; font-weight: 700; color: var(--c-ink); margin-top: -12px; }
+  /* 아침 순서: 표와 같은 색 — 버건디 머리줄 + 아이보리 바탕 */
+  .dt-routine { width: 100%; border: 1px solid var(--c-burgundy); background: var(--c-veil); }
+  .dt-routine .dt-steps__label { padding: 9px 12px; background: var(--c-burgundy); color: #fff; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.04em; }
+  .dt-routine .dt-steps { padding: 16px 12px 18px; }
+  .dt-routine .dt-steps li { background: #fff; }
   .dt-timeline { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--c-line-strong); }
   .dt-timeline li { position: relative; padding-top: 18px; font-size: 0.875rem; font-weight: 700; line-height: 1.5; }
   .dt-timeline li::before { content: ''; position: absolute; top: -5px; left: 50%; translate: -50% 0; width: 9px; height: 9px; border-radius: 50%; background: var(--c-burgundy); }
