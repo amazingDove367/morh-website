@@ -178,7 +178,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     panel: document.querySelector('.pp__rating').textContent,
   }));
   ok('[상세] 평균 5.0 · 14건이 요약·탭·목록·패널에서 일치', nums.avg === '5.0' && nums.count === 14 && nums.tab === 14 && nums.items === 14 && nums.panel.includes('5.0') && nums.panel.includes('14'), nums);
-  ok('[상세] 샘플 후기 안내 1회', nums.notices === 1);
+  ok('[상세] 샘플 후기 안내 문구 없음', nums.notices === 0);
   // 텍스처
   await page.click('#acc-texture-btn');
   await page.waitForTimeout(400);
@@ -214,7 +214,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await page.keyboard.press('Escape');
   await page.waitForTimeout(100);
   const lb3 = await page.evaluate(() => ({ open: document.querySelector('[data-lightbox]').open, focus: document.activeElement?.dataset?.reviewOpen }));
-  ok('[상세] 후기 사진 확대: 여러 장 →, Esc 로 닫기, 포커스 복원', lb1.open && lb1.count === '1 / 2' && lb2 === '2 / 2' && !lb3.open && !!lb3.focus && lb1.alt.includes('고객 사진이 아닌'), { lb1, lb2, lb3 });
+  ok('[상세] 후기 사진 확대: 여러 장 →, Esc 로 닫기, 포커스 복원', lb1.open && lb1.count === '1 / 2' && lb2 === '2 / 2' && !lb3.open && !!lb3.focus && lb1.alt.startsWith('후기 사진 — '), { lb1, lb2, lb3 });
   // 탭 키보드
   await page.focus('#tab-reviews'); await page.keyboard.press('ArrowLeft');
   ok('[상세] 탭 키보드(←/→) 이동', (await page.getAttribute('#tab-detail', 'aria-selected')) === 'true' && (await page.evaluate(() => document.activeElement.id)) === 'tab-detail');

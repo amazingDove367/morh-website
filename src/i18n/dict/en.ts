@@ -211,7 +211,7 @@ export const en: Dict = {
     prevPage: 'Previous page',
     nextPage: 'Next page',
     photoCounter: '{a} / {b}',
-    photoAlt: 'Sample review image — {a}, not a customer photo',
+    photoAlt: 'Review photo — {a}',
     tags: { bright: 'Brighter tone', moisture: 'Moisture', lasting: 'Moist all afternoon', texture: 'Spreadability', morning: 'Morning makeup', routine: 'Daily care' },
   },
   checkout: {
