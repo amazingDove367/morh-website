@@ -160,10 +160,10 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   <section class="dt-sec" aria-labelledby="dt-use-title">
     <h2 id="dt-use-title" class="dt-title dt-title--sm">{d.use.title[0].split(/\[(.+?)\]/).map((s, i) => (i % 2 ? <em class="dt-red">{s}</em> : s))}</h2>
     <p class="dt-body">{d.use.title[1]}</p>
+    <ol role="list" class="dt-steps">{d.use.morning.map((x, i) => <li><span><Nums text={String(i + 1)} /></span>{x}</li>)}</ol>
     <div class="dt-routine">
-      <ol role="list" class="dt-steps">{d.use.morning.map((x, i) => <li><span><Nums text={String(i + 1)} /></span>{x}</li>)}</ol>
+      <ol role="list" class="dt-timeline">{d.use.timeline.map((x) => <li><Nums text={x} /></li>)}</ol>
     </div>
-    <ol role="list" class="dt-timeline">{d.use.timeline.map((x) => <li><Nums text={x} /></li>)}</ol>
   </section>
 
   <!-- ⑥ 마무리 혜택 -->
@@ -286,7 +286,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   /* POINT 03: 이전 → 이후 카드 · 사진 · 표 */
   .dt-cards { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .dt-cards li { display: grid; gap: 6px; padding: 18px 8px; border: 1px solid var(--c-line-strong); }
-  .dt-cards li > span { font-size: 0.8125rem; color: var(--c-ink-soft); }
+  .dt-cards li > span { font-size: 0.9375rem; font-weight: 700; color: var(--c-burgundy); }
   .dt-cards p { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 8px; }
   .dt-cards s { color: var(--c-ink-soft); font-size: 0.9375rem; }
   .dt-cards p > span { color: var(--c-ink-soft); }
@@ -321,10 +321,9 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-steps li:nth-child(2) { border-color: var(--c-burgundy); color: var(--c-burgundy); font-weight: 700; }
   .dt-steps li > span { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--c-ink); color: #fff; font-size: 0.75rem; }
   .dt-steps li:nth-child(2) > span { background: var(--c-burgundy); }
-  /* 아침 순서: 표와 같은 색 — 버건디 테두리 + 아이보리 바탕 */
+  /* 사용 기간 타임라인: 표와 같은 색 — 버건디 테두리 + 아이보리 바탕 */
   .dt-routine { width: 100%; border: 1px solid var(--c-burgundy); background: var(--c-veil); }
-  .dt-routine .dt-steps { padding: 16px 12px 18px; }
-  .dt-routine .dt-steps li { background: #fff; }
+  .dt-routine { padding: 26px 12px 18px; }
   .dt-timeline { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--c-line-strong); }
   .dt-timeline li { position: relative; padding-top: 18px; font-size: 0.875rem; font-weight: 700; line-height: 1.5; }
   .dt-timeline li::before { content: ''; position: absolute; top: -5px; left: 50%; translate: -50% 0; width: 9px; height: 9px; border-radius: 50%; background: var(--c-burgundy); }
