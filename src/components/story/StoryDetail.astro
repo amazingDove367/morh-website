@@ -274,7 +274,7 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   /* POINT 02: 큰 숫자 · 막대 */
   .dt-big { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .dt-big li { display: grid; gap: 4px; padding: 20px 10px; background: #fff; border: 1px solid var(--c-line); }
-  .dt-big span { font-size: 0.875rem; color: var(--c-ink-soft); }
+  .dt-big span, .dt-bars__label { font-size: 0.9375rem; font-weight: 700; color: var(--c-burgundy); }
   .dt-big sup, .dt-bars__label sup { font-size: 0.7em; margin-inline-start: 1px; }
   .dt-big b { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.1; color: var(--c-burgundy); }
   .dt-bars { width: 100%; display: grid; gap: 14px; text-align: start; }
@@ -306,6 +306,10 @@ const heads = Object.entries(d.heads) as [keyof typeof d.heads, (typeof d.heads)
   .dt-table tfoot th, .dt-table tfoot td { font-weight: 700; border-bottom: 0; border-top: 1px solid var(--c-burgundy); }
   .dt-table tbody th, .dt-table tfoot th { padding-inline-start: 14px; }
   .dt-table__after { color: var(--c-plum); }
+  /* PC: 사진 라벨(사용 전/후·4주 후)과 표 머리줄을 +2px */
+  @media (min-width: 900px) {
+    .dt-pair figure, .dt-table thead th { font-size: calc(0.8125rem + 2px); }
+  }
   .dt-note { font-size: clamp(1.0625rem, 2.2vw, 1.1875rem); font-weight: 700; color: var(--c-burgundy); }
 
   /* POINT 04 */
