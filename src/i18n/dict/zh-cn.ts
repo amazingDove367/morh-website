@@ -197,6 +197,8 @@ export const zhCN: Dict = {
     all: '查看全部评价',
     more: '更多',
     photos: '图片评价',
+    prevPhotos: '上一组图片评价',
+    nextPhotos: '下一组图片评价',
     openPhoto: '打开 {a} 的图片评价 — {b}',
     summaryTitle: '评价摘要',
     summaryHead: '评价中提到最多的是 {a} 和 {b}。',

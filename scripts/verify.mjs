@@ -202,7 +202,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
   await page.click('[data-page-go="2"]');
   await page.waitForTimeout(700);
   const p2 = await page.evaluate(() => ({ first: [...document.querySelectorAll('[data-review-list] > li')].find((l) => !l.hidden).id, cur: document.querySelector('[aria-current="page"][data-page-go]').dataset.pageGo, top: document.querySelector('#reviews-list').getBoundingClientRect().top, focus: document.activeElement.id }));
-  ok('[상세] 2페이지 이동: 6~10번째 후기(s05부터), 목록 시작점(고정 헤더·탭 바로 아래)으로 이동·포커스', p2.first === 'review-s05' && p2.cur === '2' && p2.top >= 100 && p2.top <= 260 && p2.focus === 'reviews-list', p2);
+  ok('[상세] 2페이지 이동: 6~10번째 후기(s12부터), 목록 시작점(고정 헤더·탭 바로 아래)으로 이동·포커스', p2.first === 'review-s12' && p2.cur === '2' && p2.top >= 100 && p2.top <= 260 && p2.focus === 'reviews-list', p2);
   // 사진 확대 모달(사진 2장 후기 s09 는 3페이지)
   await page.click('[data-page-go="3"]'); await page.waitForTimeout(500);
   const thumb = page.locator('[data-review-list] > li:not([hidden]) [data-review-open="s09"]').first();
@@ -255,7 +255,7 @@ for (const [label, opts] of [['데스크톱', DESKTOP], ['모바일', MOBILE]]) 
     views: [...document.querySelectorAll('[data-pg-img]')].map((e) => e.dataset.view).join(), count: document.querySelector('[data-pg-count]').textContent.trim(),
     first: (() => { const i = document.querySelector('[data-pg-img="0"]'); return !i.hidden && i.complete && i.naturalWidth > 0 && getComputedStyle(i).opacity === '1'; })(),
   }));
-  ok('[상품] 첫 화면: 제품명(20px)·영문 한 줄, 키 카피·증거 칩·셀프 체크·촉촉함 섹션 없음', top.title === 'MORH 모르 브라이트닝 크림' && top.titleFs === '20px' && top.tagline === 'A moment for your daily ritual.' && top.old === 0, top);
+  ok('[상품] 첫 화면: 제품명(20px)·영문 한 줄, 키 카피·증거 칩·셀프 체크·촉촉함 섹션 없음', top.title === 'MORH 모르 미백크림' && top.titleFs === '20px' && top.tagline === 'A moment for your daily ritual.' && top.old === 0, top);
   ok('[상품] 갤러리: 페이지를 열면 바로 정면 제품 사진(01 / 05, 360 누르지 않아도 보임)', top.views === 'front,right,back,left,top' && top.count === '01 / 05' && top.first, top);
   const order = await page.evaluate(() => {
     const y = (s) => document.querySelector(s).getBoundingClientRect().top + scrollY;

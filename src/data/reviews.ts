@@ -57,28 +57,6 @@ const who = (ko: string, latin: string, ja: string, zh: string, arName: string) 
 
 export const SAMPLE_REVIEWS: Review[] = [
   {
-    id: 's01', rating: 5, sample: true, photos: ['r02'], tags: ['bright', 'moisture'],
-    author: who('김*연', 'Y. Kim', 'Y. K.', '金*妍', 'ي. ك.'), skin: SKIN.combo,
-    text: {
-      ko: { title: '2주 지나니 톤이 맑아졌어요', body: '세안하고 토너 다음에 바로 발라요. 2주쯤 지나니까 거울 볼 때 얼굴 톤이 한결 맑아 보여요. 복합성인데 끈적이지 않고 촉촉하게 마무리돼서 좋아요.' },
-      en: { title: 'My tone looked clearer after two weeks', body: 'I apply it right after toner. Around the two-week mark my skin tone looked noticeably clearer in the mirror. I have combination skin and it finishes moist, not sticky.' },
-      ja: { title: '2週間でトーンが明るく見えてきました', body: '洗顔後、化粧水のすぐあとに塗っています。2週間ほどで鏡を見たときの肌トーンがすっきり見えるように。混合肌ですがベタつかず、しっとり仕上がります。' },
-      'zh-cn': { title: '两周后肤色看起来更透亮', body: '洗脸后爽肤水之后直接涂。大约两周后照镜子时觉得肤色透亮了不少。我是混合肌，不黏腻，收尾很滋润。' },
-      ar: { title: 'بدت بشرتي أصفى بعد أسبوعين', body: 'أضعه بعد التونر مباشرة. بعد نحو أسبوعين بدا لون بشرتي أصفى في المرآة. بشرتي مختلطة ويترك إحساسًا مرطبًا غير لزج.' },
-    },
-  },
-  {
-    id: 's10', rating: 5, sample: true, photos: ['r12'], tags: ['moisture', 'routine'],
-    author: who('강*비', 'B. Kang', 'B. K.', '姜*碧', 'ب. ك.'), skin: SKIN.dry,
-    text: {
-      ko: { title: '자기 전에 바르면 아침까지 촉촉해요', body: '자기 전 마지막 단계로 바르고 자면 다음 날 아침 세안할 때까지 당기지 않아요. 건성이라 미백 크림은 건조할까 봐 걱정했는데 오히려 촉촉해서 놀랐어요.' },
-      en: { title: 'Apply before bed, still moist in the morning', body: 'I put it on as my last step at night and my skin does not feel tight even when I wash my face the next morning. I worried a brightening cream would dry out my dry skin, but it is surprisingly moist.' },
-      ja: { title: '寝る前に塗ると朝までしっとり', body: '夜の最後に塗って寝ると、翌朝の洗顔までつっぱりません。乾燥肌なので美白クリームは乾燥しそうと心配でしたが、むしろしっとりして驚きました。' },
-      'zh-cn': { title: '睡前涂，到早上都很滋润', body: '晚上最后一步涂完睡觉，第二天早上洗脸前都不紧绷。干皮本来担心美白霜会干，结果反而很滋润，有点惊喜。' },
-      ar: { title: 'أضعه قبل النوم ويبقى الترطيب حتى الصباح', body: 'أضعه كآخر خطوة ليلًا فلا تشد بشرتي حتى غسل الوجه صباحًا. خشيت أن يجفف كريم التفتيح بشرتي الجافة، لكنه مرطب على نحو مفاجئ.' },
-    },
-  },
-  {
     id: 's03', rating: 5, sample: true, photos: [], tags: ['bright', 'morning'],
     author: who('이*은', 'E. Lee', 'E. L.', '李*恩', 'إ. ل.'), skin: SKIN.oily,
     text: {
@@ -208,6 +186,28 @@ export const SAMPLE_REVIEWS: Review[] = [
       ja: { title: '毎日手が伸びて、トーンが変わりました', body: '朝、手が濡れていてもふたが開けやすいので毎日使っています。続けて3週間、肌トーンが明るくなったのを感じます。' },
       'zh-cn': { title: '每天都会用，肤色变了', body: '早上手湿也很好打开，所以每天都会拿来用。坚持了三周，能感觉到肤色变亮了。' },
       ar: { title: 'أستخدمه يوميًا فتغيّر لون بشرتي', body: 'الغطاء يُفتح بسهولة حتى بيدين مبللتين، فأستخدمه كل صباح. بعد ثلاثة أسابيع من الاستخدام المنتظم أشعر أن لون بشرتي صار أفتح.' },
+    },
+  },
+  {
+    id: 's01', rating: 5, sample: true, photos: ['r02'], tags: ['bright', 'moisture'],
+    author: who('김*연', 'Y. Kim', 'Y. K.', '金*妍', 'ي. ك.'), skin: SKIN.combo,
+    text: {
+      ko: { title: '2주 지나니 톤이 맑아졌어요', body: '세안하고 토너 다음에 바로 발라요. 2주쯤 지나니까 거울 볼 때 얼굴 톤이 한결 맑아 보여요. 복합성인데 끈적이지 않고 촉촉하게 마무리돼서 좋아요.' },
+      en: { title: 'My tone looked clearer after two weeks', body: 'I apply it right after toner. Around the two-week mark my skin tone looked noticeably clearer in the mirror. I have combination skin and it finishes moist, not sticky.' },
+      ja: { title: '2週間でトーンが明るく見えてきました', body: '洗顔後、化粧水のすぐあとに塗っています。2週間ほどで鏡を見たときの肌トーンがすっきり見えるように。混合肌ですがベタつかず、しっとり仕上がります。' },
+      'zh-cn': { title: '两周后肤色看起来更透亮', body: '洗脸后爽肤水之后直接涂。大约两周后照镜子时觉得肤色透亮了不少。我是混合肌，不黏腻，收尾很滋润。' },
+      ar: { title: 'بدت بشرتي أصفى بعد أسبوعين', body: 'أضعه بعد التونر مباشرة. بعد نحو أسبوعين بدا لون بشرتي أصفى في المرآة. بشرتي مختلطة ويترك إحساسًا مرطبًا غير لزج.' },
+    },
+  },
+  {
+    id: 's10', rating: 5, sample: true, photos: ['r12'], tags: ['moisture', 'routine'],
+    author: who('강*비', 'B. Kang', 'B. K.', '姜*碧', 'ب. ك.'), skin: SKIN.dry,
+    text: {
+      ko: { title: '자기 전에 바르면 아침까지 촉촉해요', body: '자기 전 마지막 단계로 바르고 자면 다음 날 아침 세안할 때까지 당기지 않아요. 건성이라 미백 크림은 건조할까 봐 걱정했는데 오히려 촉촉해서 놀랐어요.' },
+      en: { title: 'Apply before bed, still moist in the morning', body: 'I put it on as my last step at night and my skin does not feel tight even when I wash my face the next morning. I worried a brightening cream would dry out my dry skin, but it is surprisingly moist.' },
+      ja: { title: '寝る前に塗ると朝までしっとり', body: '夜の最後に塗って寝ると、翌朝の洗顔までつっぱりません。乾燥肌なので美白クリームは乾燥しそうと心配でしたが、むしろしっとりして驚きました。' },
+      'zh-cn': { title: '睡前涂，到早上都很滋润', body: '晚上最后一步涂完睡觉，第二天早上洗脸前都不紧绷。干皮本来担心美白霜会干，结果反而很滋润，有点惊喜。' },
+      ar: { title: 'أضعه قبل النوم ويبقى الترطيب حتى الصباح', body: 'أضعه كآخر خطوة ليلًا فلا تشد بشرتي حتى غسل الوجه صباحًا. خشيت أن يجفف كريم التفتيح بشرتي الجافة، لكنه مرطب على نحو مفاجئ.' },
     },
   },
 ];

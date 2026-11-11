@@ -36,7 +36,11 @@ const [a, b] = sum.tags;
       </div>
 
       {sum.photoReviews.length > 0 && (
-        <ul class="rs__photos" role="list" aria-label={r.photos}>
+        <div class="rs__strip" data-rs-strip>
+        <button type="button" class="rs__nav rs__nav--prev" data-rs-prev aria-label={r.prevPhotos} aria-controls="rs-photos" disabled>
+          <span aria-hidden="true">‹</span>
+        </button>
+        <ul class="rs__photos" id="rs-photos" role="list" aria-label={r.photos} data-rs-photos>
           {sum.photoReviews.map((rv) => (
             <li>
               <button type="button" class="rs__thumb" data-review-open={rv.id} data-photo="0" aria-haspopup="dialog"
@@ -50,6 +54,10 @@ const [a, b] = sum.tags;
             <a class="rs__more" href="#reviews" data-tab-link="reviews" data-ga="review_more" data-ga-link-location="summary_more" data-ga-review-count={sum.count}>{r.more} <span class="arrow" aria-hidden="true">→</span></a>
           </li>
         </ul>
+        <button type="button" class="rs__nav rs__nav--next" data-rs-next aria-label={r.nextPhotos} aria-controls="rs-photos">
+          <span aria-hidden="true">›</span>
+        </button>
+        </div>
       )}
 
       {a && (
@@ -75,10 +83,27 @@ const [a, b] = sum.tags;
   .rs__count { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .rs__all { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; color: var(--c-ink); }
   .rs__all:hover { color: var(--c-burgundy); text-decoration: underline; }
+  /* 포토 후기: 한 화면에 보이는 만큼 보여 주고, 양옆 화살표로 넘김(아래 스크롤바 숨김, 터치 스와이프는 유지) */
+  .rs__strip { position: relative; margin-top: var(--s-5); }
   .rs__photos {
-    display: grid; grid-auto-flow: column; grid-auto-columns: 132px; gap: 10px; margin-top: var(--s-5);
-    overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 6px; scrollbar-width: thin;
+    display: grid; grid-auto-flow: column; grid-auto-columns: 132px; gap: 10px;
+    overflow-x: auto; overscroll-behavior-x: contain; scroll-behavior: smooth; scroll-snap-type: x mandatory;
+    scrollbar-width: none;
   }
+  .rs__photos::-webkit-scrollbar { display: none; }
+  .rs__photos > li { scroll-snap-align: start; }
+  .rs__nav {
+    position: absolute; inset-block-start: 50%; translate: 0 -50%; z-index: 1;
+    width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; padding: 0;
+    background: rgba(255, 255, 255, 0.94); border: 1px solid var(--c-line-strong); color: var(--c-burgundy);
+    font-size: 1.5rem; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(43, 26, 31, 0.12);
+  }
+  .rs__nav span { margin-top: -3px; }
+  .rs__nav--prev { inset-inline-start: -14px; }
+  .rs__nav--next { inset-inline-end: -14px; }
+  .rs__nav:hover { border-color: var(--c-burgundy); }
+  .rs__nav:disabled { opacity: 0; pointer-events: none; }
+  :global([dir='rtl']) .rs__nav span { display: inline-block; transform: scaleX(-1); }
   .rs__thumb, .rs__more { width: 132px; height: 132px; display: block; border: 1px solid var(--c-line); background: #fff; padding: 0; cursor: pointer; position: relative; }
   .rs__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .rs__thumb:hover { border-color: var(--c-burgundy); }
@@ -95,7 +120,34 @@ const [a, b] = sum.tags;
   .rs__empty { padding: var(--s-6) 0; text-align: center; color: var(--c-ink-soft); }
   @media (max-width: 720px) {
     /* 모바일: 가로 스와이프(스크롤 스냅 없이 기본 스크롤 그대로) */
-    .rs__photos { grid-auto-columns: 112px; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); }
+    .rs__photos { grid-auto-columns: 112px; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); scroll-padding-inline: var(--gutter); }
+    .rs__nav { width: 36px; height: 36px; }
+    .rs__nav--prev { inset-inline-start: -6px; }
+    .rs__nav--next { inset-inline-end: -6px; }
     .rs__thumb, .rs__more { width: 112px; height: 112px; }
   }
+  @media (prefers-reduced-motion: reduce) { .rs__photos { scroll-behavior: auto; } }
 </style>
+
+<script>
+  // 화살표: 보이는 너비만큼 앞뒤로 넘김. 처음·끝에서는 해당 화살표 숨김
+  document.querySelectorAll<HTMLElement>('[data-rs-strip]').forEach((strip) => {
+    const list = strip.querySelector<HTMLElement>('[data-rs-photos]');
+    const prev = strip.querySelector<HTMLButtonElement>('[data-rs-prev]');
+    const next = strip.querySelector<HTMLButtonElement>('[data-rs-next]');
+    if (!list || !prev || !next) return;
+    const rtl = getComputedStyle(list).direction === 'rtl';
+    const pos = () => Math.abs(list.scrollLeft);
+    const update = () => {
+      const max = list.scrollWidth - list.clientWidth;
+      prev.disabled = pos() <= 2;
+      next.disabled = pos() >= max - 2;
+    };
+    const go = (dir: 1 | -1) => list.scrollBy({ left: dir * (rtl ? -1 : 1) * list.clientWidth * 0.9 });
+    prev.addEventListener('click', () => go(-1));
+    next.addEventListener('click', () => go(1));
+    list.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  });
+</script>

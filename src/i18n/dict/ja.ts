@@ -196,6 +196,8 @@ export const ja: Dict = {
     all: 'すべてのレビューを見る',
     more: 'もっと見る',
     photos: 'フォトレビュー',
+    prevPhotos: '前のフォトレビュー',
+    nextPhotos: '次のフォトレビュー',
     openPhoto: '{a} さんのフォトレビューを開く — {b}',
     summaryTitle: 'レビューのまとめ',
     summaryHead: 'レビューで最も多く触れられた内容は {a} と {b} です。',

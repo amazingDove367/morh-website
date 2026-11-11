@@ -197,6 +197,8 @@ export const ar: Dict = {
     all: 'عرض كل التقييمات',
     more: 'المزيد',
     photos: 'تقييمات بالصور',
+    prevPhotos: 'التقييمات المصوّرة السابقة',
+    nextPhotos: 'التقييمات المصوّرة التالية',
     openPhoto: 'فتح التقييم المصوّر من {a} — {b}',
     summaryTitle: 'ملخص التقييمات',
     summaryHead: 'أكثر ما ورد في التقييمات هو {a} و{b}.',
