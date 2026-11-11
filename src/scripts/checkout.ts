@@ -4,6 +4,7 @@
   - 개인정보는 받지 않음. 완료 화면에는 주문 내역(구성·수량·배송 지역·금액)만 sessionStorage 로 전달
 */
 import { track, ecommerce } from './analytics';
+import { sendLeadLog } from './lead-log';
 import { orderSummary, setById, setBase, shippingFor, type Region } from '../data/commerce';
 import { money } from '../i18n/format';
 import type { Locale } from '../i18n/locales';
@@ -63,6 +64,7 @@ export function initCheckout() {
   // 결제하기 = 1차 전환(주요 이벤트). 실제 결제가 없으므로 purchase 가 아닌 add_payment_info
   pay.addEventListener('click', () => {
     const s = calc();
+    sendLeadLog('purchase', { value: set.price * qty, set: set.id, qty });
     track('add_payment_info', ecommerce(qty, { payment_type: 'pay_button', shipping_tier: s.region, shipping: s.shipping, checkout_type: 'demo' }, set.id));
     try { sessionStorage.setItem(SUMMARY_KEY, JSON.stringify(calc())); } catch { /* 저장소를 쓸 수 없어도 완료 화면은 표시 */ }
     location.assign(d.complete!);
