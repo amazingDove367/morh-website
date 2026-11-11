@@ -95,6 +95,7 @@ const strings = { set: c.set, sets: t.product.sets, qty: t.product.qty, subtotal
 
 <script>
   import { track, trackOnce, trackFormFields } from '../../../../scripts/analytics';
+  import { sendLeadLog } from '../../../../scripts/lead-log';
   import { money } from '../../../../i18n/format';
   import type { Locale } from '../../../../i18n/locales';
   const root = document.querySelector<HTMLElement>('[data-complete]');
@@ -149,6 +150,7 @@ const strings = { set: c.set, sets: t.product.sets, qty: t.product.qty, subtotal
         form.hidden = true;
         done.hidden = false;
         done.focus?.();
+        sendLeadLog('lead');
         trackOnce('lead:launch_alert', 'generate_lead', { lead_type: 'launch_alert' });
       });
     }
