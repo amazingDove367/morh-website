@@ -196,6 +196,8 @@ export const en: Dict = {
     all: 'See all reviews',
     more: 'More',
     photos: 'Photo reviews',
+    prevPhotos: 'Previous photo reviews',
+    nextPhotos: 'Next photo reviews',
     openPhoto: 'Open the photo review by {a} — {b}',
     summaryTitle: 'Review summary',
     summaryHead: 'The most mentioned topics in reviews are {a} and {b}.',
